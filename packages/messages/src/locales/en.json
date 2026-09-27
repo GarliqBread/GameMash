@@ -1,0 +1,9 @@
+{
+  "app.title": "GameMash",
+  "home.tagline": "Team games on the big screen, played from your phone.",
+  "home.serverStatus": "Server: {status, select, up {online} down {offline} other {checking…}}",
+  "home.socketStatus": "Live connection: {status, select, connected {connected} disconnected {disconnected} other {connecting…}}",
+  "home.recheck": "Check again",
+  "error.not_found": "We couldn't find that.",
+  "error.internal_error": "Something went wrong. Please try again."
+}

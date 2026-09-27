@@ -1,0 +1,24 @@
+{
+  "name": "@gamemash/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
+    "build": "tsc -b",
+    "start": "node --env-file-if-exists=.env dist/index.js",
+    "typecheck": "tsc -b",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@formatjs/intl": "^6.1.2",
+    "@gamemash/messages": "workspace:*",
+    "@gamemash/shared": "workspace:*",
+    "fastify": "^5.12.5",
+    "redis": "^6.2.1",
+    "socket.io": "catalog:"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
+  }
+}
