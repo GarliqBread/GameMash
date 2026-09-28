@@ -1,0 +1,92 @@
+import type { Avatar, PlayerRecord, SessionRecord, SessionStore } from "./store.js";
+
+type SessionEntry = {
+  session: SessionRecord;
+  players: PlayerRecord[];
+  nameKeys: Set<string>;
+  avatars: Map<string, Avatar>;
+  setup: string | null;
+  summary: string | null;
+  expiresAt: number;
+};
+
+export const createMemorySessionStore = (now: () => number = Date.now): SessionStore => {
+  const sessions = new Map<string, SessionEntry>();
+  const rooms = new Map<string, string>();
+
+  const live = (sessionId: string | undefined) => {
+    if (!sessionId) return undefined;
+    const entry = sessions.get(sessionId);
+    if (!entry) return undefined;
+    if (entry.expiresAt > now()) return entry;
+    sessions.delete(sessionId);
+    rooms.delete(entry.session.roomCode);
+    return undefined;
+  };
+
+  const update = (sessionId: string, change: (entry: SessionEntry) => SessionEntry) => {
+    const entry = live(sessionId);
+    if (!entry) return false;
+    sessions.set(sessionId, change(entry));
+    return true;
+  };
+
+  return {
+    create: async (session, expiresAt) => {
+      if (live(rooms.get(session.roomCode))) return "room_code_taken";
+      rooms.set(session.roomCode, session.id);
+      sessions.set(session.id, {
+        session,
+        players: [],
+        nameKeys: new Set(),
+        avatars: new Map(),
+        setup: null,
+        summary: null,
+        expiresAt,
+      });
+      return "created";
+    },
+    findByRoomCode: async (roomCode) => live(rooms.get(roomCode))?.session ?? null,
+    findById: async (sessionId) => live(sessionId)?.session ?? null,
+    addPlayer: async (sessionId, player, { nameKey, maxPlayers, expiresAt }) => {
+      const entry = live(sessionId);
+      if (!entry) return "session_not_found";
+      if (entry.players.length >= maxPlayers) return "session_full";
+      if (entry.nameKeys.has(nameKey)) return "name_taken";
+      sessions.set(sessionId, {
+        ...entry,
+        players: [...entry.players, player],
+        nameKeys: new Set([...entry.nameKeys, nameKey]),
+        expiresAt,
+      });
+      return "added";
+    },
+    findPlayer: async (sessionId, playerId) =>
+      live(sessionId)?.players.find((player) => player.id === playerId) ?? null,
+    listPlayers: async (sessionId) => (live(sessionId)?.players ?? []).toSorted((a, b) => a.joinedAt - b.joinedAt),
+    setStatus: async (sessionId, status) =>
+      update(sessionId, (entry) => ({ ...entry, session: { ...entry.session, status } })),
+    setAvatar: async (sessionId, playerId, avatar, expiresAt) => {
+      const entry = live(sessionId);
+      if (!entry) return "session_not_found";
+      if (!entry.players.some((player) => player.id === playerId)) return "player_not_found";
+      sessions.set(sessionId, { ...entry, avatars: new Map(entry.avatars).set(playerId, avatar), expiresAt });
+      return "saved";
+    },
+    getAvatar: async (sessionId, playerId) => live(sessionId)?.avatars.get(playerId) ?? null,
+    avatarVersions: async (sessionId) =>
+      new Map([...(live(sessionId)?.avatars ?? new Map<string, Avatar>())].map(([id, avatar]) => [id, avatar.version])),
+    getSetup: async (sessionId) => live(sessionId)?.setup ?? null,
+    getLobbySummary: async (sessionId) => live(sessionId)?.summary ?? null,
+    saveSetup: async (sessionId, setup, summary, expiresAt) => {
+      const entry = live(sessionId);
+      if (!entry) return "session_not_found";
+      if (entry.session.status !== "lobby") return "setup_locked";
+      sessions.set(sessionId, { ...entry, setup, summary, expiresAt });
+      return entry.summary === summary ? "unchanged" : "changed";
+    },
+    touch: async (session, expiresAt) => {
+      update(session.id, (entry) => ({ ...entry, expiresAt }));
+    },
+  };
+};

@@ -11,4 +11,4 @@ export type Locale = keyof typeof catalogs;
 
 export const SUPPORTED_LOCALES = Object.keys(catalogs) as Locale[];
 
-export const isLocale = (value: string): value is Locale => value in catalogs;
+export const isLocale = (value: string): value is Locale => Object.hasOwn(catalogs, value);

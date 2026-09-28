@@ -11,9 +11,10 @@
     "test": "echo 'no web tests'"
   },
   "dependencies": {
-    "@base-ui/react": "^1.8.0",
+    "@gamemash/games": "workspace:*",
     "@gamemash/messages": "workspace:*",
     "@gamemash/shared": "workspace:*",
+    "@gamemash/ui": "workspace:*",
     "@tanstack/react-query": "^5.104.0",
     "@tanstack/react-router": "^1.170.39",
     "react": "catalog:",
@@ -23,12 +24,12 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.3.3",
+    "@tailwindcss/vite": "catalog:",
     "@tanstack/router-plugin": "^1.168.40",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "^6.1.1",
-    "tailwindcss": "^4.3.3",
-    "vite": "^8.3.1"
+    "tailwindcss": "catalog:",
+    "vite": "catalog:"
   }
 }

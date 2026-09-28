@@ -11,14 +11,20 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@formatjs/intl": "^6.1.2",
-    "@gamemash/messages": "workspace:*",
+    "@fastify/rate-limit": "^11.2.0",
+    "@fastify/type-provider-typebox": "^6.1.0",
+    "@gamemash/games": "workspace:*",
     "@gamemash/shared": "workspace:*",
     "fastify": "^5.12.5",
+    "pino": "^10.3.1",
+    "proxy-addr": "^2.0.8",
     "redis": "^6.2.1",
-    "socket.io": "catalog:"
+    "socket.io": "catalog:",
+    "typebox": "catalog:"
   },
   "devDependencies": {
+    "@types/proxy-addr": "^2.0.3",
+    "socket.io-client": "catalog:",
     "tsx": "^4.23.15"
   }
 }

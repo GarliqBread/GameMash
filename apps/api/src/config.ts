@@ -3,6 +3,7 @@ export type Config = {
   port: number;
   redisUrl: string;
   logLevel: string;
+  trustProxy: string[];
 };
 
 const DEFAULT_PORT = 3000;
@@ -16,9 +17,16 @@ const parsePort = (raw: string | undefined) => {
   return port;
 };
 
+const parseList = (raw: string | undefined) =>
+  (raw ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
 export const loadConfig = (env: NodeJS.ProcessEnv = process.env): Config => ({
   host: env.HOST || "0.0.0.0",
   port: parsePort(env.PORT),
   redisUrl: env.REDIS_URL || "redis://localhost:6380",
   logLevel: env.LOG_LEVEL || "info",
+  trustProxy: parseList(env.TRUST_PROXY),
 });

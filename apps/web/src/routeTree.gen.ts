@@ -10,33 +10,111 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as HostIndexRouteImport } from './routes/host.index'
+import { Route as HostSessionIdRouteImport } from './routes/host.$sessionId'
+import { Route as JoinCodeRouteImport } from './routes/join.$code'
+import { Route as PlaySessionIdRouteImport } from './routes/play.$sessionId'
+import { Route as HostSessionIdIndexRouteImport } from './routes/host.$sessionId.index'
+import { Route as HostSessionIdSetupRouteImport } from './routes/host.$sessionId.setup'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HostIndexRoute = HostIndexRouteImport.update({
+  id: '/host/',
+  path: '/host/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HostSessionIdRoute = HostSessionIdRouteImport.update({
+  id: '/host/$sessionId',
+  path: '/host/$sessionId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JoinCodeRoute = JoinCodeRouteImport.update({
+  id: '/join/$code',
+  path: '/join/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlaySessionIdRoute = PlaySessionIdRouteImport.update({
+  id: '/play/$sessionId',
+  path: '/play/$sessionId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HostSessionIdIndexRoute = HostSessionIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => HostSessionIdRoute,
+} as any)
+const HostSessionIdSetupRoute = HostSessionIdSetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => HostSessionIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/host/$sessionId': typeof HostSessionIdRouteWithChildren
+  '/join/$code': typeof JoinCodeRoute
+  '/play/$sessionId': typeof PlaySessionIdRoute
+  '/host/': typeof HostIndexRoute
+  '/host/$sessionId/setup': typeof HostSessionIdSetupRoute
+  '/host/$sessionId/': typeof HostSessionIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/join/$code': typeof JoinCodeRoute
+  '/play/$sessionId': typeof PlaySessionIdRoute
+  '/host': typeof HostIndexRoute
+  '/host/$sessionId/setup': typeof HostSessionIdSetupRoute
+  '/host/$sessionId': typeof HostSessionIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/host/$sessionId': typeof HostSessionIdRouteWithChildren
+  '/join/$code': typeof JoinCodeRoute
+  '/play/$sessionId': typeof PlaySessionIdRoute
+  '/host/': typeof HostIndexRoute
+  '/host/$sessionId/setup': typeof HostSessionIdSetupRoute
+  '/host/$sessionId/': typeof HostSessionIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/host/$sessionId'
+    | '/join/$code'
+    | '/play/$sessionId'
+    | '/host/'
+    | '/host/$sessionId/setup'
+    | '/host/$sessionId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/join/$code'
+    | '/play/$sessionId'
+    | '/host'
+    | '/host/$sessionId/setup'
+    | '/host/$sessionId'
+  id:
+    | '__root__'
+    | '/'
+    | '/host/$sessionId'
+    | '/join/$code'
+    | '/play/$sessionId'
+    | '/host/'
+    | '/host/$sessionId/setup'
+    | '/host/$sessionId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  HostSessionIdRoute: typeof HostSessionIdRouteWithChildren
+  JoinCodeRoute: typeof JoinCodeRoute
+  PlaySessionIdRoute: typeof PlaySessionIdRoute
+  HostIndexRoute: typeof HostIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +126,71 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/host/': {
+      id: '/host/'
+      path: '/host'
+      fullPath: '/host/'
+      preLoaderRoute: typeof HostIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/host/$sessionId': {
+      id: '/host/$sessionId'
+      path: '/host/$sessionId'
+      fullPath: '/host/$sessionId'
+      preLoaderRoute: typeof HostSessionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/join/$code': {
+      id: '/join/$code'
+      path: '/join/$code'
+      fullPath: '/join/$code'
+      preLoaderRoute: typeof JoinCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/play/$sessionId': {
+      id: '/play/$sessionId'
+      path: '/play/$sessionId'
+      fullPath: '/play/$sessionId'
+      preLoaderRoute: typeof PlaySessionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/host/$sessionId/': {
+      id: '/host/$sessionId/'
+      path: '/'
+      fullPath: '/host/$sessionId/'
+      preLoaderRoute: typeof HostSessionIdIndexRouteImport
+      parentRoute: typeof HostSessionIdRoute
+    }
+    '/host/$sessionId/setup': {
+      id: '/host/$sessionId/setup'
+      path: '/setup'
+      fullPath: '/host/$sessionId/setup'
+      preLoaderRoute: typeof HostSessionIdSetupRouteImport
+      parentRoute: typeof HostSessionIdRoute
+    }
   }
 }
 
+interface HostSessionIdRouteChildren {
+  HostSessionIdSetupRoute: typeof HostSessionIdSetupRoute
+  HostSessionIdIndexRoute: typeof HostSessionIdIndexRoute
+}
+
+const HostSessionIdRouteChildren: HostSessionIdRouteChildren = {
+  HostSessionIdSetupRoute: HostSessionIdSetupRoute,
+  HostSessionIdIndexRoute: HostSessionIdIndexRoute,
+}
+
+const HostSessionIdRouteWithChildren = HostSessionIdRoute._addFileChildren(
+  HostSessionIdRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  HostSessionIdRoute: HostSessionIdRouteWithChildren,
+  JoinCodeRoute: JoinCodeRoute,
+  PlaySessionIdRoute: PlaySessionIdRoute,
+  HostIndexRoute: HostIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -8,7 +8,12 @@ describe("loadConfig", () => {
       port: 3000,
       redisUrl: "redis://localhost:6380",
       logLevel: "info",
+      trustProxy: [],
     });
+  });
+
+  it("reads trusted proxies as a comma-separated list", () => {
+    expect(loadConfig({ TRUST_PROXY: "loopback, 10.0.0.0/8" }).trustProxy).toEqual(["loopback", "10.0.0.0/8"]);
   });
 
   it("rejects an invalid port", () => {
