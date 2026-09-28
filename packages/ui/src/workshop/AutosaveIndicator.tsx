@@ -11,8 +11,8 @@ export type AutosaveIndicatorProps = Omit<ComponentProps<"span">, "children"> & 
 
 const DOT_CLASSES: Record<AutosaveStatus, string> = {
   saving: "bg-sand-200",
-  saved: "bg-brand-teal",
-  error: "bg-brand-orange",
+  saved: "bg-success",
+  error: "bg-danger",
 };
 
 export const AutosaveIndicator = ({ status, labels, onRetry, className, ...props }: AutosaveIndicatorProps) => (

@@ -94,7 +94,7 @@ export const SetupWorkshop = ({ credentials, initialSetup }: SetupWorkshopProps)
       settingsLabel={intl.formatMessage({ id: "setup.rulesTitle" })}
       header={
         <>
-          <Logo tone="stage" size="md" />
+          <Logo size="md" />
           <SessionNameSticker
             label={<FormattedMessage id="setup.sessionLabel" />}
             value={setup.name}

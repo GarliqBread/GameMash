@@ -1,4 +1,5 @@
 import type { ApiError } from "./errors.js";
+import type { GameInputPayload, GameNextPayload, GameSnapshot } from "./game.js";
 import type { SessionStatus } from "./schemas.js";
 
 export type {
@@ -53,11 +54,14 @@ export type SocketAck = { ok: true } | { ok: false; error: ApiError };
 
 export type ServerToClientEvents = {
   "lobby:state": (state: LobbyState) => void;
+  "game:state": (snapshot: GameSnapshot) => void;
   "session:ended": () => void;
 };
 
 export type ClientToServerEvents = {
   "session:start": (ack: (result: SocketAck) => void) => void;
+  "game:next": (payload: GameNextPayload, ack: (result: SocketAck) => void) => void;
+  "game:input": (payload: GameInputPayload, ack: (result: SocketAck) => void) => void;
 };
 
 export const SOCKET_AUTH_ERROR = "unauthorized";

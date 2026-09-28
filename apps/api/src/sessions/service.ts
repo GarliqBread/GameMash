@@ -246,6 +246,7 @@ export const createSessionService = ({
     setAvatar,
     getAvatar: (sessionId: string, playerId: string) => store.getAvatar(sessionId, playerId),
     getSetup,
+    readSetup,
     saveSetup,
     lobbyState,
     start,

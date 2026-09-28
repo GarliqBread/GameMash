@@ -21,7 +21,7 @@ const HostStartPage = () => {
     <PhoneShell
       theme="paper"
       mainClassName="gap-4"
-      header={<Logo tone="paper" />}
+      header={<Logo />}
       footer={
         <TrustNote>
           <FormattedMessage id="lobby.trust" />

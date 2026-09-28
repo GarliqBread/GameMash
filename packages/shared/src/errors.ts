@@ -13,6 +13,8 @@ export const ERROR_CODES = [
   "setup_incomplete",
   "payload_too_large",
   "unsupported_media_type",
+  "input_closed",
+  "already_submitted",
   "internal_error",
 ] as const;
 

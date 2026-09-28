@@ -11,7 +11,10 @@ export type EditableAnswer = {
   correctAriaLabel: string;
 };
 
-export type AnswerTileEditorProps = Omit<ComponentProps<"fieldset">, "onChange"> & {
+export type AnswerTileEditorProps = Omit<
+  ComponentProps<"fieldset">,
+  "onChange"
+> & {
   legend: ReactNode;
   answers: EditableAnswer[];
   onAnswerChange: (shape: AnswerShapeName, value: string) => void;
@@ -48,24 +51,26 @@ const Tile = ({
 }: TileProps) => (
   <div
     className={cn(
-      "flex min-h-[118px] flex-col gap-2.5 rounded-card border-3 border-ink-950 pt-3 pr-3.5 pb-3.5 pl-4 motion-safe:transition-[rotate,box-shadow]",
+      "flex min-h-29.5 flex-col gap-2.5 rounded-card border-3 border-ink-950 pt-3 pr-3.5 pb-3.5 pl-4 motion-safe:transition-[rotate,box-shadow]",
       ANSWERS[answer.shape].bg,
       ANSWERS[answer.shape].fg,
       ANSWERS[answer.shape].focus,
-      isCorrect ? "-rotate-[0.8deg] shadow-brutal-xl focus-within:rotate-0" : "shadow-brutal-md",
+      isCorrect
+        ? "rotate-[-0.8deg] shadow-brutal-xl focus-within:rotate-0"
+        : "shadow-brutal-md",
     )}
   >
     <div className="flex items-center justify-between gap-2.5">
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-key border-3 border-ink-950 bg-paper-white text-ink-950">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-key text-ink-950">
         <AnswerShape shape={answer.shape} size={26} />
       </span>
       <label
         className={cn(
           "relative flex cursor-pointer items-center gap-1.5 rounded-control border-2 border-ink-950 font-pixel tracking-pixel font-bold text-ink-950",
-          "has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-3 has-[:focus-visible]:outline-(--color-focus)",
+          "has-focus-visible:outline-3 has-focus-visible:outline-offset- has-focus-visible:outline-(--color-focus)",
           isCorrect
-            ? "-rotate-[4deg] bg-sun px-2.5 py-[5px] text-label shadow-brutal-sm"
-            : "min-h-[34px] bg-paper-white px-2.5 py-1 text-xs/tight shadow-brutal-sm motion-safe:transition-[translate,box-shadow] active:brutal-pressed",
+            ? "rotate-[-4deg] bg-sun px-2.5 py-1.25 text-label shadow-brutal-sm"
+            : "min-h-8.5 bg-paper-white px-2.5 py-1 text-xs/tight shadow-brutal-sm motion-safe:transition-[translate,box-shadow] active:brutal-pressed",
         )}
       >
         <input
@@ -78,7 +83,9 @@ const Tile = ({
           className="sr-only"
         />
         {isCorrect && <CheckIcon size={16} strokeWidth={3.2} />}
-        <span aria-hidden="true">{isCorrect ? correctLabel : markCorrectLabel}</span>
+        <span aria-hidden="true">
+          {isCorrect ? correctLabel : markCorrectLabel}
+        </span>
       </label>
     </div>
     <input
@@ -108,9 +115,17 @@ export const AnswerTileEditor = ({
 }: AnswerTileEditorProps) => {
   const name = useId();
   return (
-    <fieldset className={cn("m-0 flex min-w-0 flex-col gap-2.5 border-0 p-0", className)} {...props}>
-      <legend className="mb-3 p-0 font-pixel tracking-pixel text-label font-bold text-ink-950">{legend}</legend>
-      <div className="grid grid-cols-2 gap-x-5 gap-y-[18px] pr-1.5 pb-1.5">
+    <fieldset
+      className={cn(
+        "m-0 flex min-w-0 flex-col gap-2.5 border-0 p-0",
+        className,
+      )}
+      {...props}
+    >
+      <legend className="mb-3 p-0 font-pixel tracking-pixel text-label font-bold text-ink-950">
+        {legend}
+      </legend>
+      <div className="grid grid-cols-2 gap-x-5 gap-y-4.5 pr-1.5 pb-1.5">
         {answers.map((answer) => (
           <Tile
             key={answer.shape}

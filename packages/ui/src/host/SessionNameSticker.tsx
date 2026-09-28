@@ -11,7 +11,7 @@ export type SessionNameStickerProps = Omit<ComponentProps<typeof Field.Control>,
 export const SessionNameSticker = ({ label, className, ...props }: SessionNameStickerProps) => (
   <Field.Root
     className={cn(
-      "flex min-w-0 -rotate-[1.5deg] items-center gap-3 rounded-control border-3 border-ink-950 bg-brand-blue py-1.5 pr-3 pl-4 text-ink-950 shadow-brutal",
+      "flex min-w-0 -rotate-[1.5deg] items-center gap-3 rounded-control border-3 border-ink-950 bg-brand-violet-light py-1.5 pr-3 pl-4 text-ink-950 shadow-brutal",
       "motion-safe:transition-transform focus-within:rotate-0",
       className,
     )}

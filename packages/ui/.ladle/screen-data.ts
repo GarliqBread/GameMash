@@ -9,13 +9,13 @@ export const ROOM_CODE = "KWPX";
 export const JOIN_URL = "gamemash.app";
 
 export const QUIZ_OPTIONS: AnswerOption[] = [
-  { shape: "triangle", label: "Jupiter" },
-  { shape: "diamond", label: "Saturn" },
-  { shape: "circle", label: "Uranus" },
-  { shape: "square", label: "Neptune" },
+  { shape: "squircle", label: "Jupiter" },
+  { shape: "triangle", label: "Saturn" },
+  { shape: "plus", label: "Uranus" },
+  { shape: "dome", label: "Neptune" },
 ];
 
-export const QUIZ_COUNTS: Record<AnswerShapeName, number> = { triangle: 3, diamond: 5, circle: 0, square: 1 };
+export const QUIZ_COUNTS: Record<AnswerShapeName, number> = { squircle: 3, triangle: 5, plus: 0, dome: 1 };
 
 export const LEADERBOARD: LeaderboardEntry[] = [
   { id: "priya", rank: 1, name: "Priya", total: 3480, gain: 920, movement: { direction: "up", amount: 2 } },

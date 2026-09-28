@@ -2,13 +2,13 @@ import type { ComponentProps, ReactNode } from "react";
 import { cn } from "../lib/cn.js";
 import { Sticker } from "../workshop/Sticker.js";
 
-export type GameAccent = "sun" | "brand-orange" | "brand-blue" | "brand-teal";
+export type GameAccent = "sun" | "brand-coral" | "brand-violet-light" | "brand-lime";
 
 const ACCENT_FILL: Record<GameAccent, string> = {
   sun: "bg-sun",
-  "brand-orange": "bg-brand-orange",
-  "brand-blue": "bg-brand-blue",
-  "brand-teal": "bg-brand-teal",
+  "brand-coral": "bg-brand-coral",
+  "brand-violet-light": "bg-brand-violet-light",
+  "brand-lime": "bg-brand-lime",
 };
 
 const gripStripe = (accent: GameAccent) =>
@@ -92,7 +92,7 @@ export const GameCartridge = ({
       </span>
     </button>
     {isSelected && (
-      <Sticker aria-hidden="true" tone="orange" rotate={6} className="pointer-events-none absolute -top-3.5 -right-3.5">
+      <Sticker aria-hidden="true" tone="coral" rotate={6} className="pointer-events-none absolute -top-3.5 -right-3.5">
         {editingLabel}
       </Sticker>
     )}

@@ -20,7 +20,7 @@ export const WaitingScreen = ({ credentials, me, playerCount, status, isPhotoFai
     <PhoneShell
       theme="paper"
       mainClassName="items-center justify-center gap-6 text-center"
-      header={<Logo tone="paper" />}
+      header={<Logo />}
       footer={
         <TrustNote>
           <FormattedMessage id="join.trust" />

@@ -17,11 +17,7 @@ export type StageMessageProps = {
 
 export const StageMessage = ({ title, body, action }: StageMessageProps) => (
   <StageViewport>
-    <StageLayout
-      className="py-16"
-      mainClassName="items-start justify-center gap-10"
-      header={<Logo tone="stage" size="lg" />}
-    >
+    <StageLayout className="py-16" mainClassName="items-start justify-center gap-10" header={<Logo size="lg" />}>
       <Heading size="stage-title">{title}</Heading>
       <p className="max-w-[1200px] text-stage-body text-fg-subtle">{body}</p>
       {action}

@@ -91,7 +91,7 @@ export const JoinScreen = ({ initialCode }: JoinScreenProps) => {
     <PhoneShell
       theme="paper"
       mainClassName="gap-7"
-      header={<Logo tone="paper" />}
+      header={<Logo />}
       footer={
         <div className="flex flex-col gap-4">
           <TrustNote>

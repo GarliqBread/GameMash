@@ -8,13 +8,13 @@ export const POP_QUIZ_MAX_QUESTIONS = 50;
 export const POP_QUIZ_TIME_LIMITS = [10, 20, 30, 60];
 export const POP_QUIZ_POINTS = [500, 1000, 2000];
 
-export type QuizAnswerKey = "triangle" | "diamond" | "circle" | "square";
-export const QUIZ_ANSWER_KEYS: QuizAnswerKey[] = ["triangle", "diamond", "circle", "square"];
+export type QuizAnswerKey = "squircle" | "triangle" | "plus" | "dome";
+export const QUIZ_ANSWER_KEYS: QuizAnswerKey[] = ["squircle", "triangle", "plus", "dome"];
 
 export const emptyQuestion = (id: string): QuizQuestion => ({
   id,
   text: "",
-  answers: { triangle: "", diamond: "", circle: "", square: "" },
+  answers: { squircle: "", triangle: "", plus: "", dome: "" },
   correct: null,
 });
 

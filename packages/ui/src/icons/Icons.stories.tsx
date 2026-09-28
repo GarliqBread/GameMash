@@ -9,12 +9,12 @@ export default { title: "Foundations / Icons & logo" } satisfies StoryDefault;
 
 export const Logos: Story = () => (
   <BothThemes themes={WITH_WORKSHOP}>
-    {(theme) => (
+    {() => (
       <>
-        <Logo tone={theme === "workshop" ? "stage" : theme} size="sm" />
-        <Logo tone={theme === "workshop" ? "stage" : theme} size="md" />
-        <Logo tone={theme === "workshop" ? "stage" : theme} size="lg" />
-        <Logo tone={theme === "workshop" ? "stage" : theme} size="lg" showWordmark={false} label="GameMash" />
+        <Logo size="sm" />
+        <Logo size="md" />
+        <Logo size="lg" />
+        <Logo size="lg" showWordmark={false} label="GameMash" />
       </>
     )}
   </BothThemes>

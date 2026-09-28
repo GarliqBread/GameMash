@@ -1,4 +1,4 @@
-export type AnswerShapeName = "triangle" | "diamond" | "circle" | "square";
+export type AnswerShapeName = "squircle" | "triangle" | "plus" | "dome";
 
 export type AnswerStyle = {
   bg: string;
@@ -14,35 +14,35 @@ export type AnswerOption = {
   shapeLabel?: string | undefined;
 };
 
-export const ANSWER_SHAPES: AnswerShapeName[] = ["triangle", "diamond", "circle", "square"];
+export const ANSWER_SHAPES: AnswerShapeName[] = ["squircle", "triangle", "plus", "dome"];
 
 export const ANSWERS: Record<AnswerShapeName, AnswerStyle> = {
+  squircle: {
+    bg: "bg-answer-squircle",
+    fg: "text-on-answer-squircle",
+    focus: "[--color-focus:var(--color-on-answer-squircle)]",
+    path: "M12 3 C19 3 21 5 21 12 C21 19 19 21 12 21 C5 21 3 19 3 12 C3 5 5 3 12 3 Z",
+    defaultLabel: "Squircle",
+  },
   triangle: {
     bg: "bg-answer-triangle",
     fg: "text-on-answer-triangle",
     focus: "[--color-focus:var(--color-on-answer-triangle)]",
-    path: "M12 3 L22 20 H2 Z",
+    path: "M12 3.5 C13.4 3.5 14.3 4.4 15.2 6 L21 16.5 C22 18.4 20.8 20.5 18.6 20.5 H5.4 C3.2 20.5 2 18.4 3 16.5 L8.8 6 C9.7 4.4 10.6 3.5 12 3.5 Z",
     defaultLabel: "Triangle",
   },
-  diamond: {
-    bg: "bg-answer-diamond",
-    fg: "text-on-answer-diamond",
-    focus: "[--color-focus:var(--color-on-answer-diamond)]",
-    path: "M12 2 L22 12 L12 22 L2 12 Z",
-    defaultLabel: "Diamond",
+  plus: {
+    bg: "bg-answer-plus",
+    fg: "text-on-answer-plus",
+    focus: "[--color-focus:var(--color-on-answer-plus)]",
+    path: "M9 3 H15 A1.5 1.5 0 0 1 16.5 4.5 V7.5 H19.5 A1.5 1.5 0 0 1 21 9 V15 A1.5 1.5 0 0 1 19.5 16.5 H16.5 V19.5 A1.5 1.5 0 0 1 15 21 H9 A1.5 1.5 0 0 1 7.5 19.5 V16.5 H4.5 A1.5 1.5 0 0 1 3 15 V9 A1.5 1.5 0 0 1 4.5 7.5 H7.5 V4.5 A1.5 1.5 0 0 1 9 3 Z",
+    defaultLabel: "Plus",
   },
-  circle: {
-    bg: "bg-answer-circle",
-    fg: "text-on-answer-circle",
-    focus: "[--color-focus:var(--color-on-answer-circle)]",
-    path: "M12 2 A10 10 0 1 0 12 22 A10 10 0 1 0 12 2 Z",
-    defaultLabel: "Circle",
-  },
-  square: {
-    bg: "bg-answer-square",
-    fg: "text-on-answer-square",
-    focus: "[--color-focus:var(--color-on-answer-square)]",
-    path: "M5 3 H19 A2 2 0 0 1 21 5 V19 A2 2 0 0 1 19 21 H5 A2 2 0 0 1 3 19 V5 A2 2 0 0 1 5 3 Z",
-    defaultLabel: "Square",
+  dome: {
+    bg: "bg-answer-dome",
+    fg: "text-on-answer-dome",
+    focus: "[--color-focus:var(--color-on-answer-dome)]",
+    path: "M3 17 C3 10 7 5 12 5 C17 5 21 10 21 17 C21 19 20 20 18 20 H6 C4 20 3 19 3 17 Z",
+    defaultLabel: "Dome",
   },
 };

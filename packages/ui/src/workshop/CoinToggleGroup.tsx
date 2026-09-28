@@ -45,7 +45,7 @@ export const CoinToggleGroup = <Value extends string>({
           "px-1 text-center font-pixel tracking-pixel text-caption font-bold text-ink-950 shadow-brutal",
           "motion-safe:transition-[translate,box-shadow,background-color]",
           "data-[pressed]:translate-x-[3px] data-[pressed]:translate-y-[3px] data-[pressed]:bg-sun data-[pressed]:shadow-brutal-xs",
-          "data-[pressed]:ring-4 data-[pressed]:ring-brand-yellow-deep data-[pressed]:ring-inset",
+          "data-[pressed]:ring-4 data-[pressed]:ring-sun-deep data-[pressed]:ring-inset",
         )}
       >
         {option.label}

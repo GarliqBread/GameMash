@@ -29,7 +29,7 @@ export const Stage: Story = () => {
         }
         footer={
           <>
-            <Logo tone="stage" size="lg" />
+            <Logo size="lg" />
             <Button size="stage">{t("Start game")}</Button>
           </>
         }
@@ -47,7 +47,7 @@ export const PhonePaper: Story = () => {
   return (
     <PhoneShell
       theme="paper"
-      header={<Logo tone="paper" />}
+      header={<Logo />}
       footer={<TrustNote>{t("No account needed. Your name and photo are deleted when the session ends.")}</TrustNote>}
       bottomAction={<Button size="lg">{t("Join")}</Button>}
     >

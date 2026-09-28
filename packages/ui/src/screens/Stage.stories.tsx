@@ -58,7 +58,7 @@ export const Lobby: Story = () => {
         mainClassName="flex-row gap-16"
         header={
           <>
-            <Logo tone="stage" size="lg" />
+            <Logo size="lg" />
             <span className="truncate font-display text-stage-lg font-semibold text-fg-subtle">Friday team mash</span>
             <TrustNote size="stage">{t("Nothing is saved after the game")}</TrustNote>
           </>
@@ -176,11 +176,11 @@ export const QuizReveal: Story = () => {
       >
         <section className="flex min-w-0 flex-1 flex-col gap-7">
           <p className="text-stage-lg text-fg-muted">{t("Which planet has the most known moons?")}</p>
-          <CorrectAnswerBanner shape="diamond" label={t("Saturn")} caption={t("Correct answer")} />
+          <CorrectAnswerBanner shape="triangle" label={t("Saturn")} caption={t("Correct answer")} />
           <ResultBars
             className="mt-2"
             total={9}
-            correct="diamond"
+            correct="triangle"
             correctLabel={t("correct answer")}
             rows={QUIZ_OPTIONS.map((option) => ({
               ...option,
@@ -218,7 +218,7 @@ export const FinalPodium: Story = () => {
         backdrop={<DecorativeShapes />}
         header={
           <>
-            <Logo tone="stage" size="lg" />
+            <Logo size="lg" />
             <span className="text-stage-body text-fg-subtle">{t("Pop quiz + Draw it · 9 players")}</span>
           </>
         }

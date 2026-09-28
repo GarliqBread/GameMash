@@ -20,7 +20,7 @@ export type PlayerChipProps = Omit<ComponentProps<"div">, "children"> &
 const STATE_CLASSES: Record<PlayerChipState, string> = {
   joined: "h-[88px] gap-[18px]",
   waiting: "h-[88px] gap-[18px] text-ink-400",
-  done: "h-[68px] gap-3 rounded-button border-2 border-success-stage bg-success-stage px-4 text-ink-950",
+  done: "h-[68px] gap-3 rounded-button border-2 border-success bg-success px-4 text-ink-950",
   drawing: "h-[68px] gap-3 rounded-button border-2 border-border px-4 text-fg-subtle",
 };
 

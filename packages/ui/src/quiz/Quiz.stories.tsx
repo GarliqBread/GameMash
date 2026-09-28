@@ -16,7 +16,7 @@ export default { title: "Quiz" } satisfies StoryDefault;
 
 const useOptions = (labels: string[]): AnswerOption[] => {
   const t = useCopy();
-  return labels.map((label, index) => ({ shape: ANSWER_SHAPES[index] ?? "square", label: t(label) }));
+  return labels.map((label, index) => ({ shape: ANSWER_SHAPES[index] ?? "dome", label: t(label) }));
 };
 
 export const StageGrids: Story = () => {
@@ -49,8 +49,8 @@ export const StageReveal: Story = () => {
   return (
     <StageFrame>
       <Caption>Reveal: correct keeps a cream ring, the rest dim</Caption>
-      <AnswerGrid options={four} correct="diamond" correctLabel="Correct answer" aria-label="Answer options" />
-      <AnswerGrid options={two} correct="triangle" correctLabel="Correct answer" aria-label="Answer options" />
+      <AnswerGrid options={four} correct="triangle" correctLabel="Correct answer" aria-label="Answer options" />
+      <AnswerGrid options={two} correct="squircle" correctLabel="Correct answer" aria-label="Answer options" />
     </StageFrame>
   );
 };
@@ -64,22 +64,22 @@ export const RevealSummary: Story = () => {
   return (
     <StageFrame width={1100}>
       <p className="text-stage-lg text-fg-muted">{t("Which planet has the most known moons?")}</p>
-      <CorrectAnswerBanner shape="diamond" label={t("Saturn")} caption={t("Correct answer")} />
-      <ResultBars rows={rows} total={9} correct="diamond" correctLabel={t("correct")} />
+      <CorrectAnswerBanner shape="triangle" label={t("Saturn")} caption={t("Correct answer")} />
+      <ResultBars rows={rows} total={9} correct="triangle" correctLabel={t("correct")} />
       <Caption>Long label</Caption>
       <CorrectAnswerBanner
-        shape="circle"
+        shape="plus"
         label="Donaudampfschifffahrtsgesellschaft"
         caption="Richtige Antwort"
         lang="de"
       />
       <ResultBars
         rows={[
-          { shape: "triangle", label: "Donaudampfschifffahrtsgesellschaft", count: 12 },
-          { shape: "circle", label: "Ja", count: 30 },
+          { shape: "squircle", label: "Donaudampfschifffahrtsgesellschaft", count: 12 },
+          { shape: "plus", label: "Ja", count: 30 },
         ]}
         total={42}
-        correct="circle"
+        correct="plus"
         correctLabel="richtig"
       />
     </StageFrame>
@@ -137,5 +137,14 @@ export const PhoneButtons: Story = () => (
     <PhoneAnswer count={3} />
     <PhoneAnswer count={2} />
     <PhoneAnswer count={4} locked />
+  </div>
+);
+
+export const Greyscale: Story = () => (
+  <div className="grayscale">
+    <StageGrids />
+    <StageReveal />
+    <RevealSummary />
+    <PhoneButtons />
   </div>
 );

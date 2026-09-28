@@ -104,12 +104,12 @@ describe("session setup", () => {
       id: `q${index}`,
       text: "問".repeat(90),
       answers: {
+        squircle: "答".repeat(40),
         triangle: "答".repeat(40),
-        diamond: "答".repeat(40),
-        circle: "答".repeat(40),
-        square: "答".repeat(40),
+        plus: "答".repeat(40),
+        dome: "答".repeat(40),
       },
-      correct: "triangle" as const,
+      correct: "squircle" as const,
     });
     const games = Array.from({ length: 10 }, (_, gameIndex) => ({
       id: `quiz-${gameIndex}`,

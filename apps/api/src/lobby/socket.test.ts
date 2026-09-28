@@ -2,6 +2,7 @@ import type { AddressInfo } from "node:net";
 import type {
   ClientToServerEvents,
   CreateSessionResponse,
+  GameSnapshot,
   HandshakeAuth,
   JoinSessionResponse,
   LobbyState,
@@ -11,6 +12,8 @@ import type {
 import { io as connect, type Socket } from "socket.io-client";
 import { afterEach, describe, expect, it } from "vitest";
 import { buildApp } from "../app.js";
+import { createGameRunner } from "../game/runner.js";
+import { testRules } from "../game/test-rules.js";
 import type { RedisHealth } from "../redis.js";
 import { createMemorySessionStore } from "../sessions/memory-store.js";
 import { createSessionService, type SessionService } from "../sessions/service.js";
@@ -37,8 +40,10 @@ type ServerOptions = {
 
 const startServer = async ({ now, lobbyNow = now, keepAliveMs, authenticateHost }: ServerOptions = {}) => {
   const notifier = createLobbyNotifier();
-  const sessions = createSessionService({ store: createMemorySessionStore(now), notifier, now });
+  const store = createMemorySessionStore(now);
+  const sessions = createSessionService({ store, notifier, now });
   const app = buildApp({ redis, sessions, rateLimit: false });
+  const game = createGameRunner({ store, readSetup: sessions.readSetup, rules: [testRules], log: app.log, now });
   const lobbySessions = authenticateHost
     ? { ...sessions, authenticateHost: authenticateHost(sessions.authenticateHost) }
     : sessions;
@@ -46,6 +51,7 @@ const startServer = async ({ now, lobbyNow = now, keepAliveMs, authenticateHost 
     log: app.log,
     sessions: lobbySessions,
     notifier,
+    game,
     keepAliveMs,
     now: lobbyNow,
   });
@@ -87,6 +93,18 @@ const nextState = (socket: Client, predicate: (state: LobbyState) => boolean) =>
       resolve(state);
     };
     socket.on("lobby:state", handler);
+  });
+
+const nextGame = (socket: Client, predicate: (snapshot: GameSnapshot) => boolean) =>
+  new Promise<GameSnapshot>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("timed out waiting for game state")), WAIT_MS);
+    const handler = (snapshot: GameSnapshot) => {
+      if (!predicate(snapshot)) return;
+      clearTimeout(timer);
+      socket.off("game:state", handler);
+      resolve(snapshot);
+    };
+    socket.on("game:state", handler);
   });
 
 const connectError = (socket: Client) =>
@@ -181,6 +199,87 @@ describe("lobby socket", () => {
     const lateJoined = nextState(host, (state) => state.players.some((player) => player.name === "Late Lars"));
     await server.post(`/api/sessions/${session.sessionId}/players`, { name: "Late Lars" });
     expect((await lateJoined).status).toBe("playing");
+  });
+
+  it("runs the game: per-viewer state, one answer per player, host-only Next", async () => {
+    const server = await startServer();
+    const session = await server.post<CreateSessionResponse>("/api/sessions");
+    const priya = await server.post<JoinSessionResponse>(`/api/sessions/${session.sessionId}/players`, {
+      name: "Priya",
+    });
+    const daan = await server.post<JoinSessionResponse>(`/api/sessions/${session.sessionId}/players`, {
+      name: "Daan",
+    });
+    await fetch(`${server.url}/api/sessions/${session.sessionId}/setup`, {
+      method: "PUT",
+      headers: { authorization: `Bearer ${session.hostToken}`, "content-type": "application/json" },
+      body: JSON.stringify(readySetup()),
+    });
+    const priyaPhone = server.client(playerAuth(session, priya));
+    const daanPhone = server.client(playerAuth(session, daan));
+    const host = server.client(hostAuth(session));
+    await nextState(host, (state) => state.players.every((player) => player.isConnected));
+    const emit = (socket: Client, event: "game:next" | "game:input", payload: unknown) =>
+      new Promise<SocketAck>((resolve) =>
+        (socket.emit as (name: string, data: unknown, ack: (result: SocketAck) => void) => void)(
+          event,
+          payload,
+          resolve,
+        ),
+      );
+
+    const asking = nextGame(host, (snapshot) => snapshot.status === "playing" && snapshot.phase === "ask");
+    const priyaAsking = nextGame(priyaPhone, (snapshot) => snapshot.status === "playing");
+    await new Promise<SocketAck>((resolve) => host.emit("session:start", resolve));
+    expect(await asking).toMatchObject({ phaseId: 1, view: { answered: 0 } });
+    expect(await priyaAsking).toMatchObject({ phaseId: 1, view: { mine: null, isParticipant: true } });
+
+    expect(await emit(host, "game:input", { phaseId: 1, input: "right" })).toEqual({
+      ok: false,
+      error: { code: "unauthorized" },
+    });
+    expect(await emit(priyaPhone, "game:input", { phaseId: 1 })).toEqual({ ok: false, error: { code: "bad_request" } });
+    const priyaLocked = nextGame(priyaPhone, (snapshot) => snapshot.status === "playing" && snapshot.view !== null);
+    expect(await emit(priyaPhone, "game:input", { phaseId: 1, input: "right" })).toEqual({ ok: true });
+    expect(await emit(priyaPhone, "game:input", { phaseId: 1, input: "wrong" })).toEqual({
+      ok: false,
+      error: { code: "already_submitted" },
+    });
+    expect(await priyaLocked).toMatchObject({ view: { mine: "right" } });
+
+    const revealed = nextGame(host, (snapshot) => snapshot.status === "playing" && snapshot.phase === "reveal");
+    const daanSeesReveal = nextGame(daanPhone, (snapshot) => snapshot.status === "playing" && snapshot.phaseId === 2);
+    expect(await emit(daanPhone, "game:input", { phaseId: 1, input: "wrong" })).toEqual({ ok: true });
+    expect(await revealed).toMatchObject({ phaseId: 2, waitsForHost: true });
+    expect(await daanSeesReveal).toMatchObject({ view: { mine: null, total: 0 } });
+
+    expect(await emit(daanPhone, "game:next", { phaseId: 2 })).toEqual({ ok: false, error: { code: "unauthorized" } });
+    const finished = nextGame(priyaPhone, (snapshot) => snapshot.status === "finished");
+    expect(await emit(host, "game:next", { phaseId: 2 })).toEqual({ ok: true });
+    expect(await finished).toMatchObject({
+      standings: [
+        { playerId: priya.playerId, points: 100 },
+        { playerId: daan.playerId, points: 0 },
+      ],
+    });
+  });
+
+  it("sends the current game to a screen that reconnects mid-game", async () => {
+    const server = await startServer();
+    const session = await server.post<CreateSessionResponse>("/api/sessions");
+    await fetch(`${server.url}/api/sessions/${session.sessionId}/setup`, {
+      method: "PUT",
+      headers: { authorization: `Bearer ${session.hostToken}`, "content-type": "application/json" },
+      body: JSON.stringify(readySetup()),
+    });
+    const host = server.client(hostAuth(session));
+    await nextState(host, () => true);
+    await new Promise<SocketAck>((resolve) => host.emit("session:start", resolve));
+    host.disconnect();
+
+    const again = server.client(hostAuth(session));
+
+    expect(await nextGame(again, () => true)).toMatchObject({ status: "playing", phase: "ask", phaseId: 1 });
   });
 
   it("rejects a wrong player token and credentials from another session", async () => {

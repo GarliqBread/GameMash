@@ -18,10 +18,10 @@ export const QuizQuestionSchema = Type.Object(
     text: Type.String({ maxLength: POP_QUIZ_QUESTION_MAX_LENGTH }),
     answers: Type.Object(
       {
+        squircle: AnswerTextSchema,
         triangle: AnswerTextSchema,
-        diamond: AnswerTextSchema,
-        circle: AnswerTextSchema,
-        square: AnswerTextSchema,
+        plus: AnswerTextSchema,
+        dome: AnswerTextSchema,
       },
       { additionalProperties: false },
     ),

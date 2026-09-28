@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { FormattedMessage } from "react-intl";
+import { PlayGame } from "../features/play/PlayGame";
 import { WaitingScreen } from "../features/play/WaitingScreen";
 import { PhoneMessage } from "../features/session/PhoneMessage";
 import { loadPlayerCredentials, type PlayerCredentials } from "../lib/credentials";
 import { useLobbyConnection, useLobbyStore } from "../lib/lobby";
+import { avatarSrc } from "../lib/players";
 
 type PlaySearch = {
   photo?: "failed" | undefined;
@@ -14,6 +16,8 @@ const PlayerLobby = ({ credentials, isPhotoFailed }: { credentials: PlayerCreden
   useLobbyConnection(credentials);
   const status = useLobbyStore((store) => store.status);
   const state = useLobbyStore((store) => store.state);
+  const game = useLobbyStore((store) => store.game);
+  const me = state?.players.find((player) => player.id === credentials.playerId);
 
   if (status === "ended") {
     return (
@@ -25,10 +29,24 @@ const PlayerLobby = ({ credentials, isPhotoFailed }: { credentials: PlayerCreden
     );
   }
 
+  if (game && state && state.status !== "lobby") {
+    return (
+      <PlayGame
+        me={{
+          playerId: credentials.playerId,
+          name: me?.name ?? credentials.name,
+          avatarSrc: me ? avatarSrc(credentials.sessionId, me) : undefined,
+        }}
+        snapshot={game}
+        status={status}
+      />
+    );
+  }
+
   return (
     <WaitingScreen
       credentials={credentials}
-      me={state?.players.find((player) => player.id === credentials.playerId)}
+      me={me}
       playerCount={state?.players.length}
       status={status}
       isPhotoFailed={isPhotoFailed}

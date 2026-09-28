@@ -59,7 +59,7 @@ export const Stickers: Story = () => {
         <Sticker tone="sun" rotate={-4} icon={<CheckIcon size={16} strokeWidth={3.2} />}>
           {t("Correct")}
         </Sticker>
-        <Sticker tone="orange" rotate={6}>
+        <Sticker tone="coral" rotate={6}>
           {t("Editing")}
         </Sticker>
         <Sticker tone="white">{t("Draft")}</Sticker>
@@ -141,7 +141,7 @@ export const Cartridges: Story = () => {
         <GameCartridge
           title={t("Draw it")}
           eyebrow={t("Game 2")}
-          accent="brand-orange"
+          accent="brand-coral"
           icon={<PencilIcon size={32} strokeWidth={2.2} className="text-ink-950" />}
           metaChips={[t("5 rounds"), t("60 s")]}
           isSelected={selected === "draw"}
@@ -152,7 +152,7 @@ export const Cartridges: Story = () => {
         <GameCartridge
           title="Kennst du dein Team wirklich?"
           eyebrow="Spiel 3"
-          accent="brand-teal"
+          accent="brand-lime"
           icon={<QuizIcon />}
           metaChips={["12 Fragen", "30 Sekunden"]}
           isSelected={false}

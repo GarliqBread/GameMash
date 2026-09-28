@@ -33,7 +33,7 @@ export const Join: Story = () => {
     <PhoneShell
       theme="paper"
       mainClassName="gap-7"
-      header={<Logo tone="paper" />}
+      header={<Logo />}
       footer={<TrustNote>{t("No account needed. Your name and photo are deleted when the session ends.")}</TrustNote>}
       bottomAction={
         <Button size="lg" type="submit" form="join">
@@ -141,6 +141,7 @@ export const Draw: Story = () => {
             yellow: t("Yellow"),
             green: t("Green"),
             blue: t("Blue"),
+            violet: t("Violet"),
           },
           sizeGroup: t("Brush size"),
           sizes: { thin: t("Thin brush"), medium: t("Medium brush"), thick: t("Thick brush") },

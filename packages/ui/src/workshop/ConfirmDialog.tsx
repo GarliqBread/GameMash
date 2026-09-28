@@ -40,7 +40,7 @@ export const ConfirmDialog = ({
           <AlertDialog.Close className={cn(keyButtonClassName, "h-12 px-5 text-base")}>{cancelLabel}</AlertDialog.Close>
           <AlertDialog.Close
             onClick={onConfirm}
-            className={cn(keyButtonClassName, "h-12 px-5 text-base workshop:bg-brand-orange")}
+            className={cn(keyButtonClassName, "h-12 px-5 text-base workshop:bg-brand-coral")}
           >
             {confirmLabel}
           </AlertDialog.Close>

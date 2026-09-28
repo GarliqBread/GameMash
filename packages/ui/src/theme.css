@@ -9,7 +9,7 @@
  *   @source "../../packages/ui/src";   // so Tailwind scans the component classes
  *
  * Two layers:
- *   1. Raw palette (@theme)          → bg-ink-950, text-answer-circle, …
+ *   1. Raw palette (@theme)          → bg-ink-950, text-answer-plus, …
  *   2. Semantic tokens (@theme inline) → bg-bg, bg-surface, text-fg-muted, bg-primary, …
  *      which switch between the "stage" (dark, big screen + in-game phone)
  *      and "paper" (light, join + host setup) themes via data-theme.
@@ -51,49 +51,54 @@
   --color-sand-200: #e6dfd0; /* segmented-control track, inactive number chip */
   --color-sand-300: #dcd4c4; /* hairline borders on paper */
 
-  /* ── Answer colours (fixed, never themed) ─────────────────────────────
-   * Each one pairs a colour with a SHAPE and a distinct LIGHTNESS so players
-   * can tell them apart without relying on colour:
-   *   circle (lightest) > triangle > square > diamond (darkest)
+  /* ── Answer colours: the "squishy" set (fixed, never themed) ─────────────
+   * Each answer = a SHAPE + a COLOUR + a distinct LIGHTNESS, so players can
+   * tell them apart without relying on colour (works in greyscale):
+   *   lime (lightest) > sky > violet > coral (darkest)
+   * All four are light enough for ink text.
+   * Slot 1 squircle/coral, 2 triangle/violet, 3 plus/lime, 4 dome/sky.
    */
-  --color-answer-triangle: #f26b3a;
+  --color-answer-squircle: #f26b3a;
+  --color-on-answer-squircle: #1a1726;
+  --color-answer-triangle: #a88ef8;
   --color-on-answer-triangle: #1a1726;
-  --color-answer-diamond: #2350c8;
-  --color-on-answer-diamond: #fbf6ec;
-  --color-answer-circle: #f5c542;
-  --color-on-answer-circle: #1a1726;
-  --color-answer-square: #16806f;
-  --color-on-answer-square: #fbf6ec;
+  --color-answer-plus: #c4de4a;
+  --color-on-answer-plus: #1a1726;
+  --color-answer-dome: #5cc8ee;
+  --color-on-answer-dome: #1a1726;
 
-  /* Lighter variants for decoration and avatars on the dark stage (always ink text) */
-  --color-brand-orange: #f26b3a;
-  --color-brand-blue: #6e8ff0;
-  --color-brand-yellow: #f5c542;
-  --color-brand-teal: #2ba58f;
-  /* Deeper variant of yellow for the logo on paper */
-  --color-brand-yellow-deep: #e0ae1f;
+  /* Brand colours: the same four hues. Used for the logo, avatars, buddies, teams
+     and decoration. violet-light replaces violet wherever ink text or icons sit
+     on top of it, or it sits on the dark stage (avatars, stickers). Always ink text. */
+  --color-brand-coral: #f26b3a;
+  --color-brand-violet: #6b4fd8;
+  --color-brand-violet-light: #9b86ee;
+  --color-brand-lime: #c4de4a;
+  --color-brand-sky: #5cc8ee;
 
   /* ── Accent: "sun" (primary action on stage) ──────────────────────────── */
   --color-sun: #f5c542;
   --color-sun-hover: #ffd970;
   --color-sun-press: #b8901f; /* the hard drop shadow under yellow buttons */
+  --color-sun-deep: #e0ae1f;  /* inset ring on pressed workshop coins */
 
   /* ── Status & misc ─────────────────────────────────────────────────────── */
-  --color-success: #16806f;       /* switches on, "correct" radio */
-  --color-success-stage: #2ba58f; /* "done" chips on stage */
+  --color-success: #c4de4a;       /* switches on, "correct" radio, "done" chips: lime, always ink text */
+  --color-success-ink: #3f5a0a;   /* success text/icon on light backgrounds */
   --color-link: #2350c8;
   --color-link-hover: #1a3c99;
   --color-medal-gold: #f5c542;
   --color-medal-silver: #dad5e8;
-  --color-medal-bronze: #f26b3a;
+  --color-medal-bronze: #d98c5f; /* no longer the same as answer coral */
 
   /* Drawing palette offered on the phone (order = UI order) */
   --color-draw-black: #1a1726;
   --color-draw-red: #e0413a;
   --color-draw-orange: #f26b3a;
   --color-draw-yellow: #f5c542;
-  --color-draw-green: #16806f;
-  --color-draw-blue: #2350c8;
+  --color-draw-green: #3a9a4a;
+  --color-draw-blue: #2f6fdb;
+  --color-draw-violet: #6b4fd8;
   --color-canvas: #ffffff;
 
   /* ── Type scale ──────────────────────────────────────────────────────────
@@ -148,10 +153,10 @@
   --shadow-press-sm: 0 6px 0 #b8901f;
   --shadow-card-stage: 0 16px 0 #332e4d;
   --shadow-knob: 0 1px 2px rgb(26 23 38 / 0.3);
-  --shadow-tile-orange: 0 10px 0 #f26b3a;
-  --shadow-tile-blue: 0 10px 0 #6e8ff0;
-  --shadow-tile-yellow: 0 10px 0 #f5c542;
-  --shadow-tile-teal: 0 10px 0 #2ba58f;
+  --shadow-tile-coral: 0 10px 0 #f26b3a;
+  --shadow-tile-violet: 0 10px 0 #9b86ee;
+  --shadow-tile-lime: 0 10px 0 #c4de4a;
+  --shadow-tile-sky: 0 10px 0 #5cc8ee;
   --shadow-card-word: 0 14px 0 #f26b3a;
 
   /* ── Workshop (neubrutalist host UI) ─────────────────────────────────
@@ -209,7 +214,7 @@
   --gm-press-offset-sm: 0px;
   --gm-selected: #1a1726;
   --gm-on-selected: #fbf6ec;
-  --gm-trust-icon: #16806f;
+  --gm-trust-icon: #3f5a0a;
   --gm-danger: #b3261e;
   color-scheme: light;
 }

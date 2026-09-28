@@ -12,7 +12,7 @@ export const PhoneMessage = ({ title, body, actionLabel }: PhoneMessageProps) =>
   <PhoneShell
     theme="paper"
     mainClassName="gap-4"
-    header={<Logo tone="paper" />}
+    header={<Logo />}
     bottomAction={
       <Link to="/" className={buttonVariants({ size: "lg" })}>
         {actionLabel}

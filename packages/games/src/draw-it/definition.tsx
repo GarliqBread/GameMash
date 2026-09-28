@@ -7,6 +7,6 @@ export const drawIt: GameDefinition = {
   id: "draw-it",
   titleId: "game.drawIt.title",
   roundCountId: "game.drawIt.roundCount",
-  accent: "brand-orange",
+  accent: "brand-coral",
   icon: DrawItIcon,
 };

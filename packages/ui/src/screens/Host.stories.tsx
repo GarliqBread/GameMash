@@ -46,7 +46,7 @@ const useLineup = (): LineupGame[] => {
     {
       id: "draw",
       title: t("Draw it"),
-      accent: "brand-orange",
+      accent: "brand-coral",
       icon: <PencilIcon size={32} strokeWidth={2.2} className="text-ink-950" />,
       metaChips: [t("5 rounds"), t("60 s")],
     },
@@ -87,7 +87,7 @@ export const HostSetup: Story = () => {
   const [answers, setAnswers] = useState(
     Object.fromEntries(QUIZ_OPTIONS.map((option) => [option.shape, option.label])) as Record<AnswerShapeName, string>,
   );
-  const [correct, setCorrect] = useState<AnswerShapeName | null>("diamond");
+  const [correct, setCorrect] = useState<AnswerShapeName | null>("triangle");
   const [time, setTime] = useState("20");
   const [points, setPoints] = useState("1000");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -101,7 +101,7 @@ export const HostSetup: Story = () => {
       settingsLabel={t("Game rules")}
       header={
         <>
-          <Logo tone="stage" size="md" />
+          <Logo size="md" />
           <SessionNameSticker label={t("Session")} value={sessionName} onValueChange={setSessionName} />
           <div className="flex-1" />
           <Button variant="secondary" icon={<MonitorIcon size={20} strokeWidth={2.2} />}>

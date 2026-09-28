@@ -24,7 +24,6 @@ export const Switch = ({ label, onLabel, offLabel, className, id, ...props }: Sw
         "group focus-ring relative flex h-[34px] w-14 shrink-0 cursor-pointer rounded-full bg-ink-300 p-1",
         "transition-colors duration-150 data-[checked]:bg-success data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
         "workshop:grid workshop:h-9 workshop:w-fit workshop:min-w-[78px] workshop:items-center workshop:rounded-key workshop:brutal workshop:bg-sand-200 workshop:p-[2px]",
-        "workshop:data-[checked]:bg-brand-teal",
         !label && className,
       )}
       {...props}

@@ -1,4 +1,4 @@
-import type { Avatar, PlayerRecord, SessionRecord, SessionStore } from "./store.js";
+import type { Avatar, GameRecord, PlayerRecord, SessionRecord, SessionStore } from "./store.js";
 
 type SessionEntry = {
   session: SessionRecord;
@@ -7,6 +7,8 @@ type SessionEntry = {
   avatars: Map<string, Avatar>;
   setup: string | null;
   summary: string | null;
+  game: GameRecord | null;
+  inputs: Map<string, string>;
   expiresAt: number;
 };
 
@@ -42,6 +44,8 @@ export const createMemorySessionStore = (now: () => number = Date.now): SessionS
         avatars: new Map(),
         setup: null,
         summary: null,
+        game: null,
+        inputs: new Map(),
         expiresAt,
       });
       return "created";
@@ -85,6 +89,22 @@ export const createMemorySessionStore = (now: () => number = Date.now): SessionS
       sessions.set(sessionId, { ...entry, setup, summary, expiresAt });
       return entry.summary === summary ? "unchanged" : "changed";
     },
+    getGame: async (sessionId) => live(sessionId)?.game ?? null,
+    saveGame: async (sessionId, expectedVersion, state) => {
+      const entry = live(sessionId);
+      if (!entry) return "session_not_found";
+      if ((entry.game?.version ?? null) !== expectedVersion) return "conflict";
+      sessions.set(sessionId, { ...entry, game: { version: (expectedVersion ?? 0) + 1, state }, inputs: new Map() });
+      return "saved";
+    },
+    submitInput: async (sessionId, version, playerId, input) => {
+      const entry = live(sessionId);
+      if (!entry || entry.game?.version !== version) return "closed";
+      if (entry.inputs.has(playerId)) return "duplicate";
+      sessions.set(sessionId, { ...entry, inputs: new Map(entry.inputs).set(playerId, input) });
+      return "accepted";
+    },
+    listInputs: async (sessionId) => new Map(live(sessionId)?.inputs),
     touch: async (session, expiresAt) => {
       update(session.id, (entry) => ({ ...entry, expiresAt }));
     },

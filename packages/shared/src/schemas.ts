@@ -57,6 +57,17 @@ export const JoinSessionResponseSchema = Type.Object({
 });
 export type JoinSessionResponse = Static<typeof JoinSessionResponseSchema>;
 
+const PhaseIdSchema = Type.Integer({ minimum: 1 });
+
+export const GameNextPayloadSchema = Type.Object({ phaseId: PhaseIdSchema }, { additionalProperties: false });
+export type GameNextPayload = Static<typeof GameNextPayloadSchema>;
+
+export const GameInputPayloadSchema = Type.Object(
+  { phaseId: PhaseIdSchema, input: Type.Unknown() },
+  { additionalProperties: false },
+);
+export type GameInputPayload = Static<typeof GameInputPayloadSchema>;
+
 export const HandshakeAuthSchema = Type.Union([
   Type.Object({
     role: Type.Literal("host"),

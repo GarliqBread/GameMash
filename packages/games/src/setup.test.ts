@@ -7,8 +7,8 @@ import { SessionSetupSchema } from "./setup-schema.js";
 const complete: QuizQuestion = {
   id: "q1",
   text: "Which planet has the most known moons?",
-  answers: { triangle: "Jupiter", diamond: "Saturn", circle: "Uranus", square: "Neptune" },
-  correct: "diamond",
+  answers: { squircle: "Jupiter", triangle: "Saturn", plus: "Uranus", dome: "Neptune" },
+  correct: "triangle",
 };
 
 const quiz = (questions: QuizQuestion[], id = "quiz-1"): GameSetup => ({
@@ -23,7 +23,7 @@ describe("session setup schema", () => {
   });
 
   it.each([
-    ["an answer that is too long", { ...complete, answers: { ...complete.answers, square: "x".repeat(41) } }],
+    ["an answer that is too long", { ...complete, answers: { ...complete.answers, dome: "x".repeat(41) } }],
     ["an unknown correct answer", { ...complete, correct: "hexagon" }],
     ["an id with unexpected characters", { ...complete, id: "q 1" }],
     ["an extra field", { ...complete, image: "cat.png" }],
@@ -42,7 +42,7 @@ describe("quiz readiness", () => {
   it("needs the question, all four answers and a correct answer", () => {
     expect(isQuestionComplete(complete)).toBe(true);
     expect(isQuestionComplete({ ...complete, text: "  " })).toBe(false);
-    expect(isQuestionComplete({ ...complete, answers: { ...complete.answers, circle: "" } })).toBe(false);
+    expect(isQuestionComplete({ ...complete, answers: { ...complete.answers, plus: "" } })).toBe(false);
     expect(isQuestionComplete({ ...complete, correct: null })).toBe(false);
   });
 

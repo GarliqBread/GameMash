@@ -1,6 +1,8 @@
+import { gameRules } from "@gamemash/games/server";
 import pino from "pino";
 import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
+import { createGameRunner } from "./game/runner.js";
 import { createLobbyNotifier } from "./lobby/notifier.js";
 import { attachLobby } from "./lobby/socket.js";
 import { createRedis } from "./redis.js";
@@ -13,12 +15,14 @@ const config = loadConfig();
 const log = pino({ level: config.logLevel });
 const redis = createRedis(config.redisUrl, log);
 const notifier = createLobbyNotifier();
-const sessions = createSessionService({ store: createRedisSessionStore(redis), notifier, log });
+const store = createRedisSessionStore(redis);
+const sessions = createSessionService({ store, notifier, log });
+const game = createGameRunner({ store, readSetup: sessions.readSetup, rules: gameRules, log });
 const app = buildApp(
   { redis, sessions },
   { loggerInstance: log, trustProxy: config.trustProxy.length > 0 ? config.trustProxy.join(",") : false },
 );
-const lobby = attachLobby(app.server, { log: app.log, sessions, notifier, trustProxy: config.trustProxy });
+const lobby = attachLobby(app.server, { log: app.log, sessions, notifier, game, trustProxy: config.trustProxy });
 
 let isShuttingDown = false;
 

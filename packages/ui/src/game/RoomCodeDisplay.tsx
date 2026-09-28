@@ -1,7 +1,7 @@
 import type { ComponentProps } from "react";
 import { cn } from "../lib/cn.js";
 
-const TILE_DROPS = ["shadow-tile-orange", "shadow-tile-blue", "shadow-tile-yellow", "shadow-tile-teal"];
+const TILE_DROPS = ["shadow-tile-coral", "shadow-tile-violet", "shadow-tile-lime", "shadow-tile-sky"];
 
 const codeTiles = (code: string) =>
   [...code].map((letter, position) => ({

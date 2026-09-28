@@ -66,8 +66,32 @@ return 'changed'`,
     parseCommand: (parser: CommandParser, keys: RedisArgument[], args: RedisArgument[]) => pushAll(parser, keys, args),
     transformReply: undefined as unknown as () => string,
   }),
+  saveGame: defineScript({
+    NUMBER_OF_KEYS: 3,
+    SCRIPT: `
+if redis.call('EXISTS', KEYS[1]) == 0 then return 'session_not_found' end
+local current = redis.call('HGET', KEYS[2], 'version') or ''
+if current ~= ARGV[1] then return 'conflict' end
+redis.call('HSET', KEYS[2], 'version', ARGV[2], 'state', ARGV[3])
+redis.call('PEXPIREAT', KEYS[2], ARGV[4])
+redis.call('DEL', KEYS[3])
+return 'saved'`,
+    parseCommand: (parser: CommandParser, keys: RedisArgument[], args: RedisArgument[]) => pushAll(parser, keys, args),
+    transformReply: undefined as unknown as () => string,
+  }),
+  submitInput: defineScript({
+    NUMBER_OF_KEYS: 3,
+    SCRIPT: `
+if redis.call('EXISTS', KEYS[1]) == 0 then return 'closed' end
+if redis.call('HGET', KEYS[2], 'version') ~= ARGV[1] then return 'closed' end
+if redis.call('HSETNX', KEYS[3], ARGV[2], ARGV[3]) == 0 then return 'duplicate' end
+redis.call('PEXPIREAT', KEYS[3], ARGV[4])
+return 'accepted'`,
+    parseCommand: (parser: CommandParser, keys: RedisArgument[], args: RedisArgument[]) => pushAll(parser, keys, args),
+    transformReply: undefined as unknown as () => string,
+  }),
   touchSession: defineScript({
-    NUMBER_OF_KEYS: 7,
+    NUMBER_OF_KEYS: 9,
     SCRIPT: `
 if redis.call('EXISTS', KEYS[1]) == 0 then return 0 end
 redis.call('PEXPIREAT', KEYS[1], ARGV[2])
@@ -76,6 +100,8 @@ redis.call('PEXPIREAT', KEYS[4], ARGV[2])
 redis.call('PEXPIREAT', KEYS[5], ARGV[2])
 redis.call('PEXPIREAT', KEYS[6], ARGV[2])
 redis.call('PEXPIREAT', KEYS[7], ARGV[2])
+redis.call('PEXPIREAT', KEYS[8], ARGV[2])
+redis.call('PEXPIREAT', KEYS[9], ARGV[2])
 if redis.call('GET', KEYS[2]) == ARGV[1] then redis.call('PEXPIREAT', KEYS[2], ARGV[2]) end
 return 1`,
     parseCommand: (parser: CommandParser, keys: RedisArgument[], args: RedisArgument[]) => pushAll(parser, keys, args),

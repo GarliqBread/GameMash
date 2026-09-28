@@ -63,6 +63,24 @@ export const Leaderboards: Story = () => {
   );
 };
 
+export const LeaderboardTopEntriesOnly: Story = () => {
+  const t = useCopy();
+  const movementLabels = useMovementLabels();
+  return (
+    <StageFrame width={750}>
+      <Leaderboard
+        title={t("Leaderboard")}
+        subtitle={t("after question 4")}
+        entries={BOARD.slice(0, 5)}
+        totalCount={42}
+        moreLabel={(count) => t(`+ ${count} more players`)}
+        movementLabels={movementLabels}
+        formatNumber={(value) => new Intl.NumberFormat("en").format(value)}
+      />
+    </StageFrame>
+  );
+};
+
 const RANKED: RankedPlayer[] = [
   { id: "p", rank: 1, name: "Priya", score: 7940 },
   { id: "d", rank: 2, name: "Daan", score: 7510 },

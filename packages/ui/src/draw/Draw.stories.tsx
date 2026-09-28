@@ -24,6 +24,7 @@ const useToolbarLabels = (): DrawingToolbarLabels => {
       yellow: t("Yellow"),
       green: t("Green"),
       blue: t("Blue"),
+      violet: t("Violet"),
     },
     sizeGroup: t("Brush size"),
     sizes: { thin: t("Thin brush"), medium: t("Medium brush"), thick: t("Thick brush") },

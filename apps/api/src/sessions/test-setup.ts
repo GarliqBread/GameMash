@@ -13,8 +13,8 @@ export const readySetup = (): SessionSetup => ({
           {
             id: "q1",
             text: "Which planet has the most known moons?",
-            answers: { triangle: "Jupiter", diamond: "Saturn", circle: "Uranus", square: "Neptune" },
-            correct: "diamond",
+            answers: { squircle: "Jupiter", triangle: "Saturn", plus: "Uranus", dome: "Neptune" },
+            correct: "triangle",
           },
         ],
       },

@@ -1,11 +1,16 @@
-type AvatarBackground = "bg-brand-orange" | "bg-brand-blue" | "bg-brand-yellow" | "bg-brand-teal";
+type AvatarBackground = "bg-brand-coral" | "bg-brand-violet-light" | "bg-brand-lime" | "bg-brand-sky";
 
 export type AvatarColor = {
   bg: AvatarBackground;
   fg: "text-ink-950";
 };
 
-const AVATAR_BACKGROUNDS: AvatarBackground[] = ["bg-brand-orange", "bg-brand-blue", "bg-brand-yellow", "bg-brand-teal"];
+const AVATAR_BACKGROUNDS: AvatarBackground[] = [
+  "bg-brand-coral",
+  "bg-brand-violet-light",
+  "bg-brand-lime",
+  "bg-brand-sky",
+];
 
 const FNV_OFFSET = 0x811c9dc5;
 const FNV_PRIME = 0x01000193;
@@ -20,6 +25,6 @@ const hash = (key: string) => {
 };
 
 export const avatarColor = (key: string): AvatarColor => ({
-  bg: AVATAR_BACKGROUNDS[hash(key) % AVATAR_BACKGROUNDS.length] ?? "bg-brand-orange",
+  bg: AVATAR_BACKGROUNDS[hash(key) % AVATAR_BACKGROUNDS.length] ?? "bg-brand-coral",
   fg: "text-ink-950",
 });

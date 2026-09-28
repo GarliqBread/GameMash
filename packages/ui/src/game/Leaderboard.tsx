@@ -87,6 +87,7 @@ export type LeaderboardProps = Omit<ComponentProps<"section">, "children" | "tit
   title?: ReactNode;
   subtitle?: ReactNode;
   limit?: number | undefined;
+  totalCount?: number | undefined;
   moreLabel?: ((hiddenCount: number) => ReactNode) | undefined;
   movementLabels: MovementLabels;
 };
@@ -97,13 +98,14 @@ export const Leaderboard = ({
   title,
   subtitle,
   limit,
+  totalCount,
   moreLabel,
   movementLabels,
   className,
   ...props
 }: LeaderboardProps) => {
   const visible = limit === undefined ? entries : entries.slice(0, limit);
-  const hiddenCount = entries.length - visible.length;
+  const hiddenCount = Math.max(totalCount ?? entries.length, entries.length) - visible.length;
 
   return (
     <StagePanel

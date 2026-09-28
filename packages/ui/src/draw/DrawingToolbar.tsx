@@ -14,6 +14,7 @@ const SWATCH_CLASSES: Record<DrawColor, string> = {
   yellow: "bg-draw-yellow",
   green: "bg-draw-green",
   blue: "bg-draw-blue",
+  violet: "bg-draw-violet",
 };
 
 const BRUSH_DOTS: Record<BrushSize, string> = {
@@ -44,7 +45,7 @@ export const ColorSwatchPicker = ({
     onValueChange={(next) => {
       if (next !== null) onValueChange(next);
     }}
-    className={cn("grid grid-cols-6 gap-2", className)}
+    className={cn("grid grid-cols-7 gap-1.5", className)}
     {...props}
   >
     {DRAW_COLORS.map((color) => (
@@ -53,7 +54,7 @@ export const ColorSwatchPicker = ({
         value={color}
         aria-label={colorLabels[color]}
         className={cn(
-          "focus-ring h-12 min-w-12 cursor-pointer rounded-full not-data-[checked]:ring-2 not-data-[checked]:ring-border-strong",
+          "focus-ring h-11 min-w-0 cursor-pointer rounded-full not-data-[checked]:ring-2 not-data-[checked]:ring-border-strong",
           "data-[checked]:ring-[3px] data-[checked]:ring-cream data-[checked]:ring-offset-[3px] data-[checked]:ring-offset-ink-950",
           SWATCH_CLASSES[color],
         )}

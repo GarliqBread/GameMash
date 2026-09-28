@@ -4,7 +4,7 @@ import { EyeOffIcon, ShieldCheckIcon } from "../icons/icons.js";
 import { cn } from "../lib/cn.js";
 
 const trustNoteVariants = cva(
-  "flex bg-surface text-fg-muted workshop:brutal workshop:rounded-field workshop:bg-brand-teal workshop:font-bold workshop:text-ink-950 workshop:shadow-brutal",
+  "flex bg-surface text-fg-muted workshop:brutal workshop:rounded-field workshop:bg-brand-lime workshop:font-bold workshop:text-ink-950 workshop:shadow-brutal",
   {
     variants: {
       size: {

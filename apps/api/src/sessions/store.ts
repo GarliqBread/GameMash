@@ -28,6 +28,15 @@ export type SetAvatarResult = "saved" | "player_not_found" | "session_not_found"
 
 export type SaveSetupResult = "changed" | "unchanged" | "setup_locked" | "session_not_found";
 
+export type GameRecord = {
+  version: number;
+  state: string;
+};
+
+export type SaveGameResult = "saved" | "conflict" | "session_not_found";
+
+export type SubmitInputResult = "accepted" | "duplicate" | "closed";
+
 export type CreateSessionResult = "created" | "room_code_taken";
 
 export type AddPlayerResult = "added" | "name_taken" | "session_full" | "session_not_found";
@@ -52,5 +61,20 @@ export type SessionStore = {
   getSetup: (sessionId: string) => Promise<string | null>;
   saveSetup: (sessionId: string, setup: string, summary: string, expiresAt: number) => Promise<SaveSetupResult>;
   getLobbySummary: (sessionId: string) => Promise<string | null>;
+  getGame: (sessionId: string) => Promise<GameRecord | null>;
+  saveGame: (
+    sessionId: string,
+    expectedVersion: number | null,
+    state: string,
+    expiresAt: number,
+  ) => Promise<SaveGameResult>;
+  submitInput: (
+    sessionId: string,
+    version: number,
+    playerId: string,
+    input: string,
+    expiresAt: number,
+  ) => Promise<SubmitInputResult>;
+  listInputs: (sessionId: string) => Promise<Map<string, string>>;
   touch: (session: SessionRecord, expiresAt: number) => Promise<void>;
 };

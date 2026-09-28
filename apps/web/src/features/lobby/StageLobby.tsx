@@ -1,6 +1,7 @@
 import { gameDefinition, isGameId } from "@gamemash/games";
-import { avatarPath, type LineupEntry, type LobbyPlayer } from "@gamemash/shared";
+import type { LineupEntry, LobbyPlayer } from "@gamemash/shared";
 import {
+  Button,
   buttonVariants,
   cn,
   GameChip,
@@ -21,6 +22,7 @@ import {
 import { Link } from "@tanstack/react-router";
 import { FormattedMessage, useIntl } from "react-intl";
 import type { LobbyStatus } from "../../lib/lobby";
+import { avatarSrc } from "../../lib/players";
 import { displayHost, joinUrl } from "../../lib/public-url";
 import { lobbySlots } from "./lobby-slots";
 
@@ -34,9 +36,27 @@ export type StageLobbyProps = {
   lineup: LineupEntry[];
   players: LobbyPlayer[];
   status: LobbyStatus;
+  isStarting: boolean;
+  startError: string | null;
+  onStart: () => void;
 };
 
-export const StageLobby = ({ sessionId, roomCode, sessionName, lineup, players, status }: StageLobbyProps) => {
+const startHintId = (playerCount: number, isStarting: boolean) => {
+  if (isStarting) return "lobby.starting";
+  return playerCount === 0 ? "lobby.startNeedsPlayers" : "lobby.startHint";
+};
+
+export const StageLobby = ({
+  sessionId,
+  roomCode,
+  sessionName,
+  lineup,
+  players,
+  status,
+  isStarting,
+  startError,
+  onStart,
+}: StageLobbyProps) => {
   const intl = useIntl();
   return (
     <StageViewport>
@@ -45,7 +65,7 @@ export const StageLobby = ({ sessionId, roomCode, sessionName, lineup, players, 
         mainClassName="flex-row gap-16"
         header={
           <>
-            <Logo tone="stage" size="lg" />
+            <Logo size="lg" />
             {sessionName && (
               <span className="truncate font-display text-stage-lg font-semibold text-fg-subtle">{sessionName}</span>
             )}
@@ -72,9 +92,16 @@ export const StageLobby = ({ sessionId, roomCode, sessionName, lineup, players, 
               </ul>
             </div>
             <div className="flex min-w-0 items-center gap-6">
-              {status === "reconnecting" && (
-                <p role="status" className="text-stage-caption text-fg-subtle">
+              {status === "reconnecting" ? (
+                <p role="status" className="min-w-0 text-right text-stage-caption text-fg-subtle">
                   <FormattedMessage id="connection.reconnecting" />
+                </p>
+              ) : (
+                <p
+                  role={startError ? "alert" : "status"}
+                  className="min-w-0 text-right text-stage-caption text-fg-subtle"
+                >
+                  {startError ?? <FormattedMessage id={startHintId(players.length, isStarting)} />}
                 </p>
               )}
               <Link
@@ -84,6 +111,14 @@ export const StageLobby = ({ sessionId, roomCode, sessionName, lineup, players, 
               >
                 <FormattedMessage id="lobby.editGames" />
               </Link>
+              <Button
+                size="stage"
+                className="shrink-0"
+                disabled={players.length === 0 || isStarting || status !== "connected"}
+                onClick={onStart}
+              >
+                <FormattedMessage id="lobby.start" />
+              </Button>
             </div>
           </>
         }
@@ -145,9 +180,7 @@ export const StageLobby = ({ sessionId, roomCode, sessionName, lineup, players, 
                   state="joined"
                   name={player.name}
                   colorKey={player.id}
-                  avatarSrc={
-                    player.avatarVersion === null ? undefined : avatarPath(sessionId, player.id, player.avatarVersion)
-                  }
+                  avatarSrc={avatarSrc(sessionId, player)}
                   className={player.isConnected ? undefined : "opacity-60"}
                 />
               );

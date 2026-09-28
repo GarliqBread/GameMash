@@ -7,7 +7,7 @@ export default { title: "Primitives / Avatar" } satisfies StoryDefault;
 const NAMES = ["Anouk", "Bram", "Sophie", "Daan", "Priya", "Lars", "Fatima", "Jeroen", "Mei"];
 
 const PHOTO =
-  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><rect width='10' height='10' fill='%232350c8'/><circle cx='5' cy='4' r='2' fill='%23fbf6ec'/><rect x='2' y='7' width='6' height='3' rx='1.5' fill='%23fbf6ec'/></svg>";
+  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><rect width='10' height='10' fill='%235cc8ee'/><circle cx='5' cy='4' r='2' fill='%23fbf6ec'/><rect x='2' y='7' width='6' height='3' rx='1.5' fill='%23fbf6ec'/></svg>";
 
 export const Sizes: Story = () => (
   <BothThemes>

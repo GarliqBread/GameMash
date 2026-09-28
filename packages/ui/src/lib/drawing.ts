@@ -1,6 +1,6 @@
 import { getStroke } from "perfect-freehand";
 
-export type DrawColor = "black" | "red" | "orange" | "yellow" | "green" | "blue";
+export type DrawColor = "black" | "red" | "orange" | "yellow" | "green" | "blue" | "violet";
 export type BrushSize = "thin" | "medium" | "thick";
 export type DrawTool = "brush" | "eraser";
 
@@ -16,7 +16,7 @@ export type Drawing = {
   strokes: Stroke[];
 };
 
-export const DRAW_COLORS: DrawColor[] = ["black", "red", "orange", "yellow", "green", "blue"];
+export const DRAW_COLORS: DrawColor[] = ["black", "red", "orange", "yellow", "green", "blue", "violet"];
 export const BRUSH_SIZES: BrushSize[] = ["thin", "medium", "thick"];
 
 export const DRAWING_UNITS = 1000;
