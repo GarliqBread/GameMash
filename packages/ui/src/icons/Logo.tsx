@@ -22,9 +22,9 @@ const TONE_FILLS: Record<LogoTone, Record<AnswerShapeName, string>> = {
 };
 
 const SIZES: Record<LogoSize, { mark: string; gap: string; shape: number; wordmark: string }> = {
-  sm: { mark: "size-7 gap-0.5", gap: "gap-2.5", shape: 13, wordmark: "text-[22px]" },
-  md: { mark: "size-9 gap-[3px]", gap: "gap-3", shape: 16, wordmark: "text-[26px]" },
-  lg: { mark: "size-12 gap-1", gap: "gap-4", shape: 22, wordmark: "text-[40px]" },
+  sm: { mark: "size-7 gap-0.5", gap: "gap-2.5", shape: 13, wordmark: "text-title-sm" },
+  md: { mark: "size-9 gap-[3px]", gap: "gap-3", shape: 16, wordmark: "text-title" },
+  lg: { mark: "size-12 gap-1", gap: "gap-4", shape: 22, wordmark: "text-wordmark-lg" },
 };
 
 export type LogoProps = ComponentProps<"span"> & {
@@ -53,7 +53,7 @@ export const Logo = ({ tone = "paper", size = "sm", showWordmark = true, label, 
         ))}
       </span>
       {showWordmark && (
-        <span className={cn("font-display font-extrabold tracking-[-0.02em]", sizing.wordmark)}>GameMash</span>
+        <span className={cn("font-display font-extrabold tracking-display", sizing.wordmark)}>GameMash</span>
       )}
     </span>
   );

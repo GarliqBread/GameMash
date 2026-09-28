@@ -76,7 +76,7 @@ export const GameCartridge = ({
       </span>
       <span className="flex min-w-0 flex-col gap-1.5">
         <span className="font-pixel tracking-pixel text-xs text-fg-subtle">{eyebrow}</span>
-        <span className="font-display text-[26px] leading-none font-extrabold wrap-break-word">{title}</span>
+        <span className="font-display text-title leading-none font-extrabold wrap-break-word">{title}</span>
         {metaChips.length > 0 && (
           <span className="flex flex-wrap gap-1.5">
             {metaChips.map((chip) => (

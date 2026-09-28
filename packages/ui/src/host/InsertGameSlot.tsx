@@ -16,6 +16,6 @@ export const InsertGameSlot = ({ className, children, ...props }: InsertGameSlot
     {...props}
   >
     <span aria-hidden="true" className="h-2.5 w-[120px] rounded-full border-2 border-ink-950 bg-ink-950" />
-    <span className="font-pixel tracking-pixel text-[15px] font-bold">{children}</span>
+    <span className="font-pixel tracking-pixel text-caption font-bold">{children}</span>
   </BaseButton>
 );

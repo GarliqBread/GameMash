@@ -63,7 +63,6 @@ export * from "./primitives/RadioCardGroup.js";
 export * from "./primitives/RoomCodeInput.js";
 export * from "./primitives/SegmentedControl.js";
 export * from "./primitives/Switch.js";
-export * from "./primitives/TextArea.js";
 export * from "./primitives/TextField.js";
 export * from "./primitives/TrustNote.js";
 export * from "./quiz/AnswerButton.js";

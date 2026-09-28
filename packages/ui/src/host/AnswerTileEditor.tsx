@@ -64,7 +64,7 @@ const Tile = ({
           "relative flex cursor-pointer items-center gap-1.5 rounded-control border-2 border-ink-950 font-pixel tracking-pixel font-bold text-ink-950",
           "has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-3 has-[:focus-visible]:outline-(--color-focus)",
           isCorrect
-            ? "-rotate-[4deg] bg-sun px-2.5 py-[5px] text-[13px] shadow-brutal-sm"
+            ? "-rotate-[4deg] bg-sun px-2.5 py-[5px] text-label shadow-brutal-sm"
             : "min-h-[34px] bg-paper-white px-2.5 py-1 text-xs/tight shadow-brutal-sm motion-safe:transition-[translate,box-shadow] active:brutal-pressed",
         )}
       >
@@ -88,7 +88,7 @@ const Tile = ({
       onChange={(event) => onAnswerChange(answer.shape, event.target.value)}
       maxLength={maxLength}
       placeholder={placeholder}
-      className="focus-ring h-11 w-full min-w-0 border-b-3 border-current bg-transparent px-0.5 font-display text-[28px] font-extrabold text-inherit placeholder:text-current/60"
+      className="focus-ring h-11 w-full min-w-0 border-b-3 border-current bg-transparent px-0.5 font-display text-title-lg font-extrabold text-inherit placeholder:text-current/60"
     />
   </div>
 );
@@ -109,7 +109,7 @@ export const AnswerTileEditor = ({
   const name = useId();
   return (
     <fieldset className={cn("m-0 flex min-w-0 flex-col gap-2.5 border-0 p-0", className)} {...props}>
-      <legend className="mb-3 p-0 font-pixel tracking-pixel text-[13px] font-bold text-ink-950">{legend}</legend>
+      <legend className="mb-3 p-0 font-pixel tracking-pixel text-label font-bold text-ink-950">{legend}</legend>
       <div className="grid grid-cols-2 gap-x-5 gap-y-[18px] pr-1.5 pb-1.5">
         {answers.map((answer) => (
           <Tile

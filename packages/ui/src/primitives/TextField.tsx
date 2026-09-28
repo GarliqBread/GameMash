@@ -16,15 +16,9 @@ const textFieldControlVariants = cva(
         phone: "h-[60px] rounded-field px-4 text-xl",
         host: "h-12 rounded-control px-3.5 text-lg",
       },
-      appearance: {
-        boxed: "",
-        inline:
-          "h-11 border border-transparent bg-transparent px-2.5 font-display text-2xl font-bold not-data-[disabled]:hover:border-border focus-visible:border-border-strong",
-      },
     },
     defaultVariants: {
       size: "phone",
-      appearance: "boxed",
     },
   },
 );
@@ -32,7 +26,6 @@ const textFieldControlVariants = cva(
 export type TextFieldProps = Omit<ComponentProps<typeof Field.Control>, "className" | "size"> &
   Omit<FieldFrameProps, "children"> & {
     size?: "phone" | "host" | undefined;
-    appearance?: "boxed" | "inline" | undefined;
     controlClassName?: string | undefined;
   };
 
@@ -43,7 +36,6 @@ export const TextField = ({
   error,
   disabled,
   size = "phone",
-  appearance = "boxed",
   className,
   controlClassName,
   ...props
@@ -56,6 +48,6 @@ export const TextField = ({
     disabled={disabled}
     className={className}
   >
-    <Field.Control className={cn(textFieldControlVariants({ size, appearance }), controlClassName)} {...props} />
+    <Field.Control className={cn(textFieldControlVariants({ size }), controlClassName)} {...props} />
   </FieldFrame>
 );

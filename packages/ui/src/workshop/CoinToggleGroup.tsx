@@ -42,7 +42,7 @@ export const CoinToggleGroup = <Value extends string>({
         aria-label={option.ariaLabel}
         className={cn(
           "focus-ring flex size-[74px] cursor-pointer items-center justify-center rounded-full border-3 border-ink-950 bg-paper-white",
-          "px-1 text-center font-pixel tracking-pixel text-[15px] font-bold text-ink-950 shadow-brutal",
+          "px-1 text-center font-pixel tracking-pixel text-caption font-bold text-ink-950 shadow-brutal",
           "motion-safe:transition-[translate,box-shadow,background-color]",
           "data-[pressed]:translate-x-[3px] data-[pressed]:translate-y-[3px] data-[pressed]:bg-sun data-[pressed]:shadow-brutal-xs",
           "data-[pressed]:ring-4 data-[pressed]:ring-brand-yellow-deep data-[pressed]:ring-inset",

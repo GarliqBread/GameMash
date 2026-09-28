@@ -6,7 +6,7 @@ const sectionTabVariants = cva("m-0 self-start rounded-sticker font-pixel tracki
   variants: {
     variant: {
       default: "bg-ink-950 px-2.5 py-1 text-sm/[1.3] text-cream",
-      accent: "border-2 border-ink-950 bg-sun px-2 py-0.5 text-[13px] text-ink-950",
+      accent: "border-2 border-ink-950 bg-sun px-2 py-0.5 text-label text-ink-950",
     },
   },
   defaultVariants: {

@@ -55,7 +55,7 @@ export const PhotoPickerButton = ({
         />
       </label>
       <div className="flex min-w-0 flex-col gap-0.5">
-        <label htmlFor={inputId} className="cursor-pointer text-body font-bold">
+        <label htmlFor={inputId} className={cn("cursor-pointer text-body font-bold", disabled && "cursor-not-allowed")}>
           {label}
         </label>
         {hint && (

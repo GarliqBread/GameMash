@@ -24,7 +24,7 @@ export const WordCard = ({ children, as: Word = "p", showBadge = true, className
         <PencilIcon size={44} strokeWidth={1.8} />
       </span>
     )}
-    <Word className="text-center font-display text-stage-word font-extrabold tracking-[-0.03em] text-balance hyphens-auto wrap-break-word">
+    <Word className="text-center font-display text-stage-word font-extrabold tracking-display-tight text-balance hyphens-auto wrap-break-word">
       {children}
     </Word>
   </div>

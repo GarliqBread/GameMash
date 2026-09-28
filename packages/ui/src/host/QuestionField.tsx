@@ -33,7 +33,7 @@ export const QuestionField = ({
   return (
     <Field.Root className={cn("flex flex-col gap-2", className)}>
       <div className="flex items-baseline justify-between gap-3">
-        <Field.Label className="font-pixel tracking-pixel text-[13px] font-bold text-ink-950">{label}</Field.Label>
+        <Field.Label className="font-pixel tracking-pixel text-label font-bold text-ink-950">{label}</Field.Label>
         <span
           id={counterId}
           className={cn(
@@ -51,7 +51,7 @@ export const QuestionField = ({
         aria-describedby={counterId}
         className={cn(
           "focus-ring w-full resize-none rounded-field border-3 border-ink-950 bg-paper-white px-[18px] py-3.5",
-          "font-display text-[28px]/[1.2] font-extrabold text-ink-950 shadow-brutal-md",
+          "font-display text-title-lg/[1.2] font-extrabold text-ink-950 shadow-brutal-md",
         )}
         {...props}
       />

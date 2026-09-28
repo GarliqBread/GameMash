@@ -5,13 +5,13 @@ import { cn } from "../lib/cn.js";
 const headingVariants = cva("font-display font-extrabold text-balance", {
   variants: {
     size: {
-      "stage-hero": "text-stage-4xl/[1.08] tracking-[-0.02em]",
-      "stage-title": "text-stage-3xl/[1] tracking-[-0.03em]",
+      "stage-hero": "text-stage-4xl/[1.08] tracking-display",
+      "stage-title": "text-stage-3xl/[1] tracking-display-tight",
       "stage-section": "text-stage-xl/[1.1]",
-      "stage-sub": "text-stage-2xl/[1.05] tracking-[-0.02em]",
-      phone: "text-4xl/[1.05] tracking-[-0.02em]",
+      "stage-sub": "text-stage-2xl/[1.05] tracking-display",
+      phone: "text-4xl/[1.05] tracking-display",
       "phone-sm": "text-3xl/[1.1]",
-      host: "text-3xl/[1.1] tracking-[-0.01em] workshop:text-stage-xl/[1] workshop:tracking-[-0.03em]",
+      host: "text-3xl/[1.1] tracking-[-0.01em] workshop:text-stage-xl/[1] workshop:tracking-display-tight",
       panel: "text-2xl/[1.2]",
     },
   },

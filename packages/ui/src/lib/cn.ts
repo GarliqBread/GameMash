@@ -8,9 +8,14 @@ const twMerge = extendTailwindMerge({
     },
     theme: {
       font: ["display", "sans", "pixel"],
-      tracking: ["pixel"],
+      tracking: ["pixel", "display", "display-tight"],
       text: [
         "key",
+        "label",
+        "title-sm",
+        "title",
+        "title-lg",
+        "wordmark-lg",
         "caption",
         "body",
         "stage-caption",

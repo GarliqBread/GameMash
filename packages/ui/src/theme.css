@@ -125,8 +125,15 @@
   --text-stage-word: 176px;    /* the Draw it word */
   --text-stage-word--line-height: 1;
   --text-key: 19px;            /* workshop key buttons and question tabs */
+  --text-label: 13px;          /* small Silkscreen labels: stickers, eyebrow tab, field labels */
+  --text-title-sm: 22px;       /* workshop large button, small wordmark */
+  --text-title: 26px;          /* game cartridge title, medium wordmark */
+  --text-title-lg: 28px;       /* workshop question and answer inputs */
+  --text-wordmark-lg: 40px;    /* large wordmark */
 
   --tracking-pixel: 0.04em; /* Silkscreen labels need a little air */
+  --tracking-display: -0.02em;       /* display headings and wordmark */
+  --tracking-display-tight: -0.03em; /* the largest display headings */
 
   /* ── Radius (consolidated from the canvas) ───────────────────────────── */
   --radius-control: 12px; /* desktop inputs & buttons, question chips */
