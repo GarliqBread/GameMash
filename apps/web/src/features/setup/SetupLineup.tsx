@@ -1,5 +1,6 @@
 import { gameDefinition } from "@gamemash/games";
-import type { GameSetup } from "@gamemash/games/config";
+import { type GameSetup, quizTimeRange } from "@gamemash/games/config";
+import type { SecondsRange } from "@gamemash/shared";
 import { GameLineup, type GameLineupLabels, type LineupGame } from "@gamemash/ui";
 import { useIntl } from "react-intl";
 
@@ -13,6 +14,8 @@ export type SetupLineupProps = {
 export const SetupLineup = ({ games, selectedId, onSelect, onReorder }: SetupLineupProps) => {
   const intl = useIntl();
   const format = (id: string, values?: Record<string, string | number>) => intl.formatMessage({ id }, values);
+  const formatSeconds = ({ min, max }: SecondsRange) =>
+    min === max ? format("setup.seconds", { seconds: min }) : format("setup.secondsRange", { min, max });
 
   const labels: GameLineupLabels = {
     gameNumber: (position) => format("setup.gameNumber", { position }),
@@ -35,7 +38,7 @@ export const SetupLineup = ({ games, selectedId, onSelect, onReorder }: SetupLin
       icon: <Icon />,
       metaChips: [
         format(definition.roundCountId, { count: game.config.questions.length }),
-        format("setup.seconds", { seconds: game.config.timeLimitSeconds }),
+        formatSeconds(quizTimeRange(game.config)),
       ],
     };
   });

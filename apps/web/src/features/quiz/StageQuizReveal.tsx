@@ -7,6 +7,7 @@ import {
   type LeaderboardEntry,
   type Movement,
   ResultBars,
+  RichText,
   StageLayout,
   StageNote,
   StageViewport,
@@ -17,6 +18,7 @@ import type { LobbyStatus } from "../../lib/lobby";
 import { avatarSrc } from "../../lib/players";
 import { ReconnectingNote } from "../session/ReconnectingNote";
 import { QuizStageHeader, useAnswerOptions } from "./quiz-display";
+import { usePreloadImages } from "./useQuestionImages";
 
 type RevealView = Extract<QuizStageView, { kind: "reveal" }>;
 
@@ -60,6 +62,7 @@ export const StageQuizReveal = ({ sessionId, view, players, status, next }: Stag
   const correct = options.find((option) => option.shape === view.correct);
   const fastest = view.fastest ? players.get(view.fastest.playerId) : undefined;
   const formatNumber = (value: number) => intl.formatNumber(value);
+  usePreloadImages(view.nextImages);
 
   return (
     <StageViewport>
@@ -101,7 +104,9 @@ export const StageQuizReveal = ({ sessionId, view, players, status, next }: Stag
         }
       >
         <section className="flex min-w-0 flex-1 flex-col gap-7">
-          <p className="text-stage-lg text-fg-muted hyphens-auto wrap-break-word">{view.text}</p>
+          <p className="text-stage-lg text-fg-muted hyphens-auto wrap-break-word">
+            <RichText runs={view.text} />
+          </p>
           {correct && (
             <CorrectAnswerBanner
               shape={correct.shape}

@@ -33,11 +33,16 @@ export type LobbyPlayer = {
   avatarVersion: number | null;
 };
 
+export type SecondsRange = {
+  min: number;
+  max: number;
+};
+
 export type LineupEntry = {
   id: string;
   type: string;
   roundCount: number;
-  roundSeconds: number;
+  roundSeconds: SecondsRange;
 };
 
 export type LobbyState = {

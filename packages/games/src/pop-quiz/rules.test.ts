@@ -1,19 +1,26 @@
 import { describe, expect, it } from "vitest";
 import type { Phase, PhaseChange, Points, Submission } from "../rules.js";
-import { defaultPopQuizConfig, type PopQuizConfig, type QuizAnswerKey, type QuizQuestion } from "./config.js";
+import {
+  defaultPopQuizConfig,
+  emptyQuestion,
+  type PopQuizConfig,
+  type QuizAnswerKey,
+  type QuizQuestion,
+} from "./config.js";
 import { type QuizState, popQuizRules as rules } from "./rules.js";
 import { buildLeaderboard, POP_QUIZ_READ_MS, quizPoints } from "./scoring.js";
 
 const moons: QuizQuestion = {
-  id: "q1",
-  text: "Which planet has the most known moons?",
+  ...emptyQuestion("q1"),
+  text: [{ text: "Which planet has the " }, { text: "most", bold: true }, { text: " known moons?" }],
+  images: ["img1", "img2"],
   answers: { squircle: "Jupiter", triangle: "Saturn", plus: "Uranus", dome: "Neptune" },
   correct: "triangle",
 };
 
 const capital: QuizQuestion = {
-  id: "q2",
-  text: "What is the capital of Portugal?",
+  ...emptyQuestion("q2"),
+  text: [{ text: "What is the capital of Portugal?" }],
   answers: { squircle: "Lisbon", triangle: "Porto", plus: "Faro", dome: "Braga" },
   correct: "squircle",
 };
@@ -25,7 +32,6 @@ const quizConfig = (overrides: Partial<PopQuizConfig> = {}): PopQuizConfig => ({
   ...defaultPopQuizConfig("q1"),
   questions: [moons, capital],
   timeLimitSeconds: 20,
-  points: 1000,
   ...overrides,
 });
 
@@ -119,6 +125,65 @@ describe("pop quiz rules", () => {
 
     expect(reveal.phase).toEqual({ name: "reveal", durationMs: null, input: null });
     expect(reveal.points).toEqual({ priya: 1000, daan: 750, lars: 0 });
+  });
+
+  it("uses a question's own time limit over the quiz default", () => {
+    const config = quizConfig({ questions: [{ ...moons, timeLimitSeconds: 120 }] });
+    const { answering } = toAnswering(config);
+
+    expect(answering.phase.durationMs).toBe(120_000);
+    expect(rules.stageView(viewContext(config, answering.state, answering.phase))).toMatchObject({
+      timeLimitSeconds: 120,
+    });
+
+    const reveal = expectPhase(
+      advance(config, answering.state, answering.phase, answers([["priya", "triangle", 60_000]])),
+    );
+    expect(reveal.points).toEqual({ priya: 750 });
+  });
+
+  it("doubles the points on a double points question", () => {
+    const config = quizConfig({ questions: [{ ...moons, points: "double" }] });
+    const { answering } = toAnswering(config);
+
+    const reveal = expectPhase(
+      advance(
+        config,
+        answering.state,
+        answering.phase,
+        answers([
+          ["priya", "triangle", 0],
+          ["daan", "triangle", 10_000],
+        ]),
+      ),
+    );
+    expect(reveal.points).toEqual({ priya: 2000, daan: 1500 });
+  });
+
+  it("shows the formatted question and its images on the big screen while asking", () => {
+    const config = quizConfig();
+    const { question, answering } = toAnswering(config);
+
+    for (const { state, phase } of [question, answering]) {
+      expect(rules.stageView(viewContext(config, state, phase))).toMatchObject({
+        text: moons.text,
+        images: ["img1", "img2"],
+      });
+    }
+  });
+
+  it("names the next question's images during the reveal so the big screen can load them early", () => {
+    const config = quizConfig({ questions: [capital, moons] });
+    const { answering } = toAnswering(config);
+    const reveal = expectPhase(advance(config, answering.state, answering.phase));
+    const nextQuestion = expectPhase(advance(config, reveal.state, reveal.phase));
+    const nextAnswering = expectPhase(advance(config, nextQuestion.state, nextQuestion.phase));
+    const lastReveal = expectPhase(advance(config, nextAnswering.state, nextAnswering.phase));
+
+    expect(rules.stageView(viewContext(config, reveal.state, reveal.phase))).toMatchObject({
+      nextImages: ["img1", "img2"],
+    });
+    expect(rules.stageView(viewContext(config, lastReveal.state, lastReveal.phase))).toMatchObject({ nextImages: [] });
   });
 
   it("goes to the next question after the reveal, and ends after the last one", () => {

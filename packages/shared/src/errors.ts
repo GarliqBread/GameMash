@@ -15,6 +15,9 @@ export const ERROR_CODES = [
   "unsupported_media_type",
   "input_closed",
   "already_submitted",
+  "images_unavailable",
+  "image_limit_reached",
+  "image_storage_full",
   "internal_error",
 ] as const;
 

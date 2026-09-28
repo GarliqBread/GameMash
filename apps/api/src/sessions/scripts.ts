@@ -66,6 +66,33 @@ return 'changed'`,
     parseCommand: (parser: CommandParser, keys: RedisArgument[], args: RedisArgument[]) => pushAll(parser, keys, args),
     transformReply: undefined as unknown as () => string,
   }),
+  addImage: defineScript({
+    NUMBER_OF_KEYS: 3,
+    SCRIPT: `
+local status = redis.call('HGET', KEYS[1], 'status')
+if not status then return 'session_not_found' end
+if status ~= 'lobby' then return 'setup_locked' end
+local isKnown = redis.call('ZSCORE', KEYS[2], ARGV[1]) ~= false
+if not isKnown and redis.call('ZCARD', KEYS[2]) >= tonumber(ARGV[2]) then
+  return 'limit_reached'
+end
+local time = redis.call('TIME')
+local nowMs = tonumber(time[1]) * 1000 + math.floor(tonumber(time[2]) / 1000)
+redis.call('ZREMRANGEBYSCORE', KEYS[3], '-inf', nowMs)
+if not isKnown and redis.call('ZCARD', KEYS[3]) >= tonumber(ARGV[5]) then
+  return 'storage_full'
+end
+redis.call('ZADD', KEYS[2], 'NX', ARGV[7], ARGV[1])
+redis.call('ZADD', KEYS[3], ARGV[6], ARGV[4])
+if redis.call('PEXPIRETIME', KEYS[3]) < tonumber(ARGV[6]) then
+  redis.call('PEXPIREAT', KEYS[3], ARGV[6])
+end
+redis.call('PEXPIREAT', KEYS[1], ARGV[3])
+redis.call('PEXPIREAT', KEYS[2], ARGV[3])
+return 'added'`,
+    parseCommand: (parser: CommandParser, keys: RedisArgument[], args: RedisArgument[]) => pushAll(parser, keys, args),
+    transformReply: undefined as unknown as () => string,
+  }),
   saveGame: defineScript({
     NUMBER_OF_KEYS: 3,
     SCRIPT: `
@@ -91,7 +118,7 @@ return 'accepted'`,
     transformReply: undefined as unknown as () => string,
   }),
   touchSession: defineScript({
-    NUMBER_OF_KEYS: 9,
+    NUMBER_OF_KEYS: 10,
     SCRIPT: `
 if redis.call('EXISTS', KEYS[1]) == 0 then return 0 end
 redis.call('PEXPIREAT', KEYS[1], ARGV[2])
@@ -102,6 +129,7 @@ redis.call('PEXPIREAT', KEYS[6], ARGV[2])
 redis.call('PEXPIREAT', KEYS[7], ARGV[2])
 redis.call('PEXPIREAT', KEYS[8], ARGV[2])
 redis.call('PEXPIREAT', KEYS[9], ARGV[2])
+redis.call('PEXPIREAT', KEYS[10], ARGV[2])
 if redis.call('GET', KEYS[2]) == ARGV[1] then redis.call('PEXPIREAT', KEYS[2], ARGV[2]) end
 return 1`,
     parseCommand: (parser: CommandParser, keys: RedisArgument[], args: RedisArgument[]) => pushAll(parser, keys, args),

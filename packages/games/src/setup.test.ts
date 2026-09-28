@@ -1,12 +1,20 @@
 import { Value } from "typebox/value";
 import { describe, expect, it } from "vitest";
 import { defaultPopQuizConfig, emptyQuestion, isQuestionComplete, type QuizQuestion } from "./pop-quiz/config.js";
-import { type GameSetup, hasUniqueIds, isGameReady, isSetupReady, summarizeGame } from "./setup.js";
+import {
+  type GameSetup,
+  hasUniqueIds,
+  hasValidText,
+  isGameReady,
+  isSetupReady,
+  setupImageIds,
+  summarizeGame,
+} from "./setup.js";
 import { SessionSetupSchema } from "./setup-schema.js";
 
 const complete: QuizQuestion = {
-  id: "q1",
-  text: "Which planet has the most known moons?",
+  ...emptyQuestion("q1"),
+  text: [{ text: "Which planet has the " }, { text: "most", italic: true }, { text: " known moons?" }],
   answers: { squircle: "Jupiter", triangle: "Saturn", plus: "Uranus", dome: "Neptune" },
   correct: "triangle",
 };
@@ -27,6 +35,12 @@ describe("session setup schema", () => {
     ["an unknown correct answer", { ...complete, correct: "hexagon" }],
     ["an id with unexpected characters", { ...complete, id: "q 1" }],
     ["an extra field", { ...complete, image: "cat.png" }],
+    ["an unknown mark", { ...complete, text: [{ text: "Hi", strike: true }] }],
+    ["an empty text run", { ...complete, text: [{ text: "" }] }],
+    ["more than 40 text runs", { ...complete, text: Array.from({ length: 41 }, () => ({ text: "x" })) }],
+    ["more than 9 images", { ...complete, images: Array.from({ length: 10 }, (_, index) => `img${index}`) }],
+    ["an unknown time limit", { ...complete, timeLimitSeconds: 45 }],
+    ["unknown points", { ...complete, points: "triple" }],
   ])("rejects %s", (_, question) => {
     expect(Value.Check(SessionSetupSchema, { name: "", games: [quiz([question as QuizQuestion])] })).toBe(false);
   });
@@ -41,7 +55,8 @@ describe("session setup schema", () => {
 describe("quiz readiness", () => {
   it("needs the question, all four answers and a correct answer", () => {
     expect(isQuestionComplete(complete)).toBe(true);
-    expect(isQuestionComplete({ ...complete, text: "  " })).toBe(false);
+    expect(isQuestionComplete({ ...complete, text: [{ text: "  ", bold: true }] })).toBe(false);
+    expect(isQuestionComplete({ ...complete, text: [] })).toBe(false);
     expect(isQuestionComplete({ ...complete, answers: { ...complete.answers, plus: "" } })).toBe(false);
     expect(isQuestionComplete({ ...complete, correct: null })).toBe(false);
   });
@@ -60,12 +75,45 @@ describe("quiz readiness", () => {
     expect(hasUniqueIds({ name: "", games: [quiz([complete, complete])] })).toBe(false);
   });
 
+  it("limits the visible question text, not the formatting", () => {
+    const runs = (count: number) =>
+      Array.from({ length: count }, (_, index) => ({ text: "xxx", bold: index % 2 === 0 }));
+
+    expect(hasValidText({ name: "", games: [quiz([{ ...complete, text: runs(30) }])] })).toBe(true);
+    expect(
+      hasValidText({ name: "", games: [quiz([{ ...complete, text: [{ text: "Who is our best 👩‍💻?" }] }])] }),
+    ).toBe(true);
+    expect(
+      hasValidText({
+        name: "",
+        games: [quiz([{ ...complete, text: [{ text: "x".repeat(60) }, { text: "y".repeat(31) }] }])],
+      }),
+    ).toBe(false);
+    expect(hasValidText({ name: "", games: [quiz([{ ...complete, text: [{ text: "a\u200bb" }] }])] })).toBe(false);
+  });
+
+  it("collects every image used across the setup once", () => {
+    const withImages = (id: string, images: string[]) => ({ ...complete, id, images });
+    const setup = { name: "", games: [quiz([withImages("q1", ["a", "b"]), withImages("q2", ["b", "c"])])] };
+
+    expect(setupImageIds(setup)).toEqual(["a", "b", "c"]);
+  });
+
   it("summarises a quiz for the lobby", () => {
     expect(summarizeGame(quiz([complete, complete]))).toEqual({
       id: "quiz-1",
       type: "pop-quiz",
       roundCount: 2,
-      roundSeconds: 20,
+      roundSeconds: { min: 20, max: 20 },
     });
+  });
+
+  it("summarises the shortest and longest question time of a quiz", () => {
+    const quick = { ...complete, id: "q1", timeLimitSeconds: 10 };
+    const slow = { ...complete, id: "q2", timeLimitSeconds: 120 };
+    const usual = { ...complete, id: "q3" };
+
+    expect(summarizeGame(quiz([quick, slow, usual])).roundSeconds).toEqual({ min: 10, max: 120 });
+    expect(summarizeGame(quiz([])).roundSeconds).toEqual({ min: 20, max: 20 });
   });
 });

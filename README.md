@@ -6,16 +6,16 @@ Product decisions, progress and open questions live in [docs/spec.md](docs/spec.
 
 ## Development
 
-Requires Node 24+, pnpm 10 and Docker (for Redis, exposed on port 6380 by default; set `REDIS_PORT` to change it).
+Requires Node 24+, pnpm 10 and Docker (for Redis on port 6380 and MinIO on port 9000, console on 9001; set `REDIS_PORT`, `MINIO_PORT` or `MINIO_CONSOLE_PORT` to change them).
 
 ```sh
 pnpm install
-pnpm redis                                  # start Redis in Docker
+pnpm services                               # start Redis and MinIO in Docker
 cp apps/api/.env.example apps/api/.env      # first time only
 pnpm dev                                    # build packages, then watch everything
 ```
 
-The web app runs on http://localhost:5173 and proxies `/api` and `/socket.io` to the API on port 3000. Stop Redis with `docker compose down`.
+The web app runs on http://localhost:5173 and proxies `/api` and `/socket.io` to the API on port 3000. Stop the services with `docker compose down` (add `-v` to also wipe stored images).
 
 | URL                      | Screen                                       |
 | ------------------------ | -------------------------------------------- |
@@ -33,21 +33,48 @@ Phones can't open `localhost`. Set `VITE_PUBLIC_URL` in `apps/web/.env` (see `ap
 
 `apps/api/.env`:
 
-| Variable      | Default                  | Purpose                                                           |
-| ------------- | ------------------------ | ----------------------------------------------------------------- |
-| `HOST`        | `0.0.0.0`                | Listen address                                                    |
-| `PORT`        | `3000`                   | API port                                                          |
-| `REDIS_URL`   | `redis://localhost:6380` | Redis connection                                                  |
-| `LOG_LEVEL`   | `info`                   | Pino log level                                                    |
-| `TRUST_PROXY` | empty                    | Comma-separated proxy addresses whose `X-Forwarded-For` is trusted |
+| Variable               | Default                  | Purpose                                                            |
+| ---------------------- | ------------------------ | ------------------------------------------------------------------ |
+| `HOST`                 | `0.0.0.0`                | Listen address                                                     |
+| `PORT`                 | `3000`                   | API port                                                           |
+| `REDIS_URL`            | `redis://localhost:6380` | Redis connection                                                   |
+| `LOG_LEVEL`            | `info`                   | Pino log level                                                     |
+| `TRUST_PROXY`          | empty                    | Comma-separated proxy addresses whose `X-Forwarded-For` is trusted |
+| `IMAGES_DIR`           | empty                    | Folder for question images on disk (`.images` in `.env.example`)   |
+| `IMAGES_MAX_ACTIVE`    | `3000`                   | Most question images kept across all sessions at once              |
+| `IMAGES_MIN_FREE_MB`   | `1024`                   | Uploads pause when the disk has less free space than this          |
+| `S3_ENDPOINT`          | empty                    | S3-compatible endpoint for question images, scheme and host only   |
+| `S3_BUCKET`            | empty                    | Bucket for question images                                         |
+| `S3_ACCESS_KEY_ID`     | empty                    | S3 access key                                                      |
+| `S3_SECRET_ACCESS_KEY` | empty                    | S3 secret key                                                      |
+| `S3_REGION`            | `auto`                   | Signing region (`auto` for R2)                                     |
 
-Tests that need Redis use `TEST_REDIS_URL` (default `redis://localhost:6380`). Without Redis they are skipped locally; in CI they fail.
+Question images are stored on disk under `IMAGES_DIR` and served by the API at `/api/images/{sessionId}/{imageId}`. Setting all four `S3_*` variables stores them in an S3-compatible bucket instead (presigned URLs, valid for an hour); a partial set stops the API at startup. With neither, the API runs with images turned off. Images live under `sessions/{sessionId}/`. Images that no question has used for 10 minutes are deleted when the setup is saved. All of a session's images are deleted when it ends, and every 10 minutes the API sweeps away the images of sessions that expired with nobody connected.
+
+Uploads pause (`image_storage_full`) once `IMAGES_MAX_ACTIVE` images are held across all sessions or the disk drops below `IMAGES_MIN_FREE_MB`, so abuse can fill a limit but never the disk or a bill.
+
+Tests that need Redis use `TEST_REDIS_URL` (default `redis://localhost:6380`). The S3 image store tests use `TEST_S3_ENDPOINT` (default `http://localhost:9000`), `TEST_S3_BUCKET` (default `gamemash-test`, created on the fly), `TEST_S3_ACCESS_KEY_ID` and `TEST_S3_SECRET_ACCESS_KEY` (default `minioadmin`). Without Redis or MinIO those tests are skipped locally; in CI they fail. `pnpm services` starts both.
+
+## Deploy
+
+Production runs on one Linux server with Docker: Redis, the API and Caddy (HTTPS and the web app), defined in `deploy/compose.yml`. We use an OVHcloud VPS-2 with Ubuntu 24.04.
+
+1. Point a domain (A and AAAA records) at the server.
+2. On the server, allow only SSH, HTTP and HTTPS through the firewall (`ufw allow OpenSSH && ufw allow 80,443/tcp && ufw allow 443/udp && ufw enable`), and log in with an SSH key only.
+3. Install Docker: `curl -fsSL https://get.docker.com | sh`.
+4. Clone the repository, then `cp deploy/.env.example deploy/.env` and set `DOMAIN` and `PUBLIC_URL` (for example `play.example.com` and `https://play.example.com`).
+5. Start it: `docker compose -f deploy/compose.yml --env-file deploy/.env up -d --build`. Caddy fetches the HTTPS certificate on the first request.
+6. To update: `git pull`, then run the same command again.
+
+The Caddyfile's Content-Security-Policy only allows images from the site itself; if you switch to an S3 bucket, add its origin to `img-src`.
+
+Question images sit in the `images` volume, Redis data (sessions only, all with expiries) in `redis-data`. No backups are needed: nothing outlives a session.
 
 ## Commands
 
 | Command          | What it does                                             |
 | ---------------- | -------------------------------------------------------- |
-| `pnpm redis`     | Start Redis in Docker                                    |
+| `pnpm services`  | Start Redis and MinIO (for S3 tests) in Docker           |
 | `pnpm dev`       | Build shared packages, then run everything in watch mode |
 | `pnpm lint`      | Biome lint + format check                                |
 | `pnpm format`    | Biome autofix                                            |
@@ -58,7 +85,7 @@ Tests that need Redis use `TEST_REDIS_URL` (default `redis://localhost:6380`). W
 
 ## Layout
 
-- `apps/api` – Fastify + Socket.io + Redis
+- `apps/api` – Fastify + Socket.io + Redis, question images on disk (or an S3-compatible bucket)
 - `apps/web` – React, TanStack Router/Query, Zustand, Tailwind, Base UI, react-intl
 - `packages/shared` – types, constants and helpers shared by API and web; TypeBox schemas under `@gamemash/shared/schemas`
 - `packages/games` – game definitions (title, colour, icon) and game config; helpers under `@gamemash/games/config`, schemas under `@gamemash/games/schemas`

@@ -16,7 +16,7 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "test": "pnpm build:packages && pnpm -r test",
-    "redis": "docker compose up -d --wait redis",
+    "services": "docker compose up -d --wait redis minio && docker compose run --rm minio-setup",
     "stories": "pnpm --filter @gamemash/ui stories"
   },
   "devDependencies": {

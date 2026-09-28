@@ -10,6 +10,7 @@ import {
   QUIZ_COUNTS,
   QUIZ_OPTIONS,
   ROOM_CODE,
+  SAMPLE_QUESTION_IMAGES,
 } from "../../.ladle/screen-data";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { DrawingFrame } from "../draw/DrawingFrame";
@@ -38,9 +39,11 @@ import { StageViewport } from "../layout/StageViewport";
 import { Button } from "../primitives/Button";
 import { Heading } from "../primitives/Heading";
 import { Pill } from "../primitives/Pill";
+import { RichText } from "../primitives/RichText";
 import { TrustNote } from "../primitives/TrustNote";
 import { AnswerGrid } from "../quiz/AnswerGrid";
 import { CorrectAnswerBanner } from "../quiz/CorrectAnswerBanner";
+import { QuestionImageGrid } from "../quiz/QuestionImageGrid";
 import { ResultBars } from "../quiz/ResultBars";
 
 export default { title: "Screens / Big screen" } satisfies StoryDefault;
@@ -143,6 +146,47 @@ export const QuizQuestion: Story = () => {
           </Heading>
         </div>
         <AnswerGrid
+          aria-label={t("Answer options")}
+          options={QUIZ_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
+        />
+      </StageLayout>
+    </StageViewport>
+  );
+};
+
+export const QuizQuestionWithImages: Story = () => {
+  const t = useCopy();
+  return (
+    <StageViewport>
+      <StageLayout
+        mainClassName="gap-8"
+        header={
+          <QuizHeader
+            right={
+              <>
+                <CountStat value={7} total={9} caption={t("answered")} />
+                <TimerRing seconds={14} total={20} label={t("14 seconds left")} warningLabel={t("5 seconds left")} />
+              </>
+            }
+          />
+        }
+      >
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-8">
+          <Heading size="stage-sub" className="max-w-[1500px] text-center font-medium">
+            <RichText
+              runs={[
+                { text: t("Which of these planets has the ") },
+                { text: t("most"), bold: true },
+                { text: t(" known moons?") },
+              ]}
+            />
+          </Heading>
+          <div className="min-h-0 w-full flex-1">
+            <QuestionImageGrid images={SAMPLE_QUESTION_IMAGES.slice(0, 4)} />
+          </div>
+        </div>
+        <AnswerGrid
+          density="compact"
           aria-label={t("Answer options")}
           options={QUIZ_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
         />

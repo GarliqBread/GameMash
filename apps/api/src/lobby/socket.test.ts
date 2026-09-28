@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import type { AddressInfo } from "node:net";
 import type {
   ClientToServerEvents,
@@ -14,6 +15,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { buildApp } from "../app.js";
 import { createGameRunner } from "../game/runner.js";
 import { testRules } from "../game/test-rules.js";
+import { createMemoryImageStore, type MemoryImageStore } from "../media/memory-image-store.js";
 import type { RedisHealth } from "../redis.js";
 import { createMemorySessionStore } from "../sessions/memory-store.js";
 import { createSessionService, type SessionService } from "../sessions/service.js";
@@ -36,12 +38,13 @@ type ServerOptions = {
   lobbyNow?: () => number;
   keepAliveMs?: number;
   authenticateHost?: (original: SessionService["authenticateHost"]) => SessionService["authenticateHost"];
+  images?: MemoryImageStore;
 };
 
-const startServer = async ({ now, lobbyNow = now, keepAliveMs, authenticateHost }: ServerOptions = {}) => {
+const startServer = async ({ now, lobbyNow = now, keepAliveMs, authenticateHost, images }: ServerOptions = {}) => {
   const notifier = createLobbyNotifier();
   const store = createMemorySessionStore(now);
-  const sessions = createSessionService({ store, notifier, now });
+  const sessions = createSessionService({ store, notifier, now, images });
   const app = buildApp({ redis, sessions, rateLimit: false });
   const game = createGameRunner({ store, readSetup: sessions.readSetup, rules: [testRules], log: app.log, now });
   const lobbySessions = authenticateHost
@@ -370,6 +373,26 @@ describe("lobby socket", () => {
     const ended = new Promise<void>((resolve) => host.on("session:ended", () => resolve()));
 
     await ended;
+  });
+
+  it("deletes the session's images when the session ends", async () => {
+    const images = createMemoryImageStore();
+    const almostSixHoursLater = () => Date.now() + 6 * 60 * 60 * 1000 - 100;
+    const server = await startServer({ lobbyNow: almostSixHoursLater, keepAliveMs: 60_000, images });
+    const session = await server.post<CreateSessionResponse>("/api/sessions");
+    const upload = await fetch(`${server.url}/api/sessions/${session.sessionId}/images`, {
+      method: "PUT",
+      headers: { authorization: `Bearer ${session.hostToken}`, "content-type": "image/jpeg" },
+      body: readFileSync(new URL("../sessions/fixtures/photo-256.jpg", import.meta.url)),
+    });
+    expect(upload.status).toBe(200);
+    expect(images.keys()).toHaveLength(1);
+    const host = server.client(hostAuth(session));
+    const ended = new Promise<void>((resolve) => host.on("session:ended", () => resolve()));
+
+    await ended;
+
+    await expect.poll(() => images.keys()).toEqual([]);
   });
 
   it("tells everyone and disconnects them when the session expires", async () => {

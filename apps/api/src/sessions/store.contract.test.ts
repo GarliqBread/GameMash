@@ -26,6 +26,16 @@ const session = (overrides: Partial<SessionRecord> = {}): SessionRecord => ({
 
 const inAMinute = () => Date.now() + 60_000;
 const CLOCK_DRIFT_MS = 1000;
+const imageLimits = (maxPerSession: number) => ({
+  maxPerSession,
+  maxActive: 1000,
+  expiresAt: inAMinute(),
+  leaseUntil: Date.now() + 5 * 60_000,
+  uploadedAt: 1_000,
+});
+
+const imageIds = async (store: SessionStore, sessionId: string) =>
+  (await store.listImages(sessionId)).map((image) => image.id).toSorted();
 
 const stores: [string, (() => SessionStore) | undefined][] = [
   ["memory", () => createMemorySessionStore()],
@@ -183,6 +193,69 @@ describe.each(stores)("%s session store", (name, makeStore) => {
     expect(await store.saveSetup(randomUUID(), "{}", "summary", inAMinute())).toBe("session_not_found");
   });
 
+  run("keeps track of the images of a session while its setup is open", async () => {
+    const store = makeStore?.() as SessionStore;
+    const created = session();
+    await store.create(created, inAMinute());
+
+    expect(await store.listImages(created.id)).toEqual([]);
+    expect(await store.addImage(created.id, "a", imageLimits(2))).toBe("added");
+    expect(await store.addImage(created.id, "b", { ...imageLimits(2), uploadedAt: 2_000 })).toBe("added");
+    expect(await store.addImage(created.id, "a", { ...imageLimits(2), uploadedAt: 3_000 })).toBe("added");
+    expect(await store.addImage(created.id, "c", imageLimits(2))).toBe("limit_reached");
+    expect((await store.listImages(created.id)).toSorted((x, y) => x.uploadedAt - y.uploadedAt)).toEqual([
+      { id: "a", uploadedAt: 1_000 },
+      { id: "b", uploadedAt: 2_000 },
+    ]);
+
+    await store.removeImages(created.id, ["a"]);
+    expect(await imageIds(store, created.id)).toEqual(["b"]);
+    expect(await store.addImage(created.id, "c", imageLimits(2))).toBe("added");
+    await store.removeImages(created.id, []);
+
+    await store.setStatus(created.id, "playing");
+    expect(await store.addImage(created.id, "d", imageLimits(5))).toBe("setup_locked");
+    expect(await store.addImage(randomUUID(), "e", imageLimits(5))).toBe("session_not_found");
+    expect(await imageIds(store, created.id)).toEqual(["b", "c"]);
+  });
+
+  run("stops accepting images once the whole server holds its maximum", async () => {
+    const store = makeStore?.() as SessionStore;
+    const first = session();
+    const second = session({ roomCode: "ABCD" });
+    await store.create(first, inAMinute());
+    await store.create(second, inAMinute());
+    const tight = { ...imageLimits(5), maxActive: 2 };
+
+    expect(await store.addImage(first.id, "a", tight)).toBe("added");
+    expect(await store.addImage(second.id, "b", tight)).toBe("added");
+    expect(await store.addImage(first.id, "a", tight)).toBe("added");
+    expect(await store.addImage(second.id, "c", tight)).toBe("storage_full");
+
+    await store.removeImages(first.id, ["a"]);
+    expect(await store.addImage(second.id, "c", tight)).toBe("added");
+    expect(await store.addImage(first.id, "d", { ...tight, maxActive: 3 })).toBe("added");
+
+    await store.releaseImages(first.id);
+    expect(await store.listImages(first.id)).toEqual([]);
+    expect(await imageIds(store, second.id)).toEqual(["b", "c"]);
+    expect(await store.addImage(second.id, "e", { ...tight, maxActive: 3 })).toBe("added");
+    expect(await store.addImage(second.id, "f", { ...tight, maxActive: 3 })).toBe("storage_full");
+  });
+
+  run("frees the server-wide image slots once their lease ends", async () => {
+    const store = makeStore?.() as SessionStore;
+    const created = session();
+    await store.create(created, inAMinute());
+    const shortLease = { ...imageLimits(5), maxActive: 1, leaseUntil: Date.now() + 50 };
+
+    expect(await store.addImage(created.id, "a", shortLease)).toBe("added");
+    expect(await store.addImage(created.id, "b", shortLease)).toBe("storage_full");
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
+    expect(await store.addImage(created.id, "b", shortLease)).toBe("added");
+  });
+
   run("saves game state only on top of the version it was based on", async () => {
     const store = makeStore?.() as SessionStore;
     const created = session();
@@ -244,12 +317,13 @@ describe.each(stores)("%s session store", (name, makeStore) => {
       );
       await store.saveSetup(created.id, "{}", "summary", inAMinute());
       await store.saveGame(created.id, null, "{}", inAMinute());
+      await store.addImage(created.id, "image", imageLimits(5));
       await store.submitInput(created.id, 1, priyaId, "{}", inAMinute());
       await store.touch(created, Date.now() + 10 * 60_000);
 
       const keys = await redis.keys(`${prefix}*`);
       const ttls = await Promise.all(keys.map((key) => redis.pTTL(key)));
-      expect(keys).toHaveLength(9);
+      expect(keys).toHaveLength(11);
       expect(ttls.every((ttl) => ttl > 60_000 && ttl <= 10 * 60_000 + CLOCK_DRIFT_MS)).toBe(true);
     });
 

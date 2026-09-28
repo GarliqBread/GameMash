@@ -1,4 +1,4 @@
-import { defaultPopQuizConfig, type SessionSetup } from "@gamemash/games/config";
+import { defaultPopQuizConfig, emptyQuestion, type SessionSetup } from "@gamemash/games/config";
 
 export const readySetup = (): SessionSetup => ({
   name: "Friday team mash",
@@ -11,8 +11,8 @@ export const readySetup = (): SessionSetup => ({
         timeLimitSeconds: 30,
         questions: [
           {
-            id: "q1",
-            text: "Which planet has the most known moons?",
+            ...emptyQuestion("q1"),
+            text: [{ text: "Which planet has the most known moons?" }],
             answers: { squircle: "Jupiter", triangle: "Saturn", plus: "Uranus", dome: "Neptune" },
             correct: "triangle",
           },

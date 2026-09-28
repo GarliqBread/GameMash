@@ -3,35 +3,49 @@ import {
   POP_QUIZ_ANSWER_MAX_LENGTH,
   POP_QUIZ_MAX_QUESTIONS,
   POP_QUIZ_QUESTION_MAX_LENGTH,
+  POP_QUIZ_TEXT_MAX_RUNS,
   type PopQuizConfig,
   QUIZ_ANSWER_KEYS,
   type QuizQuestion,
 } from "@gamemash/games/config";
+import { stripHiddenCharacters } from "@gamemash/shared";
 import {
   AnswerTileEditor,
   ConfirmDialog,
   CopyIcon,
-  QuestionField,
   QuestionTabs,
+  RichTextField,
   ToolButton,
   TrashIcon,
 } from "@gamemash/ui";
 import { useRef, useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
+import { QuestionImages } from "./QuestionImages";
+import { QuestionSettings } from "./QuestionSettings";
 import { addQuestion, deleteQuestion, insertQuestionAfter, newQuestionId, updateQuestion } from "./setup-changes";
+import type { ImageUploads } from "./useImageUploads";
 
 export type QuizEditorProps = {
   config: PopQuizConfig;
   onChange: (change: (config: PopQuizConfig) => PopQuizConfig) => void;
   selectedQuestionId: string | undefined;
   onSelectQuestion: (id: string) => void;
+  uploads: ImageUploads;
+  imagesEnabled: boolean;
 };
 
-export const QuizEditor = ({ config, onChange, selectedQuestionId, onSelectQuestion }: QuizEditorProps) => {
+export const QuizEditor = ({
+  config,
+  onChange,
+  selectedQuestionId,
+  onSelectQuestion,
+  uploads,
+  imagesEnabled,
+}: QuizEditorProps) => {
   const intl = useIntl();
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [deletingPosition, setDeletingPosition] = useState(1);
-  const questionFieldRef = useRef<HTMLTextAreaElement>(null);
+  const questionFieldRef = useRef<HTMLElement>(null);
   const question = config.questions.find((item) => item.id === selectedQuestionId) ?? config.questions[0];
   if (!question) return null;
 
@@ -74,15 +88,23 @@ export const QuizEditor = ({ config, onChange, selectedQuestionId, onSelectQuest
         canAdd={config.questions.length < POP_QUIZ_MAX_QUESTIONS}
       >
         <div className="flex flex-col gap-5">
-          <QuestionField
+          <RichTextField
             key={question.id}
             ref={questionFieldRef}
             label={<FormattedMessage id="setup.questionLabel" values={{ position }} />}
             value={question.text}
             onValueChange={(text) => change((current) => ({ ...current, text }))}
             maxLength={POP_QUIZ_QUESTION_MAX_LENGTH}
+            maxRuns={POP_QUIZ_TEXT_MAX_RUNS}
+            normalizeText={stripHiddenCharacters}
             counterLabel={(length, max) => intl.formatMessage({ id: "setup.counter" }, { length, max })}
             placeholder={intl.formatMessage({ id: "setup.questionPlaceholder" })}
+            toolbarLabel={intl.formatMessage({ id: "setup.formatting" })}
+            markLabels={{
+              bold: intl.formatMessage({ id: "setup.bold" }),
+              italic: intl.formatMessage({ id: "setup.italic" }),
+              underline: intl.formatMessage({ id: "setup.underline" }),
+            }}
           />
           <AnswerTileEditor
             legend={<FormattedMessage id="setup.answersLegend" />}
@@ -105,7 +127,8 @@ export const QuizEditor = ({ config, onChange, selectedQuestionId, onSelectQuest
             maxLength={POP_QUIZ_ANSWER_MAX_LENGTH}
             placeholder={intl.formatMessage({ id: "setup.answerPlaceholder" })}
           />
-          <div className="mt-1 flex flex-wrap gap-3">
+          <QuestionSettings config={config} question={question} onChange={change} />
+          <QuestionImages question={question} onChange={change} uploads={uploads} isEnabled={imagesEnabled}>
             <ToolButton
               icon={<CopyIcon size={18} strokeWidth={2.2} />}
               onClick={handleDuplicate}
@@ -123,7 +146,7 @@ export const QuizEditor = ({ config, onChange, selectedQuestionId, onSelectQuest
             >
               <FormattedMessage id="setup.deleteQuestion" />
             </ToolButton>
-          </div>
+          </QuestionImages>
         </div>
       </QuestionTabs>
       <ConfirmDialog

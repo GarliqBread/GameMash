@@ -1,4 +1,4 @@
-import type { Avatar, GameRecord, PlayerRecord, SessionRecord, SessionStore } from "./store.js";
+import type { Avatar, GameRecord, PlayerRecord, SessionImage, SessionRecord, SessionStore } from "./store.js";
 
 type SessionEntry = {
   session: SessionRecord;
@@ -7,6 +7,7 @@ type SessionEntry = {
   avatars: Map<string, Avatar>;
   setup: string | null;
   summary: string | null;
+  images: SessionImage[];
   game: GameRecord | null;
   inputs: Map<string, string>;
   expiresAt: number;
@@ -15,6 +16,12 @@ type SessionEntry = {
 export const createMemorySessionStore = (now: () => number = Date.now): SessionStore => {
   const sessions = new Map<string, SessionEntry>();
   const rooms = new Map<string, string>();
+  const activeImages = new Map<string, number>();
+
+  const activeImageCount = () => {
+    for (const [member, leaseUntil] of activeImages) if (leaseUntil <= now()) activeImages.delete(member);
+    return activeImages.size;
+  };
 
   const live = (sessionId: string | undefined) => {
     if (!sessionId) return undefined;
@@ -44,6 +51,7 @@ export const createMemorySessionStore = (now: () => number = Date.now): SessionS
         avatars: new Map(),
         setup: null,
         summary: null,
+        images: [],
         game: null,
         inputs: new Map(),
         expiresAt,
@@ -89,6 +97,28 @@ export const createMemorySessionStore = (now: () => number = Date.now): SessionS
       sessions.set(sessionId, { ...entry, setup, summary, expiresAt });
       return entry.summary === summary ? "unchanged" : "changed";
     },
+    addImage: async (sessionId, imageId, { maxPerSession, maxActive, expiresAt, leaseUntil, uploadedAt }) => {
+      const entry = live(sessionId);
+      if (!entry) return "session_not_found";
+      if (entry.session.status !== "lobby") return "setup_locked";
+      if (entry.images.some((image) => image.id === imageId)) return "added";
+      if (entry.images.length >= maxPerSession) return "limit_reached";
+      if (activeImageCount() >= maxActive) return "storage_full";
+      activeImages.set(`${sessionId}/${imageId}`, leaseUntil);
+      sessions.set(sessionId, { ...entry, images: [...entry.images, { id: imageId, uploadedAt }], expiresAt });
+      return "added";
+    },
+    removeImages: async (sessionId, imageIds) => {
+      const removed = new Set(imageIds);
+      for (const id of removed) activeImages.delete(`${sessionId}/${id}`);
+      update(sessionId, (entry) => ({ ...entry, images: entry.images.filter((image) => !removed.has(image.id)) }));
+    },
+    releaseImages: async (sessionId) => {
+      for (const member of [...activeImages.keys()])
+        if (member.startsWith(`${sessionId}/`)) activeImages.delete(member);
+      update(sessionId, (entry) => ({ ...entry, images: [] }));
+    },
+    listImages: async (sessionId) => (live(sessionId)?.images ?? []).map((image) => ({ ...image })),
     getGame: async (sessionId) => live(sessionId)?.game ?? null,
     saveGame: async (sessionId, expectedVersion, state) => {
       const entry = live(sessionId);

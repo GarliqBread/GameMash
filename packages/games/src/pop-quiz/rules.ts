@@ -1,5 +1,12 @@
 import type { GameRules, Phase, Points, Submission } from "../rules.js";
-import { type PopQuizConfig, QUIZ_ANSWER_KEYS, type QuizAnswerKey, type QuizQuestion } from "./config.js";
+import {
+  POP_QUIZ_POINTS,
+  type PopQuizConfig,
+  QUIZ_ANSWER_KEYS,
+  type QuizAnswerKey,
+  type QuizQuestion,
+  questionTimeLimit,
+} from "./config.js";
 import { buildLeaderboard, POP_QUIZ_READ_MS, quizPoints, rankOf } from "./scoring.js";
 import type { QuizAnswerOption, QuizFastest, QuizPlayerView, QuizStageView } from "./views.js";
 
@@ -22,9 +29,9 @@ const MS_PER_SECOND = 1000;
 const questionPhase: Phase = { name: "question", durationMs: POP_QUIZ_READ_MS, input: null };
 const revealPhase: Phase = { name: "reveal", durationMs: null, input: null };
 
-const answeringPhase = (config: PopQuizConfig, playerIds: string[]): Phase => ({
+const answeringPhase = (config: PopQuizConfig, question: QuizQuestion, playerIds: string[]): Phase => ({
   name: "answering",
-  durationMs: config.timeLimitSeconds * MS_PER_SECOND,
+  durationMs: questionTimeLimit(config, question) * MS_PER_SECOND,
   input: { from: playerIds, endsWhenAllSubmitted: true },
 });
 
@@ -64,14 +71,13 @@ const scoreAnswers = (
   phaseStartedAt: number,
 ) => {
   const question = questionAt(config, state.questionIndex);
-  const limitMs = config.timeLimitSeconds * MS_PER_SECOND;
+  const limitMs = questionTimeLimit(config, question) * MS_PER_SECOND;
+  const points = POP_QUIZ_POINTS[question.points];
   const entries = [...submissions].map(([playerId, { input, at }]): [string, QuizResult] => {
     const ms = Math.min(Math.max(at - phaseStartedAt, 0), limitMs);
     const isCorrect = originalKey(state, input) === question.correct;
-    const points = isCorrect
-      ? quizPoints({ points: config.points, speedBonus: config.speedBonus, limitMs, elapsedMs: ms })
-      : 0;
-    return [playerId, { shape: input, isCorrect, points, ms }];
+    const earned = isCorrect ? quizPoints({ points, speedBonus: config.speedBonus, limitMs, elapsedMs: ms }) : 0;
+    return [playerId, { shape: input, isCorrect, points: earned, ms }];
   });
   return Object.fromEntries(entries);
 };
@@ -104,7 +110,10 @@ export const popQuizRules: GameRules<PopQuizConfig, QuizState, QuizAnswerKey> = 
 
   advance: ({ config, state, phase, phaseStartedAt, submissions, playerIds, random }) => {
     if (phase.name === "question") {
-      return { phase: answeringPhase(config, playerIds), state: { ...state, participantCount: playerIds.length } };
+      return {
+        phase: answeringPhase(config, questionAt(config, state.questionIndex), playerIds),
+        state: { ...state, participantCount: playerIds.length },
+      };
     }
     if (phase.name === "answering") {
       const results = scoreAnswers(config, state, submissions, phaseStartedAt);
@@ -118,23 +127,26 @@ export const popQuizRules: GameRules<PopQuizConfig, QuizState, QuizAnswerKey> = 
   stageView: ({ config, state, phase, submissions, totals }): QuizStageView => {
     const question = questionAt(config, state.questionIndex);
     const progress = progressOf(config, state);
-    if (phase.name === "question") return { ...progress, kind: "question", text: question.text };
+    if (phase.name === "question")
+      return { ...progress, kind: "question", text: question.text, images: question.images };
     const answers = answersOf(question, state);
     if (phase.name === "answering") {
       return {
         ...progress,
         kind: "answering",
         text: question.text,
+        images: question.images,
         answers,
         answeredCount: submissions.size,
         participantCount: state.participantCount,
-        timeLimitSeconds: config.timeLimitSeconds,
+        timeLimitSeconds: questionTimeLimit(config, question),
       };
     }
     return {
       ...progress,
       kind: "reveal",
       text: question.text,
+      nextImages: config.questions[state.questionIndex + 1]?.images ?? [],
       answers,
       correct: correctShape(question, state),
       counts: countsOf(state.results),
@@ -157,7 +169,7 @@ export const popQuizRules: GameRules<PopQuizConfig, QuizState, QuizAnswerKey> = 
         answers: answersOf(question, state),
         mine: submissions.get(playerId)?.input ?? null,
         isParticipant,
-        timeLimitSeconds: config.timeLimitSeconds,
+        timeLimitSeconds: questionTimeLimit(config, question),
         total,
       };
     }

@@ -41,11 +41,11 @@ export const CoinToggleGroup = <Value extends string>({
         value={option.value}
         aria-label={option.ariaLabel}
         className={cn(
-          "focus-ring flex size-[74px] cursor-pointer items-center justify-center rounded-full border-3 border-ink-950 bg-paper-white",
+          "focus-ring flex size-18.5 cursor-pointer items-center justify-center rounded-full border-3 border-ink-950 bg-paper-white",
           "px-1 text-center font-pixel tracking-pixel text-caption font-bold text-ink-950 shadow-brutal",
           "motion-safe:transition-[translate,box-shadow,background-color]",
-          "data-[pressed]:translate-x-[3px] data-[pressed]:translate-y-[3px] data-[pressed]:bg-sun data-[pressed]:shadow-brutal-xs",
-          "data-[pressed]:ring-4 data-[pressed]:ring-sun-deep data-[pressed]:ring-inset",
+          "data-pressed:translate-x-0.75 data-pressed:translate-y-0.75 data-pressed:bg-sun data-pressed:shadow-brutal-xs",
+          "data-pressed:ring-4 data-pressed:ring-sun-deep data-pressed:ring-inset",
         )}
       >
         {option.label}

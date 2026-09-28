@@ -5,20 +5,20 @@ import type { Story, StoryDefault } from "../../.ladle/types";
 import { AnswerTileEditor } from "../host/AnswerTileEditor";
 import { GameLineup, type GameLineupLabels, type LineupGame } from "../host/GameLineup";
 import { InsertGameSlot } from "../host/InsertGameSlot";
-import { QuestionField } from "../host/QuestionField";
 import { QuestionTabs } from "../host/QuestionTabs";
+import { RichTextField } from "../host/RichTextField";
 import { SessionNameSticker } from "../host/SessionNameSticker";
 import { SettingsField } from "../host/Settings";
 import { AnswerShape } from "../icons/AnswerShape";
 import { CopyIcon, ImageIcon, MonitorIcon, PencilIcon, PlayIcon, TrashIcon } from "../icons/icons";
 import { Logo } from "../icons/Logo";
 import { ANSWER_SHAPES, type AnswerShapeName } from "../lib/answers";
+import type { RichTextRun } from "../lib/rich-text";
 import { Button } from "../primitives/Button";
 import { Heading } from "../primitives/Heading";
 import { SegmentedControl } from "../primitives/SegmentedControl";
 import { TrustNote } from "../primitives/TrustNote";
 import { AutosaveIndicator } from "../workshop/AutosaveIndicator";
-import { CoinToggleGroup } from "../workshop/CoinToggleGroup";
 import { ConfirmDialog } from "../workshop/ConfirmDialog";
 import { RuleSwitchList } from "../workshop/RuleSwitchList";
 import { RulesPanel } from "../workshop/RulesPanel";
@@ -30,6 +30,7 @@ export default { title: "Screens / Host" } satisfies StoryDefault;
 
 const QUESTION_IDS = Array.from({ length: 10 }, (_, index) => `q${index + 1}`);
 const QUESTION_MAX_LENGTH = 90;
+const TIME_LIMITS = ["10", "20", "30", "60", "120"];
 
 const QuizIcon = () => (
   <span className="grid grid-cols-2 gap-1 text-ink-950">
@@ -83,13 +84,18 @@ export const HostSetup: Story = () => {
   const [sessionName, setSessionName] = useState("Friday team mash");
   const [questionIds, setQuestionIds] = useState(QUESTION_IDS);
   const [question, setQuestion] = useState("q4");
-  const [questionText, setQuestionText] = useState("Which planet has the most known moons?");
+  const [questionText, setQuestionText] = useState<RichTextRun[]>([
+    { text: "Which planet has the " },
+    { text: "most", bold: true },
+    { text: " known moons?" },
+  ]);
   const [answers, setAnswers] = useState(
     Object.fromEntries(QUIZ_OPTIONS.map((option) => [option.shape, option.label])) as Record<AnswerShapeName, string>,
   );
   const [correct, setCorrect] = useState<AnswerShapeName | null>("triangle");
   const [time, setTime] = useState("20");
-  const [points, setPoints] = useState("1000");
+  const [questionTime, setQuestionTime] = useState("default");
+  const [points, setPoints] = useState("double");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const { rules, toggle } = useRules();
   const games = order.flatMap((id) => lineup.filter((game) => game.id === id));
@@ -154,12 +160,16 @@ export const HostSetup: Story = () => {
             onAdd={() => setQuestionIds((ids) => [...ids, `q${ids.length + 1}`])}
           >
             <div className="flex flex-col gap-5">
-              <QuestionField
+              <RichTextField
                 label={t(`Question ${questionPosition}`)}
                 value={questionText}
                 onValueChange={setQuestionText}
                 maxLength={QUESTION_MAX_LENGTH}
+                maxRuns={40}
                 counterLabel={(length, max) => t(`${length} / ${max}`)}
+                placeholder={t("Type your question")}
+                toolbarLabel={t("Text formatting")}
+                markLabels={{ bold: t("Bold"), italic: t("Italic"), underline: t("Underline") }}
               />
               <AnswerTileEditor
                 legend={t("Answers · type right on the tiles")}
@@ -175,6 +185,34 @@ export const HostSetup: Story = () => {
                 correctLabel={t("Correct")}
                 markCorrectLabel={t("Mark correct")}
               />
+              <div className="flex flex-wrap gap-x-8 gap-y-5">
+                <SettingsField label={t("Time for this question")}>
+                  {(labelId) => (
+                    <SegmentedControl
+                      aria-labelledby={labelId}
+                      value={questionTime}
+                      onValueChange={setQuestionTime}
+                      options={[
+                        { value: "default", label: t(`Default (${time} s)`) },
+                        ...TIME_LIMITS.map((seconds) => ({ value: seconds, label: t(`${seconds} s`) })),
+                      ]}
+                    />
+                  )}
+                </SettingsField>
+                <SettingsField label={t("Points")}>
+                  {(labelId) => (
+                    <SegmentedControl
+                      aria-labelledby={labelId}
+                      value={points}
+                      onValueChange={setPoints}
+                      options={[
+                        { value: "standard", label: t("Standard") },
+                        { value: "double", label: t("Double") },
+                      ]}
+                    />
+                  )}
+                </SettingsField>
+              </div>
               <div className="mt-1 flex flex-wrap gap-3">
                 <ToolButton icon={<ImageIcon size={18} strokeWidth={2.2} />}>{t("Add image")}</ToolButton>
                 <ToolButton icon={<CopyIcon size={18} strokeWidth={2.2} />}>{t("Duplicate")}</ToolButton>
@@ -197,23 +235,13 @@ export const HostSetup: Story = () => {
       }
       settings={
         <RulesPanel title={t("Game rules")}>
-          <SettingsField label={t("Time per question")}>
+          <SettingsField label={t("Default time per question")}>
             {(labelId) => (
               <SegmentedControl
                 aria-labelledby={labelId}
                 value={time}
                 onValueChange={setTime}
-                options={["10", "20", "30", "60"].map((seconds) => ({ value: seconds, label: t(`${seconds} s`) }))}
-              />
-            )}
-          </SettingsField>
-          <SettingsField label={t("Points for a right answer")}>
-            {(labelId) => (
-              <CoinToggleGroup
-                aria-labelledby={labelId}
-                value={points}
-                onValueChange={setPoints}
-                options={["500", "1000", "2000"].map((value) => ({ value, label: value }))}
+                options={TIME_LIMITS.map((seconds) => ({ value: seconds, label: t(`${seconds} s`) }))}
               />
             )}
           </SettingsField>

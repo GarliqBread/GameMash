@@ -5,6 +5,7 @@ import { Type } from "typebox";
 import { Value } from "typebox/value";
 import type { RedisClient } from "../redis.js";
 import type {
+  AddImageResult,
   AddPlayerResult,
   AvatarMeta,
   GameRecord,
@@ -29,6 +30,13 @@ const PlayerRecordSchema = Type.Object({
 const ADD_PLAYER_RESULTS: AddPlayerResult[] = ["added", "name_taken", "session_full", "session_not_found"];
 const SET_AVATAR_RESULTS: SetAvatarResult[] = ["saved", "player_not_found", "session_not_found"];
 const SAVE_SETUP_RESULTS: SaveSetupResult[] = ["changed", "unchanged", "setup_locked", "session_not_found"];
+const ADD_IMAGE_RESULTS: AddImageResult[] = [
+  "added",
+  "limit_reached",
+  "storage_full",
+  "setup_locked",
+  "session_not_found",
+];
 const SAVE_GAME_RESULTS: SaveGameResult[] = ["saved", "conflict", "session_not_found"];
 const SUBMIT_INPUT_RESULTS: SubmitInputResult[] = ["accepted", "duplicate", "closed"];
 
@@ -37,6 +45,10 @@ const AvatarMetaSchema = Type.Object({
   version: Type.Number(),
 });
 
+const RELEASE_SCAN_COUNT = 500;
+
+const activeImageMember = (sessionId: string, imageId: string) => `${sessionId}/${imageId}`;
+
 const keys = (prefix: string) => ({
   session: (id: string) => `${prefix}session:${id}`,
   players: (id: string) => `${prefix}session:${id}:players`,
@@ -44,9 +56,11 @@ const keys = (prefix: string) => ({
   avatars: (id: string) => `${prefix}session:${id}:avatars`,
   avatarMeta: (id: string) => `${prefix}session:${id}:avatar-meta`,
   setup: (id: string) => `${prefix}session:${id}:setup`,
+  images: (id: string) => `${prefix}session:${id}:images`,
   game: (id: string) => `${prefix}session:${id}:game`,
   inputs: (id: string) => `${prefix}session:${id}:inputs`,
   room: (roomCode: string) => `${prefix}room:${roomCode}`,
+  activeImages: () => `${prefix}images:active`,
 });
 
 const toHash = (session: SessionRecord) => ({
@@ -88,6 +102,9 @@ const isSetAvatarResult = (value: unknown): value is SetAvatarResult =>
 
 const isSaveSetupResult = (value: unknown): value is SaveSetupResult =>
   SAVE_SETUP_RESULTS.some((result) => result === value);
+
+const isAddImageResult = (value: unknown): value is AddImageResult =>
+  ADD_IMAGE_RESULTS.some((result) => result === value);
 
 const isSaveGameResult = (value: unknown): value is SaveGameResult =>
   SAVE_GAME_RESULTS.some((result) => result === value);
@@ -174,6 +191,49 @@ export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PRE
       if (!isSaveSetupResult(result)) throw new Error(`unexpected save setup result: ${String(result)}`);
       return result;
     },
+    addImage: async (sessionId, imageId, { maxPerSession, maxActive, expiresAt, leaseUntil, uploadedAt }) => {
+      const result = await redis.addImage(
+        [key.session(sessionId), key.images(sessionId), key.activeImages()],
+        [
+          imageId,
+          String(maxPerSession),
+          String(expiresAt),
+          activeImageMember(sessionId, imageId),
+          String(maxActive),
+          String(leaseUntil),
+          String(uploadedAt),
+        ],
+      );
+      if (!isAddImageResult(result)) throw new Error(`unexpected add image result: ${String(result)}`);
+      return result;
+    },
+    removeImages: async (sessionId, imageIds) => {
+      if (imageIds.length === 0) return;
+      await redis
+        .multi()
+        .zRem(key.images(sessionId), imageIds)
+        .zRem(
+          key.activeImages(),
+          imageIds.map((id) => activeImageMember(sessionId, id)),
+        )
+        .exec();
+    },
+    releaseImages: async (sessionId) => {
+      const match = `${activeImageMember(sessionId, "")}*`;
+      for await (const batch of redis.zScanIterator(key.activeImages(), { MATCH: match, COUNT: RELEASE_SCAN_COUNT })) {
+        if (batch.length > 0)
+          await redis.zRem(
+            key.activeImages(),
+            batch.map((entry) => entry.value),
+          );
+      }
+      await redis.del(key.images(sessionId));
+    },
+    listImages: async (sessionId) =>
+      (await redis.zRangeWithScores(key.images(sessionId), 0, -1)).map((entry) => ({
+        id: entry.value,
+        uploadedAt: entry.score,
+      })),
     getGame: async (sessionId) => toGameRecord(await redis.hGetAll(key.game(sessionId))),
     saveGame: async (sessionId, expectedVersion, state, expiresAt) => {
       const result = await redis.saveGame(
@@ -209,6 +269,7 @@ export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PRE
           key.setup(session.id),
           key.game(session.id),
           key.inputs(session.id),
+          key.images(session.id),
         ],
         [session.id, String(expiresAt)],
       );

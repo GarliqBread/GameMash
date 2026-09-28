@@ -1,9 +1,11 @@
 import { type Static, Type } from "typebox";
 import {
   POP_QUIZ_ANSWER_MAX_LENGTH,
+  POP_QUIZ_MAX_IMAGES_PER_QUESTION,
   POP_QUIZ_MAX_QUESTIONS,
-  POP_QUIZ_POINTS,
+  POP_QUIZ_POINT_LEVELS,
   POP_QUIZ_QUESTION_MAX_LENGTH,
+  POP_QUIZ_TEXT_MAX_RUNS,
   POP_QUIZ_TIME_LIMITS,
   QUIZ_ANSWER_KEYS,
 } from "./config.js";
@@ -12,10 +14,25 @@ export const ItemIdSchema = Type.String({ minLength: 1, maxLength: 64, pattern: 
 
 const AnswerTextSchema = Type.String({ maxLength: POP_QUIZ_ANSWER_MAX_LENGTH });
 
+export const QuizTextRunSchema = Type.Object(
+  {
+    text: Type.String({ minLength: 1, maxLength: POP_QUIZ_QUESTION_MAX_LENGTH }),
+    bold: Type.Optional(Type.Boolean()),
+    italic: Type.Optional(Type.Boolean()),
+    underline: Type.Optional(Type.Boolean()),
+  },
+  { additionalProperties: false },
+);
+export type QuizTextRun = Static<typeof QuizTextRunSchema>;
+
+export const QuizTextSchema = Type.Array(QuizTextRunSchema, { maxItems: POP_QUIZ_TEXT_MAX_RUNS });
+export type QuizText = Static<typeof QuizTextSchema>;
+
 export const QuizQuestionSchema = Type.Object(
   {
     id: ItemIdSchema,
-    text: Type.String({ maxLength: POP_QUIZ_QUESTION_MAX_LENGTH }),
+    text: QuizTextSchema,
+    images: Type.Array(ItemIdSchema, { maxItems: POP_QUIZ_MAX_IMAGES_PER_QUESTION }),
     answers: Type.Object(
       {
         squircle: AnswerTextSchema,
@@ -26,6 +43,8 @@ export const QuizQuestionSchema = Type.Object(
       { additionalProperties: false },
     ),
     correct: Type.Union([Type.Enum(QUIZ_ANSWER_KEYS), Type.Null()]),
+    timeLimitSeconds: Type.Union([Type.Enum(POP_QUIZ_TIME_LIMITS), Type.Null()]),
+    points: Type.Enum(POP_QUIZ_POINT_LEVELS),
   },
   { additionalProperties: false },
 );
@@ -35,7 +54,6 @@ export const PopQuizConfigSchema = Type.Object(
   {
     questions: Type.Array(QuizQuestionSchema, { maxItems: POP_QUIZ_MAX_QUESTIONS }),
     timeLimitSeconds: Type.Enum(POP_QUIZ_TIME_LIMITS),
-    points: Type.Enum(POP_QUIZ_POINTS),
     speedBonus: Type.Boolean(),
     leaderboardAfterEachQuestion: Type.Boolean(),
     shuffleAnswers: Type.Boolean(),

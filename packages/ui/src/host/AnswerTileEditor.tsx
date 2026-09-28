@@ -11,10 +11,7 @@ export type EditableAnswer = {
   correctAriaLabel: string;
 };
 
-export type AnswerTileEditorProps = Omit<
-  ComponentProps<"fieldset">,
-  "onChange"
-> & {
+export type AnswerTileEditorProps = Omit<ComponentProps<"fieldset">, "onChange"> & {
   legend: ReactNode;
   answers: EditableAnswer[];
   onAnswerChange: (shape: AnswerShapeName, value: string) => void;
@@ -55,9 +52,7 @@ const Tile = ({
       ANSWERS[answer.shape].bg,
       ANSWERS[answer.shape].fg,
       ANSWERS[answer.shape].focus,
-      isCorrect
-        ? "rotate-[-0.8deg] shadow-brutal-xl focus-within:rotate-0"
-        : "shadow-brutal-md",
+      isCorrect ? "rotate-[-0.8deg] shadow-brutal-xl focus-within:rotate-0" : "shadow-brutal-md",
     )}
   >
     <div className="flex items-center justify-between gap-2.5">
@@ -83,9 +78,7 @@ const Tile = ({
           className="sr-only"
         />
         {isCorrect && <CheckIcon size={16} strokeWidth={3.2} />}
-        <span aria-hidden="true">
-          {isCorrect ? correctLabel : markCorrectLabel}
-        </span>
+        <span aria-hidden="true">{isCorrect ? correctLabel : markCorrectLabel}</span>
       </label>
     </div>
     <input
@@ -115,16 +108,8 @@ export const AnswerTileEditor = ({
 }: AnswerTileEditorProps) => {
   const name = useId();
   return (
-    <fieldset
-      className={cn(
-        "m-0 flex min-w-0 flex-col gap-2.5 border-0 p-0",
-        className,
-      )}
-      {...props}
-    >
-      <legend className="mb-3 p-0 font-pixel tracking-pixel text-label font-bold text-ink-950">
-        {legend}
-      </legend>
+    <fieldset className={cn("m-0 flex min-w-0 flex-col gap-2.5 border-0 p-0", className)} {...props}>
+      <legend className="mb-3 p-0 font-pixel tracking-pixel text-label font-bold text-ink-950">{legend}</legend>
       <div className="grid grid-cols-2 gap-x-5 gap-y-4.5 pr-1.5 pb-1.5">
         {answers.map((answer) => (
           <Tile

@@ -1,10 +1,19 @@
-import { emptySetup, hasUniqueIds, isSetupReady, type SessionSetup, summarizeGame } from "@gamemash/games/config";
+import {
+  emptySetup,
+  hasUniqueIds,
+  hasValidText,
+  isSetupReady,
+  type SessionSetup,
+  setupImageIds,
+  summarizeGame,
+  withoutImages,
+} from "@gamemash/games/config";
 import { SessionSetupSchema } from "@gamemash/games/schemas";
 import {
   AVATAR_MAX_BYTES,
   AVATAR_MAX_DIMENSION,
   type CreateSessionResponse,
-  type ErrorCode,
+  hasHiddenCharacters,
   type JoinSessionResponse,
   type LobbyState,
   MAX_PLAYERS,
@@ -15,13 +24,15 @@ import {
 import { type Static, Type } from "typebox";
 import { Value } from "typebox/value";
 import type { LobbyNotifier } from "../lobby/notifier.js";
+import { createImageService } from "../media/image-service.js";
+import type { ImageStore } from "../media/image-store.js";
 import { sessionExpiresAt } from "./expiry.js";
 import { inspectImage } from "./image.js";
+import { fail, type Result } from "./result.js";
 import { createId, createRoomCode, createSecret, hashSecret, matchesSecretHash } from "./secrets.js";
 import type { PlayerRecord, SessionRecord, SessionStore } from "./store.js";
 
 const MAX_ROOM_CODE_ATTEMPTS = 20;
-const HIDDEN_CHARACTERS = /[\p{Cc}\p{Cf}]/u;
 
 export class RoomCodesExhaustedError extends Error {
   constructor() {
@@ -29,18 +40,16 @@ export class RoomCodesExhaustedError extends Error {
   }
 }
 
-export type Result<T> = { ok: true; value: T } | { ok: false; error: ErrorCode };
-
-const fail = (error: ErrorCode): { ok: false; error: ErrorCode } => ({ ok: false, error });
+export type { Result } from "./result.js";
 
 const isValidName = (name: string) =>
-  name.length > 0 && [...name].length <= PLAYER_NAME_MAX_LENGTH && !HIDDEN_CHARACTERS.test(name);
+  name.length > 0 && [...name].length <= PLAYER_NAME_MAX_LENGTH && !hasHiddenCharacters(name);
 
 const LineupEntrySchema = Type.Object({
   id: Type.String(),
   type: Type.String(),
   roundCount: Type.Number(),
-  roundSeconds: Type.Number(),
+  roundSeconds: Type.Object({ min: Type.Number(), max: Type.Number() }),
 });
 
 const LobbySummarySchema = Type.Object({
@@ -75,6 +84,8 @@ export type SessionServiceDeps = {
   roomCode?: (() => string) | undefined;
   maxPlayers?: number | undefined;
   log?: ServiceLogger | undefined;
+  images?: ImageStore | undefined;
+  maxActiveImages?: number | undefined;
 };
 
 export const createSessionService = ({
@@ -84,7 +95,11 @@ export const createSessionService = ({
   roomCode = createRoomCode,
   maxPlayers = MAX_PLAYERS,
   log,
+  images,
+  maxActiveImages,
 }: SessionServiceDeps) => {
+  const media = createImageService({ store, images, now, maxActiveImages });
+
   const readSetup = async (sessionId: string) => {
     const json = await store.getSetup(sessionId);
     const setup = parseJson(json, isSetup);
@@ -174,10 +189,24 @@ export const createSessionService = ({
     return { ok: true, value: { version } };
   };
 
-  const getSetup = (session: SessionRecord) => readSetup(session.id);
+  const pruneImages = async (sessionId: string, usedIds: string[]) => {
+    try {
+      await media.pruneImages(sessionId, usedIds);
+    } catch (error) {
+      log?.warn({ sessionId, error }, "could not delete unused images");
+    }
+  };
 
-  const saveSetup = async (session: SessionRecord, setup: SessionSetup): Promise<Result<null>> => {
-    if (!hasUniqueIds(setup) || HIDDEN_CHARACTERS.test(setup.name)) return fail("bad_request");
+  const getSetup = async (session: SessionRecord) => {
+    const setup = await readSetup(session.id);
+    return media.imagesEnabled ? setup : withoutImages(setup);
+  };
+
+  const saveSetup = async (session: SessionRecord, submitted: SessionSetup): Promise<Result<null>> => {
+    const setup = media.imagesEnabled ? submitted : withoutImages(submitted);
+    if (!hasUniqueIds(setup) || !hasValidText(setup) || hasHiddenCharacters(setup.name)) return fail("bad_request");
+    const imageIds = setupImageIds(setup);
+    if (!(await media.hasImages(session.id, imageIds))) return fail("bad_request");
     const summary: LobbySummary = { name: setup.name, lineup: setup.games.map(summarizeGame) };
     const result = await store.saveSetup(
       session.id,
@@ -189,6 +218,7 @@ export const createSessionService = ({
     if (result === "setup_locked") return fail("setup_locked");
     await touch(session);
     if (result === "changed") notifier?.notify(session.id);
+    await pruneImages(session.id, imageIds);
     return { ok: true, value: null };
   };
 
@@ -251,6 +281,7 @@ export const createSessionService = ({
     lobbyState,
     start,
     keepAlive,
+    ...media,
   };
 };
 

@@ -20,3 +20,12 @@ export const SessionSetupSchema = Type.Object(
   { additionalProperties: false },
 );
 export type SessionSetup = Static<typeof SessionSetupSchema>;
+
+export const HostSetupResponseSchema = Type.Object(
+  {
+    setup: SessionSetupSchema,
+    imagesEnabled: Type.Boolean(),
+  },
+  { additionalProperties: false },
+);
+export type HostSetupResponse = Static<typeof HostSetupResponseSchema>;

@@ -17,6 +17,10 @@ export type PlayerCredentials = {
 
 export type Credentials = HostCredentials | PlayerCredentials;
 
+export const hostAuthorization = (credentials: HostCredentials) => ({
+  authorization: `Bearer ${credentials.hostToken}`,
+});
+
 const remembered = new Map<string, Credentials>();
 
 const storageKey = (role: Credentials["role"], sessionId: string) => `gamemash:${role}:${sessionId}`;

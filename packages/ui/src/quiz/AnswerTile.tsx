@@ -12,6 +12,7 @@ export type AnswerTileProps = Omit<ComponentProps<"div">, "children"> & {
   shapeLabel?: string | undefined;
   stateLabel?: string | undefined;
   layout?: "row" | "stack" | undefined;
+  density?: "regular" | "compact" | undefined;
 };
 
 export const AnswerTile = ({
@@ -21,13 +22,17 @@ export const AnswerTile = ({
   shapeLabel = ANSWERS[shape].defaultLabel,
   stateLabel,
   layout = "row",
+  density = "regular",
   className,
   ...props
 }: AnswerTileProps) => (
   <div
     className={cn(
-      "flex min-h-[196px] min-w-0 rounded-tile px-12 py-6 transition-opacity duration-300",
-      layout === "row" ? "items-center gap-10" : "flex-col justify-center gap-5 py-9",
+      "flex min-w-0 rounded-tile transition-opacity duration-300",
+      density === "compact" ? "min-h-[116px] px-10 py-4" : "min-h-[196px] px-12 py-6",
+      layout === "row" && (density === "compact" ? "items-center gap-8" : "items-center gap-10"),
+      layout === "stack" &&
+        (density === "compact" ? "flex-col justify-center gap-3" : "flex-col justify-center gap-5 py-9"),
       ANSWERS[shape].bg,
       ANSWERS[shape].fg,
       state === "correct" && "ring-[6px] ring-cream",
@@ -36,8 +41,13 @@ export const AnswerTile = ({
     )}
     {...props}
   >
-    <AnswerShape shape={shape} size={96} label={shapeLabel} className="shrink-0" />
-    <span className="min-w-0 font-display text-stage-2xl leading-[1.05] font-extrabold hyphens-auto wrap-break-word">
+    <AnswerShape shape={shape} size={density === "compact" ? 64 : 96} label={shapeLabel} className="shrink-0" />
+    <span
+      className={cn(
+        "min-w-0 font-display leading-[1.05] font-extrabold hyphens-auto wrap-break-word",
+        density === "compact" ? "text-stage-xl" : "text-stage-2xl",
+      )}
+    >
       {label}
     </span>
     {stateLabel && <span className="sr-only">{stateLabel}</span>}

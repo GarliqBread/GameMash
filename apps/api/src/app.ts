@@ -1,8 +1,11 @@
 import rateLimit from "@fastify/rate-limit";
 import type { ApiError, HealthResponse } from "@gamemash/shared";
 import Fastify, { type FastifyError, type FastifyReply, type FastifyRequest, type FastifyServerOptions } from "fastify";
+import type { DiskImageStore } from "./media/disk-image-store.js";
+import { imageFileRoutes } from "./media/image-file-routes.js";
 import type { RedisHealth } from "./redis.js";
 import { avatarRoutes } from "./sessions/avatar-routes.js";
+import { imageRoutes } from "./sessions/image-routes.js";
 import { DEFAULT_SESSION_ROUTE_LIMITS, type SessionRouteLimits, sessionRoutes } from "./sessions/routes.js";
 import type { SessionService } from "./sessions/service.js";
 import { setupRoutes } from "./sessions/setup-routes.js";
@@ -12,6 +15,7 @@ export type AppDeps = {
   sessions: SessionService;
   rateLimit?: boolean | undefined;
   limits?: Partial<SessionRouteLimits> | undefined;
+  imageFiles?: DiskImageStore | undefined;
 };
 
 const INTERNAL_ERROR = 500;
@@ -50,7 +54,7 @@ const rejectMalformedRequest = (error: FastifyError, request: FastifyRequest, re
 };
 
 export const buildApp = (
-  { redis, sessions, rateLimit: isRateLimited = true, limits }: AppDeps,
+  { redis, sessions, rateLimit: isRateLimited = true, limits, imageFiles }: AppDeps,
   options: FastifyServerOptions = {},
 ) => {
   const app = Fastify({
@@ -71,6 +75,8 @@ export const buildApp = (
   app.register(sessionRoutes(sessions, { ...DEFAULT_SESSION_ROUTE_LIMITS, ...limits }));
   app.register(avatarRoutes(sessions));
   app.register(setupRoutes(sessions));
+  app.register(imageRoutes(sessions));
+  if (imageFiles) app.register(imageFileRoutes(imageFiles));
 
   app.setNotFoundHandler((_request, reply) => reply.code(404).send(notFound));
 

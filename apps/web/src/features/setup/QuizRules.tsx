@@ -1,5 +1,5 @@
-import { POP_QUIZ_POINTS, POP_QUIZ_TIME_LIMITS, type PopQuizConfig } from "@gamemash/games/config";
-import { CoinToggleGroup, RuleSwitchList, RulesPanel, SegmentedControl, SettingsField } from "@gamemash/ui";
+import { POP_QUIZ_TIME_LIMITS, type PopQuizConfig } from "@gamemash/games/config";
+import { RuleSwitchList, RulesPanel, SegmentedControl, SettingsField } from "@gamemash/ui";
 import { FormattedMessage, useIntl } from "react-intl";
 
 export type QuizRulesProps = {
@@ -19,21 +19,13 @@ export const QuizRules = ({ config, onChange }: QuizRulesProps) => {
           <SegmentedControl
             aria-labelledby={labelId}
             value={String(config.timeLimitSeconds)}
+            className="grid-flow-row grid-cols-3"
+            itemClassName="whitespace-nowrap"
             onValueChange={(value) => onChange((current) => ({ ...current, timeLimitSeconds: Number(value) }))}
             options={POP_QUIZ_TIME_LIMITS.map((seconds) => ({
               value: String(seconds),
               label: intl.formatMessage({ id: "setup.seconds" }, { seconds }),
             }))}
-          />
-        )}
-      </SettingsField>
-      <SettingsField label={<FormattedMessage id="setup.points" />}>
-        {(labelId) => (
-          <CoinToggleGroup
-            aria-labelledby={labelId}
-            value={String(config.points)}
-            onValueChange={(value) => onChange((current) => ({ ...current, points: Number(value) }))}
-            options={POP_QUIZ_POINTS.map((points) => ({ value: String(points), label: intl.formatNumber(points) }))}
           />
         )}
       </SettingsField>

@@ -29,8 +29,9 @@ export * from "./host/GameCartridge.js";
 export * from "./host/GameLineup.js";
 export * from "./host/InsertGameSlot.js";
 export * from "./host/LineupConnector.js";
-export * from "./host/QuestionField.js";
+export * from "./host/QuestionImageStrip.js";
 export * from "./host/QuestionTabs.js";
+export * from "./host/RichTextField.js";
 export * from "./host/SessionNameSticker.js";
 export * from "./host/Settings.js";
 export * from "./icons/AnswerShape.js";
@@ -53,6 +54,7 @@ export {
   type DrawTool,
   type Stroke,
 } from "./lib/drawing.js";
+export { RICH_TEXT_MARKS, type RichTextMark, type RichTextRun, richTextLength } from "./lib/rich-text.js";
 export * from "./primitives/Avatar.js";
 export * from "./primitives/Button.js";
 export * from "./primitives/Heading.js";
@@ -60,6 +62,7 @@ export * from "./primitives/IconButton.js";
 export * from "./primitives/PhotoPickerButton.js";
 export * from "./primitives/Pill.js";
 export * from "./primitives/RadioCardGroup.js";
+export * from "./primitives/RichText.js";
 export * from "./primitives/RoomCodeInput.js";
 export * from "./primitives/SegmentedControl.js";
 export * from "./primitives/Switch.js";
@@ -69,6 +72,7 @@ export * from "./quiz/AnswerButton.js";
 export * from "./quiz/AnswerGrid.js";
 export * from "./quiz/AnswerTile.js";
 export * from "./quiz/CorrectAnswerBanner.js";
+export * from "./quiz/QuestionImageGrid.js";
 export * from "./quiz/ResultBars.js";
 export * from "./workshop/AutosaveIndicator.js";
 export * from "./workshop/CoinToggleGroup.js";

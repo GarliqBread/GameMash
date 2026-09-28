@@ -168,6 +168,9 @@ export const attachLobby = (
     io.to(sessionRoom(sessionId)).emit("session:ended");
     io.in(sessionRoom(sessionId)).disconnectSockets(true);
     forgetSession(sessionId);
+    void sessions
+      .deleteImages(sessionId)
+      .catch((error: unknown) => log.error({ err: error, sessionId }, "failed to delete session images"));
   };
 
   const broadcast = async (sessionId: string) => {

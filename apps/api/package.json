@@ -15,6 +15,7 @@
     "@fastify/type-provider-typebox": "^6.1.0",
     "@gamemash/games": "workspace:*",
     "@gamemash/shared": "workspace:*",
+    "aws4fetch": "^1.0.20",
     "fastify": "^5.12.5",
     "pino": "^10.3.1",
     "proxy-addr": "^2.0.8",

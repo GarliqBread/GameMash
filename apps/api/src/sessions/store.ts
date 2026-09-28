@@ -33,6 +33,21 @@ export type GameRecord = {
   state: string;
 };
 
+export type AddImageResult = "added" | "limit_reached" | "storage_full" | "setup_locked" | "session_not_found";
+
+export type ImageLimits = {
+  maxPerSession: number;
+  maxActive: number;
+  expiresAt: number;
+  leaseUntil: number;
+  uploadedAt: number;
+};
+
+export type SessionImage = {
+  id: string;
+  uploadedAt: number;
+};
+
 export type SaveGameResult = "saved" | "conflict" | "session_not_found";
 
 export type SubmitInputResult = "accepted" | "duplicate" | "closed";
@@ -61,6 +76,10 @@ export type SessionStore = {
   getSetup: (sessionId: string) => Promise<string | null>;
   saveSetup: (sessionId: string, setup: string, summary: string, expiresAt: number) => Promise<SaveSetupResult>;
   getLobbySummary: (sessionId: string) => Promise<string | null>;
+  addImage: (sessionId: string, imageId: string, limits: ImageLimits) => Promise<AddImageResult>;
+  removeImages: (sessionId: string, imageIds: string[]) => Promise<void>;
+  releaseImages: (sessionId: string) => Promise<void>;
+  listImages: (sessionId: string) => Promise<SessionImage[]>;
   getGame: (sessionId: string) => Promise<GameRecord | null>;
   saveGame: (
     sessionId: string,

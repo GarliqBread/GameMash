@@ -29,12 +29,15 @@ describe("joining a session", () => {
     expect(listener).toHaveBeenCalledWith(sessionId);
   });
 
-  it.each(["", "   ", "x".repeat(21), "Pri\u0000ya", "Pri​ya"])("rejects the name %j", async (name) => {
-    const { service } = setup();
-    const { sessionId } = await service.create();
+  it.each(["", "   ", "x".repeat(21), "Pri\u0000ya", "Pri​ya", "Priya\u200D", "Priya\u{E0041}"])(
+    "rejects the name %j",
+    async (name) => {
+      const { service } = setup();
+      const { sessionId } = await service.create();
 
-    expect(await service.join(sessionId, name)).toEqual({ ok: false, error: "invalid_name" });
-  });
+      expect(await service.join(sessionId, name)).toEqual({ ok: false, error: "invalid_name" });
+    },
+  );
 
   it("accepts names of 20 characters including accents and emoji-free scripts", async () => {
     const { service } = setup();
@@ -155,7 +158,10 @@ describe("starting a session", () => {
       const [game] = base.games;
       const [question] = game?.config.questions ?? [];
       if (!game || !question) throw new Error("fixture is missing a question");
-      return { ...base, games: [{ ...game, config: { ...game.config, questions: [{ ...question, text }] } }] };
+      return {
+        ...base,
+        games: [{ ...game, config: { ...game.config, questions: [{ ...question, text: [{ text }] }] } }],
+      };
     };
 
     await service.saveSetup(session, setupWith("First wording"));

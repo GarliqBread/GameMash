@@ -19,10 +19,26 @@ type Reveal = { correct?: undefined; correctLabel?: undefined } | { correct: Ans
 export type AnswerGridProps = Omit<ComponentProps<"ul">, "children"> &
   Reveal & {
     options: AnswerOption[];
+    density?: "regular" | "compact" | undefined;
   };
 
-export const AnswerGrid = ({ options, correct, correctLabel, className, ...props }: AnswerGridProps) => (
-  <ul className={cn("grid gap-6", COLUMNS[options.length] ?? "grid-cols-2", className)} {...props}>
+export const AnswerGrid = ({
+  options,
+  correct,
+  correctLabel,
+  density = "regular",
+  className,
+  ...props
+}: AnswerGridProps) => (
+  <ul
+    className={cn(
+      "grid",
+      density === "compact" ? "gap-4" : "gap-6",
+      COLUMNS[options.length] ?? "grid-cols-2",
+      className,
+    )}
+    {...props}
+  >
     {options.map((option) => {
       const state = tileState(option.shape, correct);
       return (
@@ -34,6 +50,7 @@ export const AnswerGrid = ({ options, correct, correctLabel, className, ...props
             state={state}
             stateLabel={state === "correct" ? correctLabel : undefined}
             layout={options.length === 3 ? "stack" : "row"}
+            density={density}
             className="flex-1"
           />
         </li>

@@ -1,4 +1,5 @@
 import type { QuizAnswerKey } from "./config.js";
+import type { QuizText } from "./schema.js";
 
 export type QuizAnswerOption = {
   shape: QuizAnswerKey;
@@ -29,10 +30,11 @@ export type QuizFastest = {
 };
 
 export type QuizStageView =
-  | (QuizProgress & { kind: "question"; text: string })
+  | (QuizProgress & { kind: "question"; text: QuizText; images: string[] })
   | (QuizProgress & {
       kind: "answering";
-      text: string;
+      text: QuizText;
+      images: string[];
       answers: QuizAnswerOption[];
       answeredCount: number;
       participantCount: number;
@@ -40,7 +42,8 @@ export type QuizStageView =
     })
   | (QuizProgress & {
       kind: "reveal";
-      text: string;
+      text: QuizText;
+      nextImages: string[];
       answers: QuizAnswerOption[];
       correct: QuizAnswerKey;
       counts: Record<QuizAnswerKey, number>;

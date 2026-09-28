@@ -19,13 +19,7 @@ export type PhoneQuizAnsweringProps = {
   status: LobbyStatus;
 };
 
-export const PhoneQuizAnswering = ({
-  me,
-  view,
-  phaseId,
-  phaseEndsAt,
-  status,
-}: PhoneQuizAnsweringProps) => {
+export const PhoneQuizAnswering = ({ me, view, phaseId, phaseEndsAt, status }: PhoneQuizAnsweringProps) => {
   const intl = useIntl();
 
   const answer = useSocketAction(submitInput);
@@ -36,16 +30,12 @@ export const PhoneQuizAnswering = ({
   const [picked, setPicked] = useState<QuizAnswerKey | null>(null);
   const selected = view.mine ?? picked ?? undefined;
   const isTimeUp = seconds === 0;
-  const error =
-    answer.error && answer.error.code !== "already_submitted"
-      ? answer.error
-      : null;
+  const error = answer.error && answer.error.code !== "already_submitted" ? answer.error : null;
 
   const onAnswer = async (shape: QuizAnswerKey) => {
     setPicked(shape);
     const result = await answer.run(phaseId, shape);
-    if (!result.ok && result.error.code !== "already_submitted")
-      setPicked(null);
+    if (!result.ok && result.error.code !== "already_submitted") setPicked(null);
   };
 
   const header = (
@@ -79,13 +69,7 @@ export const PhoneQuizAnswering = ({
   }
 
   return (
-    <PlayFrame
-      me={me}
-      total={view.total}
-      status={status}
-      mainClassName="gap-3.5"
-      header={header}
-    >
+    <PlayFrame me={me} total={view.total} status={status} mainClassName="gap-3.5" header={header}>
       <p role="status" className="text-fg-subtle">
         {selected && <FormattedMessage id="play.lockedIn" />}
         {!selected && isTimeUp && <FormattedMessage id="play.timeUp" />}

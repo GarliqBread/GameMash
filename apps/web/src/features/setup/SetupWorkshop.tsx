@@ -30,18 +30,21 @@ import { QuizEditor } from "./QuizEditor";
 import { QuizRules } from "./QuizRules";
 import { SetupLineup } from "./SetupLineup";
 import { addGame, newQuiz, removeGame, reorderGames, updateConfig } from "./setup-changes";
+import { useImageUploads } from "./useImageUploads";
 import { useSetupEditor } from "./useSetupEditor";
 
 export type SetupWorkshopProps = {
   credentials: HostCredentials;
   initialSetup: SessionSetup;
+  imagesEnabled: boolean;
 };
 
-export const SetupWorkshop = ({ credentials, initialSetup }: SetupWorkshopProps) => {
+export const SetupWorkshop = ({ credentials, initialSetup, imagesEnabled }: SetupWorkshopProps) => {
   const intl = useIntl();
   const navigate = useNavigate();
   const formatError = useErrorMessage();
   const { setup, status, saveError, update, flush } = useSetupEditor(credentials, initialSetup);
+  const uploads = useImageUploads(credentials);
   const [selectedGameId, setSelectedGameId] = useState(initialSetup.games[0]?.id);
   const [selectedQuestions, setSelectedQuestions] = useState<Record<string, string>>({});
   const [hasTriedToOpen, setHasTriedToOpen] = useState(false);
@@ -188,6 +191,8 @@ export const SetupWorkshop = ({ credentials, initialSetup }: SetupWorkshopProps)
               onChange={(change) => update((current) => updateConfig(current, game.id, change))}
               selectedQuestionId={selectedQuestions[game.id]}
               onSelectQuestion={(questionId) => selectQuestion(game.id, questionId)}
+              uploads={uploads}
+              imagesEnabled={imagesEnabled}
             />
           ) : (
             <div className="flex flex-col items-start gap-5">
