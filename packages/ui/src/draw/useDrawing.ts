@@ -166,6 +166,7 @@ export const useDrawing = ({ initialColor = "black", initialSize = "medium" }: U
   }, []);
 
   const undo = useCallback(() => setStrokes((current) => current.slice(0, -1)), []);
+  const load = useCallback((next: Drawing) => setStrokes(next.strokes), []);
   const clear = useCallback(() => setStrokes([]), []);
 
   const toBlob = useCallback(
@@ -203,6 +204,7 @@ export const useDrawing = ({ initialColor = "black", initialSize = "medium" }: U
     setTool,
     undo,
     clear,
+    load,
     toBlob,
     canvasProps,
   };

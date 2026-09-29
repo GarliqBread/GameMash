@@ -21,6 +21,7 @@
     "stories:build": "ladle build"
   },
   "dependencies": {
+    "@gamemash/shared": "workspace:*",
     "@base-ui/react": "catalog:",
     "@dnd-kit/dom": "^0.5.0",
     "@dnd-kit/helpers": "^0.5.0",

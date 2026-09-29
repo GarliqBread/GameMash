@@ -379,29 +379,58 @@ describe.each(stores)("%s session store", (name, makeStore) => {
     await store.create(created, inAMinute());
 
     expect(await store.getGame(created.id)).toBeNull();
-    expect(await store.saveGame(created.id, null, "first", inAMinute())).toBe("saved");
-    expect(await store.saveGame(created.id, null, "again", inAMinute())).toBe("conflict");
-    expect(await store.saveGame(created.id, 2, "ahead", inAMinute())).toBe("conflict");
-    expect(await store.saveGame(created.id, 1, "second", inAMinute())).toBe("saved");
+    expect(await store.saveGame(created.id, null, "first", inAMinute(), false)).toBe("saved");
+    expect(await store.saveGame(created.id, null, "again", inAMinute(), false)).toBe("conflict");
+    expect(await store.saveGame(created.id, 2, "ahead", inAMinute(), false)).toBe("conflict");
+    expect(await store.saveGame(created.id, 1, "second", inAMinute(), false)).toBe("saved");
     expect(await store.getGame(created.id)).toEqual({ version: 2, state: "second" });
-    expect(await store.saveGame(randomUUID(), null, "lost", inAMinute())).toBe("session_not_found");
+    expect(await store.saveGame(randomUUID(), null, "lost", inAMinute(), false)).toBe("session_not_found");
   });
 
   run("accepts one input per player for the current game version only", async () => {
     const store = makeStore?.() as SessionStore;
     const created = session();
     await store.create(created, inAMinute());
-    await store.saveGame(created.id, null, "phase-1", inAMinute());
+    await store.saveGame(created.id, null, "phase-1", inAMinute(), false);
 
-    expect(await store.submitInput(created.id, 1, "priya", "a", inAMinute())).toBe("accepted");
-    expect(await store.submitInput(created.id, 1, "priya", "b", inAMinute())).toBe("duplicate");
-    expect(await store.submitInput(created.id, 2, "daan", "c", inAMinute())).toBe("closed");
+    expect(await store.submitInput(created.id, 1, "priya", "a", inAMinute(), false)).toBe("accepted");
+    expect(await store.submitInput(created.id, 1, "priya", "b", inAMinute(), false)).toBe("duplicate");
+    expect(await store.submitInput(created.id, 2, "daan", "c", inAMinute(), false)).toBe("closed");
     expect(await store.listInputs(created.id)).toEqual(new Map([["priya", "a"]]));
 
-    await store.saveGame(created.id, 1, "phase-2", inAMinute());
+    expect(await store.submitInput(created.id, 1, "daan", "c", inAMinute(), true)).toBe("accepted");
+    expect(await store.submitInput(created.id, 1, "daan", "d", inAMinute(), true)).toBe("accepted");
+    expect(await store.listInputs(created.id)).toEqual(
+      new Map([
+        ["priya", "a"],
+        ["daan", "d"],
+      ]),
+    );
+
+    await store.saveGame(created.id, 1, "phase-2", inAMinute(), false);
     expect(await store.listInputs(created.id)).toEqual(new Map());
-    expect(await store.submitInput(created.id, 1, "daan", "late", inAMinute())).toBe("closed");
-    expect(await store.submitInput(randomUUID(), 1, "daan", "d", inAMinute())).toBe("closed");
+    expect(await store.submitInput(created.id, 1, "daan", "late", inAMinute(), true)).toBe("closed");
+    expect(await store.submitInput(randomUUID(), 1, "daan", "d", inAMinute(), false)).toBe("closed");
+  });
+
+  run("keeps uploads until a game save clears them", async () => {
+    const store = makeStore?.() as SessionStore;
+    const created = session();
+    await store.create(created, inAMinute());
+    await store.saveGame(created.id, null, "phase-1", inAMinute(), false);
+
+    expect(await store.saveUpload(created.id, 1, "priya", "first", inAMinute())).toBe("saved");
+    expect(await store.saveUpload(created.id, 1, "priya", "second", inAMinute())).toBe("saved");
+    expect(await store.saveUpload(created.id, 2, "daan", "early", inAMinute())).toBe("closed");
+    expect(await store.saveUpload(randomUUID(), 1, "daan", "lost", inAMinute())).toBe("closed");
+    expect(await store.getUpload(created.id, "priya")).toBe("second");
+    expect(await store.getUpload(created.id, "daan")).toBeNull();
+
+    await store.saveGame(created.id, 1, "phase-2", inAMinute(), false);
+    expect(await store.getUpload(created.id, "priya")).toBe("second");
+
+    await store.saveGame(created.id, 2, "phase-3", inAMinute(), true);
+    expect(await store.getUpload(created.id, "priya")).toBeNull();
   });
 
   if (name === "redis" && redis) {
@@ -433,14 +462,15 @@ describe.each(stores)("%s session store", (name, makeStore) => {
         inAMinute(),
       );
       await store.saveSetup(created.id, "{}", "summary", inAMinute());
-      await store.saveGame(created.id, null, "{}", inAMinute());
+      await store.saveGame(created.id, null, "{}", inAMinute(), false);
       await store.addImage(created.id, "image", imageLimits(5));
-      await store.submitInput(created.id, 1, priyaId, "{}", inAMinute());
+      await store.submitInput(created.id, 1, priyaId, "{}", inAMinute(), false);
+      await store.saveUpload(created.id, 1, priyaId, "{}", inAMinute());
       await store.touch(created, Date.now() + 10 * 60_000);
 
       const keys = await redis.keys(`${prefix}*`);
       const ttls = await Promise.all(keys.map((key) => redis.pTTL(key)));
-      expect(keys).toHaveLength(11);
+      expect(keys).toHaveLength(12);
       expect(ttls.every((ttl) => ttl > 60_000 && ttl <= 10 * 60_000 + CLOCK_DRIFT_MS)).toBe(true);
     });
 

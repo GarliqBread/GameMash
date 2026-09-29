@@ -1,4 +1,4 @@
-import type { GameRules, SessionSetup, Submission } from "@gamemash/games/config";
+import type { GameRules, SessionSetup, Submission, UploadViewer } from "@gamemash/games/config";
 import type { GameSnapshot, GameStanding } from "@gamemash/shared";
 import { Type } from "typebox";
 import { Value } from "typebox/value";
@@ -29,6 +29,8 @@ export type GameRunnerDeps = {
   now?: (() => number) | undefined;
   random?: (() => number) | undefined;
 };
+
+export type UploadResult = "accepted" | "closed" | "invalid";
 
 export type GameSnapshots = {
   host: GameSnapshot;
@@ -170,6 +172,7 @@ export const createGameRunner = ({
       expected,
       JSON.stringify(state),
       sessionExpiresAt(session.createdAt, now()),
+      state.status === "playing" && state.phase.input?.via === "upload",
     );
     if (result !== "saved") return false;
     schedule(session.id, { version: (expected ?? 0) + 1, state });
@@ -225,23 +228,75 @@ export const createGameRunner = ({
       else await beginLoaded(loaded);
     });
 
+  const canHostAdvance = (phase: PlayingState["phase"]) => phase.durationMs === null || phase.skippable === true;
+
   const next = (sessionId: string, phaseId: number) =>
     serialize(sessionId, () =>
       withPlaying(sessionId, phaseId, (loaded, game) =>
-        game.state.phase.durationMs === null ? advanceLoaded(loaded, game) : Promise.resolve(false),
+        canHostAdvance(game.state.phase) ? advanceLoaded(loaded, game) : Promise.resolve(false),
       ),
     );
 
-  const isEveryoneDone = async (sessionId: string, state: PlayingState, connected: Set<string>) => {
+  const isDone = (active: ActiveGame, playerId: string, submission: Submission<unknown> | undefined) => {
+    if (!submission) return false;
+    const { rules: gameRules, config, state } = active;
+    return (
+      gameRules.isInputDone?.({ config, state: state.game, phase: state.phase, playerId, input: submission.input }) ??
+      true
+    );
+  };
+
+  const isEveryoneDone = async (loaded: Loaded, state: PlayingState, connected: Set<string>) => {
     if (state.phase.input?.endsWhenAllSubmitted !== true) return false;
     const present = participantsOf(state).filter((playerId) => connected.has(playerId));
-    if (present.length === 0) return false;
-    const inputs = await store.listInputs(sessionId);
-    return present.every((playerId) => inputs.has(playerId));
+    const active = activeGame(loaded.setup, state);
+    if (present.length === 0 || !active) return false;
+    const submissions = await readSubmissions(loaded.session.id, active);
+    return present.every((playerId) => isDone(active, playerId, submissions.get(playerId)));
   };
 
   const endEarlyIfDone = async (loaded: Loaded, game: PlayingGame, connected: Set<string>) =>
-    (await isEveryoneDone(loaded.session.id, game.state, connected)) && advanceLoaded(loaded, game);
+    (await isEveryoneDone(loaded, game.state, connected)) && advanceLoaded(loaded, game);
+
+  const openPhase = async (sessionId: string, playerId: string, phaseId: number, at: number) => {
+    const current = await loadPlaying(sessionId);
+    if (!current || current.game.version !== phaseId) return null;
+    const { phaseEndsAt } = current.game.state;
+    const isOpen = participantsOf(current.game.state).includes(playerId) && (phaseEndsAt === null || at <= phaseEndsAt);
+    const active = activeGame(current.loaded.setup, current.game.state);
+    return isOpen && active ? { ...current, active } : null;
+  };
+
+  type OpenPhase = NonNullable<Awaited<ReturnType<typeof openPhase>>>;
+
+  const previousSubmission = async (sessionId: string, active: ActiveGame, playerId: string) => {
+    const json = (await store.listInputs(sessionId)).get(playerId);
+    return json === undefined ? undefined : (parseSubmission(json, active, playerId) ?? undefined);
+  };
+
+  const record = async (
+    { loaded, game, active }: OpenPhase,
+    playerId: string,
+    input: unknown,
+    at: number,
+    connected: Set<string>,
+  ) => {
+    const previous = await previousSubmission(loaded.session.id, active, playerId);
+    const result = await store.submitInput(
+      loaded.session.id,
+      game.version,
+      playerId,
+      JSON.stringify({ input, at }),
+      sessionExpiresAt(loaded.session.createdAt, at),
+      game.state.phase.input?.replaceable === true,
+    );
+    if (result !== "accepted") return result;
+    const isChange = !previous || isDone(active, playerId, previous) !== isDone(active, playerId, { input, at });
+    if (!isChange) return result;
+    notifier.notify(loaded.session.id);
+    await endEarlyIfDone(loaded, game, connected);
+    return result;
+  };
 
   const submit = (
     sessionId: string,
@@ -251,28 +306,54 @@ export const createGameRunner = ({
     connected: Set<string>,
   ): Promise<SubmitInputResult> =>
     serialize(sessionId, async () => {
-      const current = await loadPlaying(sessionId);
-      if (!current || current.game.version !== phaseId) return "closed";
-      const { loaded, game } = current;
       const at = now();
-      const { phaseEndsAt } = game.state;
-      const isOpen = participantsOf(game.state).includes(playerId) && (phaseEndsAt === null || at <= phaseEndsAt);
-      const active = activeGame(loaded.setup, game.state);
-      const parsed = isOpen && active ? parseInput(active, playerId, input) : null;
+      const open = await openPhase(sessionId, playerId, phaseId, at);
+      if (!open || open.game.state.phase.input?.via === "upload") return "closed";
+      const parsed = parseInput(open.active, playerId, input);
       if (parsed === null) return "closed";
-
-      const result = await store.submitInput(
-        sessionId,
-        phaseId,
-        playerId,
-        JSON.stringify({ input: parsed, at }),
-        sessionExpiresAt(loaded.session.createdAt, at),
-      );
-      if (result !== "accepted") return result;
-      notifier.notify(sessionId);
-      await endEarlyIfDone(loaded, game, connected);
-      return result;
+      return record(open, playerId, parsed, at, connected);
     });
+
+  const upload = (
+    sessionId: string,
+    playerId: string,
+    phaseId: number,
+    body: unknown,
+    connected: Set<string>,
+  ): Promise<UploadResult> =>
+    serialize(sessionId, async () => {
+      const at = now();
+      const open = await openPhase(sessionId, playerId, phaseId, at);
+      if (open?.game.state.phase.input?.via !== "upload") return "closed";
+      const { rules: gameRules, config, state } = open.active;
+      const parsed = gameRules.parseUpload?.({
+        config,
+        state: state.game,
+        phase: state.phase,
+        playerId,
+        input: body,
+      });
+      if (!parsed) return "invalid";
+      const expiresAt = sessionExpiresAt(open.loaded.session.createdAt, at);
+      const saved = await store.saveUpload(sessionId, phaseId, playerId, JSON.stringify(parsed.payload), expiresAt);
+      if (saved !== "saved") return "closed";
+      const result = await record(open, playerId, parsed.input, at, connected);
+      return result === "accepted" ? "accepted" : "closed";
+    });
+
+  const readUpload = async (sessionId: string, viewer: UploadViewer, id: string) => {
+    const current = await loadPlaying(sessionId);
+    const active = current && activeGame(current.loaded.setup, current.game.state);
+    if (!active) return null;
+    const owner = active.rules.uploadOwner?.({
+      config: active.config,
+      state: active.state.game,
+      phase: active.state.phase,
+      viewer,
+      id,
+    });
+    return owner ? store.getUpload(sessionId, owner) : null;
+  };
 
   const settle = (sessionId: string, connected: Set<string>) =>
     serialize(sessionId, async () => {
@@ -313,6 +394,7 @@ export const createGameRunner = ({
       phase: state.phase.name,
       phaseEndsAt: state.phaseEndsAt,
       waitsForHost: state.phase.durationMs === null,
+      canSkip: state.phase.durationMs !== null && state.phase.skippable === true,
       serverNow,
     };
     return {
@@ -346,7 +428,19 @@ export const createGameRunner = ({
     running.clear();
   };
 
-  return { begin, resume, next, submit, settle, snapshots, forget, close, subscribe: notifier.subscribe };
+  return {
+    begin,
+    resume,
+    next,
+    submit,
+    upload,
+    readUpload,
+    settle,
+    snapshots,
+    forget,
+    close,
+    subscribe: notifier.subscribe,
+  };
 };
 
 export type GameRunner = ReturnType<typeof createGameRunner>;

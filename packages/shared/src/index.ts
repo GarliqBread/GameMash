@@ -1,4 +1,5 @@
 export * from "./character.js";
+export * from "./drawing.js";
 export * from "./errors.js";
 export * from "./game.js";
 export * from "./health.js";

@@ -390,7 +390,9 @@ export const attachLobby = (
     await io.close();
   };
 
-  return { io, close };
+  const connectedPlayers = (sessionId: string) => presence.connectedPlayers(sessionId);
+
+  return { io, close, connectedPlayers };
 };
 
 export type Lobby = ReturnType<typeof attachLobby>;

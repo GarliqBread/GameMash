@@ -2,7 +2,6 @@ export * from "./draw/DrawingCanvas.js";
 export * from "./draw/DrawingFrame.js";
 export * from "./draw/DrawingResult.js";
 export * from "./draw/DrawingToolbar.js";
-export * from "./draw/OwnDrawingNotice.js";
 export * from "./draw/RatingScale.js";
 export * from "./draw/RatingScalePreview.js";
 export * from "./draw/useDrawing.js";
@@ -29,6 +28,7 @@ export * from "./game/WordCard.js";
 export * from "./host/AnswerTileEditor.js";
 export * from "./host/GameCartridge.js";
 export * from "./host/GameLineup.js";
+export * from "./host/GamePicker.js";
 export * from "./host/InsertGameSlot.js";
 export * from "./host/LineupConnector.js";
 export * from "./host/QuestionImageStrip.js";
@@ -36,6 +36,7 @@ export * from "./host/QuestionTabs.js";
 export * from "./host/RichTextField.js";
 export * from "./host/SessionNameSticker.js";
 export * from "./host/Settings.js";
+export * from "./host/WordListEditor.js";
 export * from "./icons/AnswerShape.js";
 export * from "./icons/Icon.js";
 export * from "./icons/icons.js";
@@ -49,11 +50,13 @@ export * from "./lib/cn.js";
 export {
   BRUSH_SIZES,
   type BrushSize,
+  compactDrawing,
   DRAW_COLORS,
   type DrawColor,
   type Drawing,
   type DrawPoint,
   type DrawTool,
+  pointCount,
   type Stroke,
 } from "./lib/drawing.js";
 export { RICH_TEXT_MARKS, type RichTextMark, type RichTextRun, richTextLength } from "./lib/rich-text.js";

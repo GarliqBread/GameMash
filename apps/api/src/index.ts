@@ -27,8 +27,13 @@ const images = config.s3 ? createS3ImageStore(config.s3) : imageFiles;
 if (!images) log.warn("neither IMAGES_DIR nor S3 storage is configured, question images are disabled");
 const sessions = createSessionService({ store, notifier, log, images, maxActiveImages: config.maxActiveImages });
 const game = createGameRunner({ store, readSetup: sessions.readSetup, rules: gameRules, log });
+const uploads = {
+  upload: game.upload,
+  readUpload: game.readUpload,
+  connectedPlayers: (sessionId: string) => lobby.connectedPlayers(sessionId),
+};
 const app = buildApp(
-  { redis, sessions, imageFiles },
+  { redis, sessions, imageFiles, uploads },
   { loggerInstance: log, trustProxy: config.trustProxy.length > 0 ? config.trustProxy.join(",") : false },
 );
 const lobby = attachLobby(app.server, { log: app.log, sessions, notifier, game, trustProxy: config.trustProxy });

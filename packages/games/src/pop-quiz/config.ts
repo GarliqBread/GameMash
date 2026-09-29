@@ -1,4 +1,6 @@
 import { hasHiddenCharacters } from "@gamemash/shared";
+import type { GameConfigRules } from "../game-config.js";
+import { hasUniqueIds } from "../unique.js";
 import type { PopQuizConfig, QuizQuestion, QuizText } from "./schema.js";
 
 export type { PopQuizConfig, QuizQuestion, QuizText, QuizTextRun } from "./schema.js";
@@ -74,3 +76,17 @@ export const isQuestionComplete = (question: QuizQuestion) =>
   isFilled(quizPlainText(question.text)) &&
   answerKeysOf(question).every((key) => isFilled(question.answers[key])) &&
   question.correct !== null;
+
+export const popQuizConfigRules: GameConfigRules<PopQuizConfig> = {
+  isValid: (config) =>
+    hasUniqueIds(config.questions) &&
+    config.questions.every((question) => isQuestionTextValid(question.text) && hasOnlyActiveAnswers(question)),
+  isReady: (config) => config.questions.length > 0 && config.questions.every(isQuestionComplete),
+  imageIds: (config) => config.questions.flatMap((question) => question.images),
+  withoutImages: (config) => ({
+    ...config,
+    questions: config.questions.map((question) => ({ ...question, images: [] })),
+  }),
+  roundCount: (config) => config.questions.length,
+  roundSeconds: quizTimeRange,
+};

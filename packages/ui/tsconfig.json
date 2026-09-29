@@ -9,5 +9,6 @@
     "types": []
   },
   "include": ["src"],
+  "references": [{ "path": "../shared" }],
   "exclude": ["src/**/*.stories.tsx"]
 }

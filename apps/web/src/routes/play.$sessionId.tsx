@@ -39,6 +39,7 @@ const PlayerLobby = ({ credentials }: { credentials: PlayerCredentials }) => {
   if (game && state && state.status !== "lobby") {
     return (
       <PlayGame
+        credentials={credentials}
         me={{
           playerId: credentials.playerId,
           name: me?.name ?? credentials.name,

@@ -8,7 +8,7 @@ import {
 } from "@gamemash/shared";
 import { ApiErrorSchema, BearerAuthHeadersSchema, SessionParamsSchema } from "@gamemash/shared/schemas";
 import { Type } from "typebox";
-import { requireHost, sessionRateLimitKey } from "./host-auth.js";
+import { requireHost, sessionRateLimitKey } from "./auth.js";
 import type { SessionService } from "./service.js";
 
 const MINUTE_MS = 60_000;

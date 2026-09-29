@@ -1,4 +1,5 @@
 import { type Static, Type } from "typebox";
+import { ItemIdSchema } from "../item-id.js";
 import {
   POP_QUIZ_ANSWER_MAX_LENGTH,
   POP_QUIZ_MAX_IMAGES_PER_QUESTION,
@@ -10,8 +11,6 @@ import {
   POP_QUIZ_TIME_LIMITS,
   QUIZ_ANSWER_KEYS,
 } from "./config.js";
-
-export const ItemIdSchema = Type.String({ minLength: 1, maxLength: 64, pattern: "^[A-Za-z0-9_-]+$" });
 
 const AnswerTextSchema = Type.String({ maxLength: POP_QUIZ_ANSWER_MAX_LENGTH });
 

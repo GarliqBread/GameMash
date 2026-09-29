@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useCopy } from "../../.ladle/pseudo";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { GameCartridge } from "../host/GameCartridge";
+import { GamePicker } from "../host/GamePicker";
 import { InsertGameSlot } from "../host/InsertGameSlot";
+import { WordListEditor } from "../host/WordListEditor";
 import { AnswerShape } from "../icons/AnswerShape";
 import { CheckIcon, CopyIcon, ImageIcon, PencilIcon, TrashIcon } from "../icons/icons";
 import { ANSWER_SHAPES } from "../lib/answers";
@@ -161,6 +163,71 @@ export const Cartridges: Story = () => {
           dragHandleLabel="Spiel 3 verschieben"
         />
         <InsertGameSlot>{t("+ Insert game")}</InsertGameSlot>
+      </div>
+    </Bench>
+  );
+};
+
+export const Picker: Story = () => {
+  const t = useCopy();
+  const [picked, setPicked] = useState("");
+  return (
+    <Bench>
+      <div className="flex w-[320px] flex-col gap-4">
+        <GamePicker
+          trigger={<InsertGameSlot>{t("+ Insert game")}</InsertGameSlot>}
+          onPick={setPicked}
+          options={[
+            {
+              id: "pop-quiz",
+              title: t("Pop quiz"),
+              description: t("Multiple choice and true or false"),
+              accent: "sun",
+              icon: <QuizIcon />,
+            },
+            {
+              id: "draw-it",
+              title: t("Draw it"),
+              description: t("Everyone draws the same word, then rates"),
+              accent: "brand-coral",
+              icon: <PencilIcon size={28} strokeWidth={2.2} className="text-ink-950" />,
+            },
+          ]}
+        />
+        <p>{picked ? `Picked ${picked}` : "Nothing picked"}</p>
+      </div>
+    </Bench>
+  );
+};
+
+export const Words: Story = () => {
+  const t = useCopy();
+  const [words, setWords] = useState([
+    { id: "w1", value: "Lighthouse" },
+    { id: "w2", value: "Coffee machine on fire" },
+    { id: "w3", value: "" },
+  ]);
+  return (
+    <Bench>
+      <div className="w-[640px]">
+        <WordListEditor
+          legend={t("Words - one per round")}
+          words={words.map((word, index) => ({
+            ...word,
+            inputLabel: t(`Word for round ${index + 1}`),
+            removeLabel: t(`Remove word ${index + 1}`),
+          }))}
+          onWordChange={(id, value) =>
+            setWords((current) => current.map((word) => (word.id === id ? { ...word, value } : word)))
+          }
+          onRemove={(id) => setWords((current) => current.filter((word) => word.id !== id))}
+          onAdd={() => setWords((current) => [...current, { id: `w${Date.now()}`, value: "" }])}
+          addLabel={t("Add word")}
+          canAdd={words.length < 10}
+          canRemove={words.length > 1}
+          maxLength={40}
+          placeholder={t("Something to draw")}
+        />
       </div>
     </Bench>
   );

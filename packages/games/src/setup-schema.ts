@@ -1,8 +1,10 @@
 import { type Static, Type } from "typebox";
-import { ItemIdSchema, PopQuizConfigSchema } from "./pop-quiz/schema.js";
+import { DrawItConfigSchema } from "./draw-it/schema.js";
+import { ItemIdSchema } from "./item-id.js";
+import { PopQuizConfigSchema } from "./pop-quiz/schema.js";
 import { MAX_GAMES, SESSION_NAME_MAX_LENGTH } from "./setup.js";
 
-export const GameSetupSchema = Type.Object(
+const PopQuizSetupSchema = Type.Object(
   {
     id: ItemIdSchema,
     type: Type.Literal("pop-quiz"),
@@ -10,6 +12,17 @@ export const GameSetupSchema = Type.Object(
   },
   { additionalProperties: false },
 );
+
+const DrawItSetupSchema = Type.Object(
+  {
+    id: ItemIdSchema,
+    type: Type.Literal("draw-it"),
+    config: DrawItConfigSchema,
+  },
+  { additionalProperties: false },
+);
+
+export const GameSetupSchema = Type.Union([PopQuizSetupSchema, DrawItSetupSchema]);
 export type GameSetup = Static<typeof GameSetupSchema>;
 
 export const SessionSetupSchema = Type.Object(

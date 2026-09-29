@@ -1,5 +1,5 @@
 import { gameDefinition } from "@gamemash/games";
-import { type GameSetup, quizTimeRange } from "@gamemash/games/config";
+import { type GameSetup, summarizeGame } from "@gamemash/games/config";
 import type { SecondsRange } from "@gamemash/shared";
 import { GameLineup, type GameLineupLabels, type LineupGame } from "@gamemash/ui";
 import { useIntl } from "react-intl";
@@ -30,16 +30,14 @@ export const SetupLineup = ({ games, selectedId, onSelect, onReorder }: SetupLin
 
   const lineup: LineupGame[] = games.map((game) => {
     const definition = gameDefinition(game.type);
+    const summary = summarizeGame(game);
     const Icon = definition.icon;
     return {
       id: game.id,
       title: format(definition.titleId),
       accent: definition.accent,
       icon: <Icon />,
-      metaChips: [
-        format(definition.roundCountId, { count: game.config.questions.length }),
-        formatSeconds(quizTimeRange(game.config)),
-      ],
+      metaChips: [format(definition.roundCountId, { count: summary.roundCount }), formatSeconds(summary.roundSeconds)],
     };
   });
 

@@ -4,7 +4,7 @@ import { Sticker } from "../workshop/Sticker.js";
 
 export type GameAccent = "sun" | "brand-coral" | "brand-violet-light" | "brand-lime";
 
-const ACCENT_FILL: Record<GameAccent, string> = {
+export const GAME_ACCENT_FILL: Record<GameAccent, string> = {
   sun: "bg-sun",
   "brand-coral": "bg-brand-coral",
   "brand-violet-light": "bg-brand-violet-light",
@@ -69,7 +69,7 @@ export const GameCartridge = ({
         aria-hidden="true"
         className={cn(
           "flex size-16 shrink-0 items-center justify-center rounded-control border-3 border-ink-950",
-          ACCENT_FILL[accent],
+          GAME_ACCENT_FILL[accent],
         )}
       >
         {icon}

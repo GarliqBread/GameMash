@@ -1,9 +1,7 @@
 import {
   emptySetup,
-  hasUniqueIds,
-  hasValidAnswers,
-  hasValidText,
   isSetupReady,
+  isSetupValid,
   type SessionSetup,
   setupImageIds,
   summarizeGame,
@@ -245,8 +243,7 @@ export const createSessionService = ({
 
   const saveSetup = async (session: SessionRecord, submitted: SessionSetup): Promise<Result<null>> => {
     const setup = media.imagesEnabled ? submitted : withoutImages(submitted);
-    if (!hasUniqueIds(setup) || !hasValidText(setup) || !hasValidAnswers(setup) || hasHiddenCharacters(setup.name))
-      return fail("bad_request");
+    if (!isSetupValid(setup) || hasHiddenCharacters(setup.name)) return fail("bad_request");
     const imageIds = setupImageIds(setup);
     if (!(await media.hasImages(session.id, imageIds))) return fail("bad_request");
     const summary: LobbySummary = { name: setup.name, lineup: setup.games.map(summarizeGame) };

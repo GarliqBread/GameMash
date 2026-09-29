@@ -55,6 +55,8 @@ export type SaveGameResult = "saved" | "conflict" | "session_not_found";
 
 export type SubmitInputResult = "accepted" | "duplicate" | "closed";
 
+export type SaveUploadResult = "saved" | "closed";
+
 export type CreateSessionResult = "created" | "room_code_taken";
 
 export type AddPlayerResult = "added" | "name_taken" | "session_full" | "session_not_found";
@@ -97,6 +99,7 @@ export type SessionStore = {
     expectedVersion: number | null,
     state: string,
     expiresAt: number,
+    clearUploads: boolean,
   ) => Promise<SaveGameResult>;
   submitInput: (
     sessionId: string,
@@ -104,7 +107,16 @@ export type SessionStore = {
     playerId: string,
     input: string,
     expiresAt: number,
+    replace: boolean,
   ) => Promise<SubmitInputResult>;
   listInputs: (sessionId: string) => Promise<Map<string, string>>;
+  saveUpload: (
+    sessionId: string,
+    version: number,
+    playerId: string,
+    payload: string,
+    expiresAt: number,
+  ) => Promise<SaveUploadResult>;
+  getUpload: (sessionId: string, playerId: string) => Promise<string | null>;
   touch: (session: SessionRecord, expiresAt: number) => Promise<void>;
 };

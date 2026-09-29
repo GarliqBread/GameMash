@@ -1,7 +1,11 @@
 import {
+  type DrawItConfig,
+  defaultDrawItConfig,
   defaultPopQuizConfig,
   emptyQuestion,
+  emptyWord,
   type GameSetup,
+  type GameType,
   type PopQuizConfig,
   type QuizQuestion,
   type QuizQuestionKind,
@@ -11,11 +15,12 @@ import { createLocalId } from "../../lib/ids";
 
 export const newQuestionId = () => createLocalId("q");
 
-export const newQuiz = (): GameSetup => ({
-  id: createLocalId("quiz"),
-  type: "pop-quiz",
-  config: defaultPopQuizConfig(newQuestionId()),
-});
+export const newWordId = () => createLocalId("w");
+
+export const newGame = (type: GameType): GameSetup =>
+  type === "draw-it"
+    ? { id: createLocalId("draw"), type, config: defaultDrawItConfig(newWordId()) }
+    : { id: createLocalId("quiz"), type, config: defaultPopQuizConfig(newQuestionId()) };
 
 export const addGame = (setup: SessionSetup, game: GameSetup): SessionSetup => ({
   ...setup,
@@ -32,14 +37,24 @@ export const reorderGames = (setup: SessionSetup, orderedIds: string[]): Session
   games: orderedIds.flatMap((id) => setup.games.filter((game) => game.id === id)),
 });
 
-export const updateConfig = (
+const updateGame = (setup: SessionSetup, gameId: string, change: (game: GameSetup) => GameSetup): SessionSetup => ({
+  ...setup,
+  games: setup.games.map((game) => (game.id === gameId ? change(game) : game)),
+});
+
+export const updateQuizConfig = (
   setup: SessionSetup,
   gameId: string,
   change: (config: PopQuizConfig) => PopQuizConfig,
-): SessionSetup => ({
-  ...setup,
-  games: setup.games.map((game) => (game.id === gameId ? { ...game, config: change(game.config) } : game)),
-});
+): SessionSetup =>
+  updateGame(setup, gameId, (game) => (game.type === "pop-quiz" ? { ...game, config: change(game.config) } : game));
+
+export const updateDrawItConfig = (
+  setup: SessionSetup,
+  gameId: string,
+  change: (config: DrawItConfig) => DrawItConfig,
+): SessionSetup =>
+  updateGame(setup, gameId, (game) => (game.type === "draw-it" ? { ...game, config: change(game.config) } : game));
 
 export const updateQuestion = (
   config: PopQuizConfig,
@@ -85,3 +100,18 @@ export const changeQuestionKind = (
         };
   return { ...question, kind, answers, correct: null };
 };
+
+export const changeWord = (config: DrawItConfig, wordId: string, text: string): DrawItConfig => ({
+  ...config,
+  words: config.words.map((word) => (word.id === wordId ? { ...word, text } : word)),
+});
+
+export const addWord = (config: DrawItConfig, id: string): DrawItConfig => ({
+  ...config,
+  words: [...config.words, emptyWord(id)],
+});
+
+export const deleteWord = (config: DrawItConfig, wordId: string): DrawItConfig => ({
+  ...config,
+  words: config.words.filter((word) => word.id !== wordId),
+});

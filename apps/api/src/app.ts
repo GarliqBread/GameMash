@@ -1,6 +1,7 @@
 import rateLimit from "@fastify/rate-limit";
 import type { ApiError, HealthResponse } from "@gamemash/shared";
 import Fastify, { type FastifyError, type FastifyReply, type FastifyRequest, type FastifyServerOptions } from "fastify";
+import { type GameUploads, uploadRoutes } from "./game/upload-routes.js";
 import type { DiskImageStore } from "./media/disk-image-store.js";
 import { imageFileRoutes } from "./media/image-file-routes.js";
 import type { RedisHealth } from "./redis.js";
@@ -16,6 +17,7 @@ export type AppDeps = {
   rateLimit?: boolean | undefined;
   limits?: Partial<SessionRouteLimits> | undefined;
   imageFiles?: DiskImageStore | undefined;
+  uploads?: GameUploads | undefined;
 };
 
 const INTERNAL_ERROR = 500;
@@ -54,7 +56,7 @@ const rejectMalformedRequest = (error: FastifyError, request: FastifyRequest, re
 };
 
 export const buildApp = (
-  { redis, sessions, rateLimit: isRateLimited = true, limits, imageFiles }: AppDeps,
+  { redis, sessions, rateLimit: isRateLimited = true, limits, imageFiles, uploads }: AppDeps,
   options: FastifyServerOptions = {},
 ) => {
   const app = Fastify({
@@ -77,6 +79,7 @@ export const buildApp = (
   app.register(setupRoutes(sessions));
   app.register(imageRoutes(sessions));
   if (imageFiles) app.register(imageFileRoutes(imageFiles));
+  if (uploads) app.register(uploadRoutes(sessions, uploads));
 
   app.setNotFoundHandler((_request, reply) => reply.code(404).send(notFound));
 

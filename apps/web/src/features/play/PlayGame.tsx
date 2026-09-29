@@ -2,7 +2,9 @@ import { type QuizPlayerView, rankOf } from "@gamemash/games/config";
 import type { FinishedSnapshot, GameSnapshot } from "@gamemash/shared";
 import { Heading, Pill } from "@gamemash/ui";
 import { FormattedMessage } from "react-intl";
+import type { PlayerCredentials } from "../../lib/credentials";
 import type { LobbyStatus } from "../../lib/lobby";
+import { PhoneDrawIt } from "../draw/PhoneDrawIt";
 import { PhoneQuizAnswering } from "../quiz/PhoneQuizAnswering";
 import { PhoneQuizQuestion, PhoneQuizReveal } from "../quiz/PhoneQuizStatus";
 import { type PlayerIdentity, PlayFrame } from "./PlayFrame";
@@ -38,13 +40,17 @@ const PhoneFinal = ({
 };
 
 export type PlayGameProps = {
+  credentials: PlayerCredentials;
   me: PlayerIdentity;
   snapshot: GameSnapshot;
   status: LobbyStatus;
 };
 
-export const PlayGame = ({ me, snapshot, status }: PlayGameProps) => {
+export const PlayGame = ({ credentials, me, snapshot, status }: PlayGameProps) => {
   if (snapshot.status === "finished") return <PhoneFinal me={me} snapshot={snapshot} status={status} />;
+  if (snapshot.gameType === "draw-it") {
+    return <PhoneDrawIt credentials={credentials} me={me} snapshot={snapshot} status={status} />;
+  }
   if (snapshot.gameType !== "pop-quiz") return null;
 
   const view = snapshot.view as QuizPlayerView;

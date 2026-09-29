@@ -5,9 +5,15 @@ const PhaseSchema = Type.Object({
   name: Type.String(),
   durationMs: Type.Union([Type.Number(), Type.Null()]),
   input: Type.Union([
-    Type.Object({ from: Type.Array(Type.String()), endsWhenAllSubmitted: Type.Boolean() }),
+    Type.Object({
+      from: Type.Array(Type.String()),
+      endsWhenAllSubmitted: Type.Boolean(),
+      replaceable: Type.Optional(Type.Boolean()),
+      via: Type.Optional(Type.Literal("upload")),
+    }),
     Type.Null(),
   ]),
+  skippable: Type.Optional(Type.Boolean()),
 });
 
 const PointsSchema = Type.Record(Type.String(), Type.Number());

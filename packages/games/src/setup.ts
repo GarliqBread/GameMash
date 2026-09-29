@@ -1,46 +1,56 @@
 import type { LineupEntry } from "@gamemash/shared";
-import { hasOnlyActiveAnswers, isQuestionComplete, isQuestionTextValid, quizTimeRange } from "./pop-quiz/config.js";
+import { drawItConfigRules } from "./draw-it/config.js";
+import type { GameConfigRules } from "./game-config.js";
+import { popQuizConfigRules } from "./pop-quiz/config.js";
 import type { GameSetup, SessionSetup } from "./setup-schema.js";
+import { hasUniqueIds } from "./unique.js";
 
+export type { GameConfigRules } from "./game-config.js";
 export type { GameSetup, HostSetupResponse, SessionSetup } from "./setup-schema.js";
 
 export const SESSION_NAME_MAX_LENGTH = 40;
 export const MAX_GAMES = 10;
 
+export type GameType = GameSetup["type"];
+type ConfigOf<Type extends GameType> = Extract<GameSetup, { type: Type }>["config"];
+
+const CONFIG_RULES: { [Type in GameType]: GameConfigRules<ConfigOf<Type>> } = {
+  "pop-quiz": popQuizConfigRules,
+  "draw-it": drawItConfigRules,
+};
+
+const configRulesOf = <Game extends GameSetup>(game: Game) =>
+  CONFIG_RULES[game.type] as GameConfigRules<Game["config"]>;
+
 export const emptySetup = (): SessionSetup => ({ name: "", games: [] });
 
-const isUnique = (ids: string[]) => new Set(ids).size === ids.length;
-
-export const hasUniqueIds = (setup: SessionSetup) =>
-  isUnique(setup.games.map((game) => game.id)) &&
-  setup.games.every((game) => isUnique(game.config.questions.map((question) => question.id)));
-
-export const hasValidText = (setup: SessionSetup) =>
-  setup.games.every((game) => game.config.questions.every((question) => isQuestionTextValid(question.text)));
-
-export const hasValidAnswers = (setup: SessionSetup) =>
-  setup.games.every((game) => game.config.questions.every(hasOnlyActiveAnswers));
+export const isSetupValid = (setup: SessionSetup) =>
+  hasUniqueIds(setup.games) && setup.games.every((game) => configRulesOf(game).isValid(game.config));
 
 export const setupImageIds = (setup: SessionSetup) => [
-  ...new Set(setup.games.flatMap((game) => game.config.questions.flatMap((question) => question.images))),
+  ...new Set(setup.games.flatMap((game) => configRulesOf(game).imageIds(game.config))),
 ];
+
+const gameWithoutImages = <Game extends GameSetup>(game: Game): Game => ({
+  ...game,
+  config: configRulesOf(game).withoutImages(game.config),
+});
 
 export const withoutImages = (setup: SessionSetup): SessionSetup => ({
   ...setup,
-  games: setup.games.map((game) => ({
-    ...game,
-    config: { ...game.config, questions: game.config.questions.map((question) => ({ ...question, images: [] })) },
-  })),
+  games: setup.games.map(gameWithoutImages),
 });
 
-export const isGameReady = (game: GameSetup) =>
-  game.config.questions.length > 0 && game.config.questions.every(isQuestionComplete);
+export const isGameReady = (game: GameSetup) => configRulesOf(game).isReady(game.config);
 
 export const isSetupReady = (setup: SessionSetup) => setup.games.length > 0 && setup.games.every(isGameReady);
 
-export const summarizeGame = (game: GameSetup): LineupEntry => ({
-  id: game.id,
-  type: game.type,
-  roundCount: game.config.questions.length,
-  roundSeconds: quizTimeRange(game.config),
-});
+export const summarizeGame = (game: GameSetup): LineupEntry => {
+  const rules = configRulesOf(game);
+  return {
+    id: game.id,
+    type: game.type,
+    roundCount: rules.roundCount(game.config),
+    roundSeconds: rules.roundSeconds(game.config),
+  };
+};

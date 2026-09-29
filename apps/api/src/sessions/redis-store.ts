@@ -14,6 +14,7 @@ import type {
   RemovePlayerResult,
   SaveGameResult,
   SaveSetupResult,
+  SaveUploadResult,
   SessionRecord,
   SessionStore,
   SubmitInputResult,
@@ -42,6 +43,7 @@ const ADD_IMAGE_RESULTS: AddImageResult[] = [
 ];
 const SAVE_GAME_RESULTS: SaveGameResult[] = ["saved", "conflict", "session_not_found"];
 const SUBMIT_INPUT_RESULTS: SubmitInputResult[] = ["accepted", "duplicate", "closed"];
+const SAVE_UPLOAD_RESULTS: SaveUploadResult[] = ["saved", "closed"];
 
 const AvatarMetaSchema = Type.Object({
   type: Type.Enum(AVATAR_CONTENT_TYPES),
@@ -62,6 +64,7 @@ const keys = (prefix: string) => ({
   images: (id: string) => `${prefix}session:${id}:images`,
   game: (id: string) => `${prefix}session:${id}:game`,
   inputs: (id: string) => `${prefix}session:${id}:inputs`,
+  uploads: (id: string) => `${prefix}session:${id}:uploads`,
   room: (roomCode: string) => `${prefix}room:${roomCode}`,
   activeImages: () => `${prefix}images:active`,
 });
@@ -120,6 +123,9 @@ const isAddImageResult = (value: unknown): value is AddImageResult =>
 
 const isSaveGameResult = (value: unknown): value is SaveGameResult =>
   SAVE_GAME_RESULTS.some((result) => result === value);
+
+const isSaveUploadResult = (value: unknown): value is SaveUploadResult =>
+  SAVE_UPLOAD_RESULTS.some((result) => result === value);
 
 const isSubmitInputResult = (value: unknown): value is SubmitInputResult =>
   SUBMIT_INPUT_RESULTS.some((result) => result === value);
@@ -273,28 +279,38 @@ export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PRE
         uploadedAt: entry.score,
       })),
     getGame: async (sessionId) => toGameRecord(await redis.hGetAll(key.game(sessionId))),
-    saveGame: async (sessionId, expectedVersion, state, expiresAt) => {
+    saveGame: async (sessionId, expectedVersion, state, expiresAt, clearUploads) => {
       const result = await redis.saveGame(
-        [key.session(sessionId), key.game(sessionId), key.inputs(sessionId)],
+        [key.session(sessionId), key.game(sessionId), key.inputs(sessionId), key.uploads(sessionId)],
         [
           expectedVersion === null ? "" : String(expectedVersion),
           String((expectedVersion ?? 0) + 1),
           state,
           String(expiresAt),
+          clearUploads ? "1" : "0",
         ],
       );
       if (!isSaveGameResult(result)) throw new Error(`unexpected save game result: ${String(result)}`);
       return result;
     },
-    submitInput: async (sessionId, version, playerId, input, expiresAt) => {
+    submitInput: async (sessionId, version, playerId, input, expiresAt, replace) => {
       const result = await redis.submitInput(
         [key.session(sessionId), key.game(sessionId), key.inputs(sessionId)],
-        [String(version), playerId, input, String(expiresAt)],
+        [String(version), playerId, input, String(expiresAt), replace ? "1" : "0"],
       );
       if (!isSubmitInputResult(result)) throw new Error(`unexpected submit input result: ${String(result)}`);
       return result;
     },
     listInputs: async (sessionId) => new Map(Object.entries(await redis.hGetAll(key.inputs(sessionId)))),
+    saveUpload: async (sessionId, version, playerId, payload, expiresAt) => {
+      const result = await redis.saveUpload(
+        [key.session(sessionId), key.game(sessionId), key.uploads(sessionId)],
+        [String(version), playerId, payload, String(expiresAt)],
+      );
+      if (!isSaveUploadResult(result)) throw new Error(`unexpected save upload result: ${String(result)}`);
+      return result;
+    },
+    getUpload: async (sessionId, playerId) => (await redis.hGet(key.uploads(sessionId), playerId)) ?? null,
     touch: async (session, expiresAt) => {
       await redis.touchSession(
         [
@@ -308,6 +324,7 @@ export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PRE
           key.game(session.id),
           key.inputs(session.id),
           key.images(session.id),
+          key.uploads(session.id),
         ],
         [session.id, String(expiresAt)],
       );

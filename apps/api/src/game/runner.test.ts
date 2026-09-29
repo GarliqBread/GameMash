@@ -1,5 +1,5 @@
-import { POP_QUIZ_READ_MS, type SessionSetup } from "@gamemash/games/config";
-import { popQuizRules } from "@gamemash/games/server";
+import { DRAW_IT_RESULTS_MS, POP_QUIZ_READ_MS, type SessionSetup } from "@gamemash/games/config";
+import { drawItRules, popQuizRules } from "@gamemash/games/server";
 import type { GameSnapshot } from "@gamemash/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemorySessionStore } from "../sessions/memory-store.js";
@@ -26,14 +26,19 @@ const playing = (snapshot: GameSnapshot | undefined) => {
   return snapshot;
 };
 
-const startGame = async ({ questions = 2, names = ["Priya", "Daan"], rules = testRules } = {}) => {
+const startGame = async ({
+  questions = 2,
+  names = ["Priya", "Daan"],
+  rules = testRules,
+  setup = setupWith(questions),
+} = {}) => {
   const store = createMemorySessionStore();
   const sessions = createSessionService({ store });
   const created = await sessions.create();
   const sessionId = created.sessionId;
   const session = await store.findById(sessionId);
   if (!session) throw new Error("session was not created");
-  await sessions.saveSetup(session, setupWith(questions));
+  await sessions.saveSetup(session, setup);
   const playerIds: string[] = [];
   for (const name of names) {
     const joined = await sessions.join(sessionId, name);
@@ -134,6 +139,58 @@ describe("game runner", () => {
     if (!late.ok) throw new Error(late.error);
     expect(await runner.submit(sessionId, late.value.playerId, 1, "right", everyone)).toBe("closed");
     expect(playing(await player(late.value.playerId)).view).toMatchObject({ isParticipant: false });
+  });
+
+  it("lets players change their input when the phase allows it", async () => {
+    const { runner, sessionId, playerIds, player, everyone } = await startGame({
+      rules: createTestRules({ replaceable: true, endsWhenAllSubmitted: false }),
+    });
+    const [priya = ""] = playerIds;
+
+    expect(await runner.submit(sessionId, priya, 1, "right", everyone)).toBe("accepted");
+    expect(await runner.submit(sessionId, priya, 1, "wrong", everyone)).toBe("accepted");
+    expect(playing(await player(priya)).view).toMatchObject({ mine: "wrong" });
+  });
+
+  it("ends early only once every participant's input counts as done", async () => {
+    const { runner, sessionId, playerIds, host, everyone } = await startGame({
+      rules: createTestRules({ replaceable: true, isDone: (input) => input === "right" }),
+    });
+    const [priya = "", daan = ""] = playerIds;
+
+    await runner.submit(sessionId, priya, 1, "right", everyone);
+    await runner.submit(sessionId, daan, 1, "wrong", everyone);
+    expect(playing(await host()).phase).toBe("ask");
+
+    await runner.submit(sessionId, daan, 1, "right", everyone);
+    expect(playing(await host()).phase).toBe("reveal");
+  });
+
+  it("only tells screens about a changed input when the player's done state changes", async () => {
+    const { runner, sessionId, playerIds, notified, everyone } = await startGame({
+      rules: createTestRules({ replaceable: true, isDone: (input) => input === "right" }),
+    });
+    const [priya = ""] = playerIds;
+    const notifications = () => notified.length;
+    const before = notifications();
+
+    await runner.submit(sessionId, priya, 1, "wrong", everyone);
+    expect(notifications()).toBe(before + 1);
+    await runner.submit(sessionId, priya, 1, "wrong", everyone);
+    expect(notifications()).toBe(before + 1);
+    await runner.submit(sessionId, priya, 1, "right", everyone);
+    expect(notifications()).toBe(before + 2);
+  });
+
+  it("lets the host skip a timed phase only when the game allows it", async () => {
+    const { runner, sessionId, host } = await startGame({ rules: createTestRules({ revealMs: 8000 }) });
+
+    await vi.advanceTimersByTimeAsync(ASK_MS);
+    await settle();
+    expect(playing(await host())).toMatchObject({ phase: "reveal", waitsForHost: false, canSkip: true });
+
+    expect(await runner.next(sessionId, 2)).toBe(true);
+    expect(playing(await host())).toMatchObject({ phaseId: 3, phase: "ask", canSkip: false });
   });
 
   it("refuses input the game does not understand, and input after the deadline", async () => {
@@ -357,5 +414,96 @@ describe("pop quiz on the game runner", () => {
         { playerId: daan, points: 0 },
       ],
     });
+  });
+});
+
+describe("draw it on the game runner", () => {
+  const drawItSetup: SessionSetup = {
+    name: "Friday team mash",
+    games: [{ id: "draw-1", type: "draw-it", config: { words: [{ id: "w1", text: "Lighthouse" }], drawSeconds: 30 } }],
+  };
+
+  it("forgets the previous round's drawings when the next round starts", async () => {
+    const twoWords: SessionSetup = {
+      ...drawItSetup,
+      games: drawItSetup.games.map((game) =>
+        game.type === "draw-it"
+          ? { ...game, config: { ...game.config, words: [...game.config.words, { id: "w2", text: "Cat" }] } }
+          : game,
+      ),
+    };
+    const { runner, sessionId, playerIds, everyone, host } = await startGame({ rules: drawItRules, setup: twoWords });
+    const [priya = ""] = playerIds;
+    const mine = () => runner.readUpload(sessionId, { kind: "player", playerId: priya }, "mine");
+    const line = { color: "red", size: "thin", points: [[0.5, 0.5, 0.5]] };
+
+    await runner.upload(sessionId, priya, 1, { done: false, drawing: { strokes: [line] } }, everyone);
+    expect(await mine()).not.toBeNull();
+
+    await vi.advanceTimersByTimeAsync(30_000);
+    await settle();
+    expect(playing(await host()).phase).toBe("results");
+    await runner.next(sessionId, 2);
+
+    expect(playing(await host())).toMatchObject({ phase: "draw", view: { word: "Cat" } });
+    expect(await mine()).toBeNull();
+  });
+
+  it("draws, rates and scores a round, letting players change their mind", async () => {
+    const { runner, sessionId, playerIds, everyone, host, player } = await startGame({
+      names: ["Priya", "Daan", "Lars"],
+      rules: drawItRules,
+      setup: drawItSetup,
+    });
+    const [priya = "", daan = "", lars = ""] = playerIds;
+
+    const line = { color: "red", size: "thick", points: [[0.1, 0.1, 0.5]] };
+    const drawing = (strokes: unknown[], done = true) => ({ done, drawing: { strokes } });
+
+    expect(await runner.submit(sessionId, priya, 1, { done: true, blank: false }, everyone)).toBe("closed");
+    expect(await runner.upload(sessionId, priya, 1, drawing([line, { ...line, color: "pink" }]), everyone)).toBe(
+      "invalid",
+    );
+    expect(await runner.upload(sessionId, priya, 1, drawing([line], false), everyone)).toBe("accepted");
+    expect(await runner.upload(sessionId, priya, 1, drawing([line, line]), everyone)).toBe("accepted");
+    expect(await runner.upload(sessionId, daan, 1, drawing([line]), everyone)).toBe("accepted");
+    expect(playing(await host())).toMatchObject({ phase: "draw", view: { doneIds: [priya, daan] } });
+    expect(await runner.readUpload(sessionId, { kind: "player", playerId: priya }, "mine")).toBe(
+      JSON.stringify({ strokes: [line, line] }),
+    );
+    expect(await runner.readUpload(sessionId, { kind: "host" }, "mine")).toBeNull();
+    expect(await runner.upload(sessionId, lars, 1, drawing([]), everyone)).toBe("accepted");
+    await settle();
+
+    const rating = playing(await host());
+    expect(rating).toMatchObject({ phase: "rate", phaseId: 2, view: { drawingIds: ["d1", "d2"] } });
+    const toRate = async (playerId: string) => {
+      const view = playing(await player(playerId)).view as { toRate: string[] };
+      const [drawingId = ""] = view.toRate;
+      return drawingId;
+    };
+    const priyaRates = await toRate(priya);
+    expect(await runner.upload(sessionId, priya, 2, drawing([line]), everyone)).toBe("closed");
+    expect(await runner.readUpload(sessionId, { kind: "player", playerId: priya }, priyaRates)).toBe(
+      JSON.stringify({ strokes: [line] }),
+    );
+    expect(
+      await runner.readUpload(sessionId, { kind: "player", playerId: priya }, priyaRates === "d1" ? "d2" : "d1"),
+    ).toBeNull();
+    expect(await runner.readUpload(sessionId, { kind: "host" }, "d1")).not.toBeNull();
+    expect(await runner.submit(sessionId, priya, 2, { [priyaRates]: 3 }, everyone)).toBe("accepted");
+    expect(await runner.submit(sessionId, priya, 2, { [priyaRates]: 9 }, everyone)).toBe("accepted");
+    expect(await runner.submit(sessionId, daan, 2, { [await toRate(daan)]: 5 }, everyone)).toBe("accepted");
+    expect(await runner.submit(sessionId, lars, 2, { [await toRate(lars)]: 7 }, everyone)).toBe("accepted");
+    await settle();
+
+    expect(playing(await host())).toMatchObject({ phase: "results", waitsForHost: false, canSkip: true });
+    await vi.advanceTimersByTimeAsync(DRAW_IT_RESULTS_MS);
+    await settle();
+
+    const finished = await host();
+    if (finished?.status !== "finished") throw new Error("expected the session to finish");
+    expect(finished.standings.map((entry) => entry.playerId).toSorted()).toEqual([priya, daan].toSorted());
+    expect(finished.standings.every((entry) => entry.points >= 500 && entry.points <= 900)).toBe(true);
   });
 });

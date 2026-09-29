@@ -14,16 +14,18 @@ export type PlayFrameProps = {
   total: number;
   status: LobbyStatus;
   header?: ReactNode;
+  bottomAction?: ReactNode;
   mainClassName?: string | undefined;
   children: ReactNode;
 };
 
-export const PlayFrame = ({ me, total, status, header, mainClassName, children }: PlayFrameProps) => (
+export const PlayFrame = ({ me, total, status, header, bottomAction, mainClassName, children }: PlayFrameProps) => (
   <PhoneShell
     theme="stage"
     className="bg-bg"
     mainClassName={mainClassName}
     header={header}
+    bottomAction={bottomAction}
     footer={
       <div className="flex flex-col gap-2">
         {status === "reconnecting" && (

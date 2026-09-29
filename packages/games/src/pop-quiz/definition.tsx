@@ -12,6 +12,7 @@ const PopQuizIcon = () => (
 export const popQuiz: GameDefinition = {
   id: "pop-quiz",
   titleId: "game.popQuiz.title",
+  descriptionId: "game.popQuiz.description",
   roundCountId: "game.popQuiz.roundCount",
   accent: "sun",
   icon: PopQuizIcon,

@@ -18,6 +18,7 @@ type SessionEntry = {
   images: SessionImage[];
   game: GameRecord | null;
   inputs: Map<string, string>;
+  uploads: Map<string, string>;
   expiresAt: number;
 };
 
@@ -78,6 +79,7 @@ export const createMemorySessionStore = (now: () => number = Date.now): SessionS
         images: [],
         game: null,
         inputs: new Map(),
+        uploads: new Map(),
         expiresAt,
       });
       return "created";
@@ -168,21 +170,33 @@ export const createMemorySessionStore = (now: () => number = Date.now): SessionS
     },
     listImages: async (sessionId) => (live(sessionId)?.images ?? []).map((image) => ({ ...image })),
     getGame: async (sessionId) => live(sessionId)?.game ?? null,
-    saveGame: async (sessionId, expectedVersion, state) => {
+    saveGame: async (sessionId, expectedVersion, state, _expiresAt, clearUploads) => {
       const entry = live(sessionId);
       if (!entry) return "session_not_found";
       if ((entry.game?.version ?? null) !== expectedVersion) return "conflict";
-      sessions.set(sessionId, { ...entry, game: { version: (expectedVersion ?? 0) + 1, state }, inputs: new Map() });
+      sessions.set(sessionId, {
+        ...entry,
+        game: { version: (expectedVersion ?? 0) + 1, state },
+        inputs: new Map(),
+        uploads: clearUploads ? new Map() : entry.uploads,
+      });
       return "saved";
     },
-    submitInput: async (sessionId, version, playerId, input) => {
+    submitInput: async (sessionId, version, playerId, input, _expiresAt, replace) => {
       const entry = live(sessionId);
       if (!entry || entry.game?.version !== version) return "closed";
-      if (entry.inputs.has(playerId)) return "duplicate";
+      if (!replace && entry.inputs.has(playerId)) return "duplicate";
       sessions.set(sessionId, { ...entry, inputs: new Map(entry.inputs).set(playerId, input) });
       return "accepted";
     },
     listInputs: async (sessionId) => new Map(live(sessionId)?.inputs),
+    saveUpload: async (sessionId, version, playerId, payload) => {
+      const entry = live(sessionId);
+      if (!entry || entry.game?.version !== version) return "closed";
+      sessions.set(sessionId, { ...entry, uploads: new Map(entry.uploads).set(playerId, payload) });
+      return "saved";
+    },
+    getUpload: async (sessionId, playerId) => live(sessionId)?.uploads.get(playerId) ?? null,
     touch: async (session, expiresAt) => {
       update(session.id, (entry) => ({ ...entry, expiresAt }));
     },

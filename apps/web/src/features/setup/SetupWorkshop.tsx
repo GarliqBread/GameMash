@@ -1,4 +1,6 @@
+import { GAMES, gameDefinition, isGameId } from "@gamemash/games";
 import {
+  type GameSetup,
   isGameReady,
   isQuestionComplete,
   isSetupReady,
@@ -10,6 +12,8 @@ import {
   AutosaveIndicator,
   Button,
   ConfirmDialog,
+  GamePicker,
+  type GamePickerOption,
   Heading,
   InsertGameSlot,
   Logo,
@@ -26,12 +30,20 @@ import { useRef, useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import type { HostCredentials } from "../../lib/credentials";
 import { useErrorMessage } from "../../lib/errors";
+import { DrawItEditor } from "./DrawItEditor";
+import { DrawItRules } from "./DrawItRules";
 import { QuizEditor } from "./QuizEditor";
 import { QuizRules } from "./QuizRules";
 import { SetupLineup } from "./SetupLineup";
-import { addGame, newQuiz, removeGame, reorderGames, updateConfig } from "./setup-changes";
+import { addGame, newGame, removeGame, reorderGames, updateDrawItConfig, updateQuizConfig } from "./setup-changes";
 import { useImageUploads } from "./useImageUploads";
 import { useSetupEditor } from "./useSetupEditor";
+
+const problemOf = (games: GameSetup[]) => {
+  const unready = games.find((game) => !isGameReady(game));
+  if (!unready) return games.length === 0 ? "needGame" : null;
+  return unready.type === "draw-it" ? "needWords" : "needComplete";
+};
 
 export type SetupWorkshopProps = {
   credentials: HostCredentials;
@@ -55,8 +67,20 @@ export const SetupWorkshop = ({ credentials, initialSetup, imagesEnabled }: Setu
   const selectQuestion = (gameId: string, questionId: string) =>
     setSelectedQuestions((current) => ({ ...current, [gameId]: questionId }));
 
-  const handleInsert = () => {
-    const game = newQuiz();
+  const pickerOptions: GamePickerOption[] = Object.values(GAMES).map((definition) => {
+    const Icon = definition.icon;
+    return {
+      id: definition.id,
+      title: intl.formatMessage({ id: definition.titleId }),
+      description: intl.formatMessage({ id: definition.descriptionId }),
+      accent: definition.accent,
+      icon: <Icon />,
+    };
+  });
+
+  const handleInsert = (type: string) => {
+    if (!isGameId(type)) return;
+    const game = newGame(type);
     update((current) => addGame(current, game));
     setSelectedGameId(game.id);
   };
@@ -76,7 +100,10 @@ export const SetupWorkshop = ({ credentials, initialSetup, imagesEnabled }: Setu
     if (setup.games.length === 0 || unready) {
       if (unready) {
         setSelectedGameId(unready.id);
-        const incomplete = unready.config.questions.find((question) => !isQuestionComplete(question));
+        const incomplete =
+          unready.type === "pop-quiz"
+            ? unready.config.questions.find((question) => !isQuestionComplete(question))
+            : undefined;
         if (incomplete) selectQuestion(unready.id, incomplete.id);
       }
       return;
@@ -88,8 +115,7 @@ export const SetupWorkshop = ({ credentials, initialSetup, imagesEnabled }: Setu
       });
   };
 
-  const problem =
-    !hasTriedToOpen || isSetupReady(setup) ? null : setup.games.length === 0 ? "needGame" : "needComplete";
+  const problem = !hasTriedToOpen || isSetupReady(setup) ? null : problemOf(setup.games);
 
   return (
     <WorkshopShell
@@ -127,14 +153,16 @@ export const SetupWorkshop = ({ credentials, initialSetup, imagesEnabled }: Setu
             onSelect={setSelectedGameId}
             onReorder={(ids) => update((current) => reorderGames(current, ids))}
           />
-          <InsertGameSlot
-            ref={insertSlotRef}
-            className="mt-3"
-            onClick={handleInsert}
+          <GamePicker
+            options={pickerOptions}
+            onPick={handleInsert}
             disabled={setup.games.length >= MAX_GAMES}
-          >
-            <FormattedMessage id="setup.insertGame" />
-          </InsertGameSlot>
+            trigger={
+              <InsertGameSlot ref={insertSlotRef} className="mt-3">
+                <FormattedMessage id="setup.insertGame" />
+              </InsertGameSlot>
+            }
+          />
           <div className="flex-1" />
           <TrustNote>
             <FormattedMessage id="setup.trust" />
@@ -147,11 +175,13 @@ export const SetupWorkshop = ({ credentials, initialSetup, imagesEnabled }: Setu
             <div className="flex flex-col gap-1.5">
               {game && (
                 <SectionTab as="span" variant="accent">
-                  <FormattedMessage id="game.popQuiz.title" />
+                  <FormattedMessage id={gameDefinition(game.type).titleId} />
                 </SectionTab>
               )}
               <Heading size="host">
-                <FormattedMessage id={game ? "setup.editQuestions" : "setup.emptyTitle"} />
+                <FormattedMessage
+                  id={!game ? "setup.emptyTitle" : game.type === "draw-it" ? "setup.editWords" : "setup.editQuestions"}
+                />
               </Heading>
             </div>
             <div className="flex items-center gap-4">
@@ -184,11 +214,17 @@ export const SetupWorkshop = ({ credentials, initialSetup, imagesEnabled }: Setu
               <FormattedMessage id={`setup.${problem}`} />
             </p>
           )}
-          {game ? (
+          {game?.type === "draw-it" ? (
+            <DrawItEditor
+              key={game.id}
+              config={game.config}
+              onChange={(change) => update((current) => updateDrawItConfig(current, game.id, change))}
+            />
+          ) : game ? (
             <QuizEditor
               key={game.id}
               config={game.config}
-              onChange={(change) => update((current) => updateConfig(current, game.id, change))}
+              onChange={(change) => update((current) => updateQuizConfig(current, game.id, change))}
               selectedQuestionId={selectedQuestions[game.id]}
               onSelectQuestion={(questionId) => selectQuestion(game.id, questionId)}
               uploads={uploads}
@@ -199,9 +235,15 @@ export const SetupWorkshop = ({ credentials, initialSetup, imagesEnabled }: Setu
               <p className="text-lg text-fg-muted">
                 <FormattedMessage id="setup.emptyBody" values={{ max: MAX_GAMES }} />
               </p>
-              <Button size="lg" onClick={handleInsert}>
-                <FormattedMessage id="setup.addQuiz" />
-              </Button>
+              <GamePicker
+                options={pickerOptions}
+                onPick={handleInsert}
+                trigger={
+                  <Button size="lg">
+                    <FormattedMessage id="setup.addGame" />
+                  </Button>
+                }
+              />
             </div>
           )}
           <ConfirmDialog
@@ -217,10 +259,15 @@ export const SetupWorkshop = ({ credentials, initialSetup, imagesEnabled }: Setu
         </>
       }
       settings={
-        game ? (
+        game?.type === "draw-it" ? (
+          <DrawItRules
+            config={game.config}
+            onChange={(change) => update((current) => updateDrawItConfig(current, game.id, change))}
+          />
+        ) : game ? (
           <QuizRules
             config={game.config}
-            onChange={(change) => update((current) => updateConfig(current, game.id, change))}
+            onChange={(change) => update((current) => updateQuizConfig(current, game.id, change))}
           />
         ) : null
       }

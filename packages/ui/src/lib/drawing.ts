@@ -1,23 +1,27 @@
+import {
+  BRUSH_SIZES,
+  type BrushSize,
+  DRAW_COLORS,
+  type DrawColor,
+  type Drawing,
+  type DrawPoint,
+  pointCount,
+  type Stroke,
+} from "@gamemash/shared";
 import { getStroke } from "perfect-freehand";
 
-export type DrawColor = "black" | "red" | "orange" | "yellow" | "green" | "blue" | "violet";
-export type BrushSize = "thin" | "medium" | "thick";
+export {
+  BRUSH_SIZES,
+  type BrushSize,
+  DRAW_COLORS,
+  type DrawColor,
+  type Drawing,
+  type DrawPoint,
+  pointCount,
+  type Stroke,
+};
+
 export type DrawTool = "brush" | "eraser";
-
-export type DrawPoint = [x: number, y: number, pressure: number];
-
-export type Stroke = {
-  color: DrawColor | "eraser";
-  size: BrushSize;
-  points: DrawPoint[];
-};
-
-export type Drawing = {
-  strokes: Stroke[];
-};
-
-export const DRAW_COLORS: DrawColor[] = ["black", "red", "orange", "yellow", "green", "blue", "violet"];
-export const BRUSH_SIZES: BrushSize[] = ["thin", "medium", "thick"];
 
 export const DRAWING_UNITS = 1000;
 
@@ -76,3 +80,45 @@ export const strokePath = (stroke: Stroke) => {
   pathCache.set(stroke, path);
   return path;
 };
+
+const COMPACT_STEPS = [0.002, 0.004, 0.008, 0.016, 0.032];
+const COORDINATE_PRECISION = 1000;
+const PRESSURE_PRECISION = 100;
+
+const roundTo = (value: number, precision: number) => Math.round(value * precision) / precision;
+
+const thinPoints = (points: DrawPoint[], minDistance: number) => {
+  const kept: DrawPoint[] = [];
+  for (const [index, point] of points.entries()) {
+    const previous = kept.at(-1);
+    const isLast = index === points.length - 1;
+    const isFar = !previous || Math.hypot(point[0] - previous[0], point[1] - previous[1]) >= minDistance;
+    if (isFar || isLast) kept.push(point);
+  }
+  return kept;
+};
+
+const thinDrawing = (drawing: Drawing, minDistance: number): Drawing => ({
+  strokes: drawing.strokes.map((stroke) => ({
+    ...stroke,
+    points: thinPoints(
+      stroke.points.map(
+        ([x, y, pressure]): DrawPoint => [
+          roundTo(x, COORDINATE_PRECISION),
+          roundTo(y, COORDINATE_PRECISION),
+          roundTo(pressure, PRESSURE_PRECISION),
+        ],
+      ),
+      minDistance,
+    ),
+  })),
+});
+
+const compactWith = (drawing: Drawing, maxPoints: number, steps: number[]): Drawing => {
+  const [step = 0, ...rest] = steps;
+  const thinned = thinDrawing(drawing, step);
+  return rest.length === 0 || pointCount(thinned) <= maxPoints ? thinned : compactWith(drawing, maxPoints, rest);
+};
+
+export const compactDrawing = (drawing: Drawing, maxPoints: number) =>
+  compactWith(drawing, maxPoints, [0, ...COMPACT_STEPS]);

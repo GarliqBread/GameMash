@@ -1,16 +1,8 @@
 import { Value } from "typebox/value";
 import { describe, expect, it } from "vitest";
+import { type DrawItWord, defaultDrawItConfig } from "./draw-it/config.js";
 import { defaultPopQuizConfig, emptyQuestion, isQuestionComplete, type QuizQuestion } from "./pop-quiz/config.js";
-import {
-  type GameSetup,
-  hasUniqueIds,
-  hasValidAnswers,
-  hasValidText,
-  isGameReady,
-  isSetupReady,
-  setupImageIds,
-  summarizeGame,
-} from "./setup.js";
+import { type GameSetup, isGameReady, isSetupReady, isSetupValid, setupImageIds, summarizeGame } from "./setup.js";
 import { SessionSetupSchema } from "./setup-schema.js";
 
 const complete: QuizQuestion = {
@@ -81,11 +73,9 @@ describe("quiz readiness", () => {
   it("rejects hidden answers on a true or false question", () => {
     const setupWith = (question: QuizQuestion) => ({ name: "", games: [quiz([complete, question])] });
 
-    expect(hasValidAnswers(setupWith(trueFalse))).toBe(true);
-    expect(hasValidAnswers(setupWith({ ...trueFalse, answers: { ...trueFalse.answers, triangle: "Maybe" } }))).toBe(
-      false,
-    );
-    expect(hasValidAnswers(setupWith({ ...trueFalse, correct: "dome" }))).toBe(false);
+    expect(isSetupValid(setupWith(trueFalse))).toBe(true);
+    expect(isSetupValid(setupWith({ ...trueFalse, answers: { ...trueFalse.answers, triangle: "Maybe" } }))).toBe(false);
+    expect(isSetupValid(setupWith({ ...trueFalse, correct: "dome" }))).toBe(false);
   });
 
   it("is ready only when every game has questions and all of them are complete", () => {
@@ -97,26 +87,26 @@ describe("quiz readiness", () => {
   });
 
   it("spots duplicate game and question ids", () => {
-    expect(hasUniqueIds({ name: "", games: [quiz([complete]), quiz([complete], "quiz-2")] })).toBe(true);
-    expect(hasUniqueIds({ name: "", games: [quiz([complete]), quiz([complete])] })).toBe(false);
-    expect(hasUniqueIds({ name: "", games: [quiz([complete, complete])] })).toBe(false);
+    expect(isSetupValid({ name: "", games: [quiz([complete]), quiz([complete], "quiz-2")] })).toBe(true);
+    expect(isSetupValid({ name: "", games: [quiz([complete]), quiz([complete])] })).toBe(false);
+    expect(isSetupValid({ name: "", games: [quiz([complete, complete])] })).toBe(false);
   });
 
   it("limits the visible question text, not the formatting", () => {
     const runs = (count: number) =>
       Array.from({ length: count }, (_, index) => ({ text: "xxx", bold: index % 2 === 0 }));
 
-    expect(hasValidText({ name: "", games: [quiz([{ ...complete, text: runs(30) }])] })).toBe(true);
+    expect(isSetupValid({ name: "", games: [quiz([{ ...complete, text: runs(30) }])] })).toBe(true);
     expect(
-      hasValidText({ name: "", games: [quiz([{ ...complete, text: [{ text: "Who is our best 👩‍💻?" }] }])] }),
+      isSetupValid({ name: "", games: [quiz([{ ...complete, text: [{ text: "Who is our best 👩‍💻?" }] }])] }),
     ).toBe(true);
     expect(
-      hasValidText({
+      isSetupValid({
         name: "",
         games: [quiz([{ ...complete, text: [{ text: "x".repeat(60) }, { text: "y".repeat(31) }] }])],
       }),
     ).toBe(false);
-    expect(hasValidText({ name: "", games: [quiz([{ ...complete, text: [{ text: "a\u200bb" }] }])] })).toBe(false);
+    expect(isSetupValid({ name: "", games: [quiz([{ ...complete, text: [{ text: "a\u200bb" }] }])] })).toBe(false);
   });
 
   it("collects every image used across the setup once", () => {
@@ -142,5 +132,70 @@ describe("quiz readiness", () => {
 
     expect(summarizeGame(quiz([quick, slow, usual])).roundSeconds).toEqual({ min: 10, max: 120 });
     expect(summarizeGame(quiz([])).roundSeconds).toEqual({ min: 20, max: 20 });
+  });
+});
+
+const drawIt = (words: DrawItWord[], id = "draw-1"): GameSetup => ({
+  id,
+  type: "draw-it",
+  config: { ...defaultDrawItConfig("w1"), words },
+});
+
+const lighthouse: DrawItWord = { id: "w1", text: "Lighthouse" };
+
+describe("draw it setup", () => {
+  it("accepts a new game straight from the defaults", () => {
+    const game: GameSetup = { id: "draw-1", type: "draw-it", config: defaultDrawItConfig("w1") };
+
+    expect(Value.Check(SessionSetupSchema, { name: "", games: [game, quiz([complete])] })).toBe(true);
+  });
+
+  it.each([
+    ["a word that is too long", { ...defaultDrawItConfig("w1"), words: [{ id: "w1", text: "x".repeat(41) }] }],
+    ["an unknown draw time", { ...defaultDrawItConfig("w1"), drawSeconds: 45 }],
+    [
+      "more than 10 words",
+      { ...defaultDrawItConfig("w1"), words: Array.from({ length: 11 }, (_, i) => ({ id: `w${i}`, text: "Cat" })) },
+    ],
+    ["an extra field", { ...defaultDrawItConfig("w1"), wordList: "animals" }],
+    ["quiz questions", defaultPopQuizConfig("q1")],
+  ])("rejects %s", (_, config) => {
+    expect(Value.Check(SessionSetupSchema, { name: "", games: [{ id: "draw-1", type: "draw-it", config }] })).toBe(
+      false,
+    );
+  });
+
+  it("is ready only when every round has a word", () => {
+    expect(isGameReady(drawIt([lighthouse]))).toBe(true);
+    expect(isGameReady(drawIt([]))).toBe(false);
+    expect(isGameReady(drawIt([lighthouse, { id: "w2", text: "  " }]))).toBe(false);
+  });
+
+  it("spots duplicate word ids and hidden characters", () => {
+    expect(isSetupValid({ name: "", games: [drawIt([lighthouse, { id: "w2", text: "Cat" }]), quiz([complete])] })).toBe(
+      true,
+    );
+    expect(isSetupValid({ name: "", games: [drawIt([lighthouse, lighthouse])] })).toBe(false);
+    expect(isSetupValid({ name: "", games: [drawIt([{ id: "w1", text: "Li\u200bghthouse" }])] })).toBe(false);
+    expect(isSetupValid({ name: "", games: [drawIt([lighthouse], "same"), quiz([complete], "same")] })).toBe(false);
+  });
+
+  it("uses no images", () => {
+    expect(setupImageIds({ name: "", games: [drawIt([lighthouse])] })).toEqual([]);
+  });
+
+  it("summarises the rounds and draw time for the lobby", () => {
+    const game: GameSetup = {
+      id: "draw-1",
+      type: "draw-it",
+      config: { words: [lighthouse, { id: "w2", text: "Cat" }], drawSeconds: 90 },
+    };
+
+    expect(summarizeGame(game)).toEqual({
+      id: "draw-1",
+      type: "draw-it",
+      roundCount: 2,
+      roundSeconds: { min: 90, max: 90 },
+    });
   });
 });

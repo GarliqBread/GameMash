@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { useCopy } from "../../.ladle/pseudo";
-import { HOUSE, LIGHTHOUSE } from "../../.ladle/sample-drawings";
+import { LIGHTHOUSE } from "../../.ladle/sample-drawings";
 import { QUIZ_OPTIONS, ROOM_CODE } from "../../.ladle/screen-data";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { DrawingCanvas } from "../draw/DrawingCanvas";
 import { DrawingFrame } from "../draw/DrawingFrame";
 import { DrawingToolbar } from "../draw/DrawingToolbar";
-import { OwnDrawingNotice } from "../draw/OwnDrawingNotice";
 import { RatingScale } from "../draw/RatingScale";
 import { useDrawing } from "../draw/useDrawing";
 import { PlayerScoreBar } from "../game/PlayerScoreBar";
@@ -174,33 +173,6 @@ export const Rate: Story = () => {
         onValueChange={setRating}
         lowLabel={t("1 · Not quite")}
         highLabel={t("Masterpiece · 10")}
-      />
-    </PhoneShell>
-  );
-};
-
-export const RateOwn: Story = () => {
-  const t = useCopy();
-  return (
-    <PhoneShell
-      theme="stage"
-      mainClassName="justify-center"
-      header={
-        <>
-          <span className="font-bold text-fg-muted">{t("Drawing 5 / 9")}</span>
-          <TimerPill seconds={12} tone="idle" label={t("12 seconds left")} />
-        </>
-      }
-      footer={
-        <TrustNote icon="eye-off">{t("Your score for this drawing comes from everyone else's ratings.")}</TrustNote>
-      }
-    >
-      <OwnDrawingNotice
-        drawing={HOUSE}
-        drawingLabel={t("Your drawing")}
-        badge={t("Yours")}
-        title={t("This one's yours")}
-        description={t("Sit back while the others rate it. Keep a straight face so you don't give it away.")}
       />
     </PhoneShell>
   );

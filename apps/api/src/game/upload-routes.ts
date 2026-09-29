@@ -1,0 +1,146 @@
+import type { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
+import { DRAW_IT_UPLOAD_MAX_BYTES, type UploadViewer } from "@gamemash/games/config";
+import { ApiErrorSchema, BearerAuthHeadersSchema } from "@gamemash/shared/schemas";
+import type { FastifyReply } from "fastify";
+import { Type } from "typebox";
+import { requireHost, requirePlayer } from "../sessions/auth.js";
+import type { SessionService } from "../sessions/service.js";
+import type { UploadResult } from "./runner.js";
+
+export type GameUploads = {
+  upload: (
+    sessionId: string,
+    playerId: string,
+    phaseId: number,
+    body: unknown,
+    connected: Set<string>,
+  ) => Promise<UploadResult>;
+  readUpload: (sessionId: string, viewer: UploadViewer, id: string) => Promise<string | null>;
+  connectedPlayers: (sessionId: string) => Set<string>;
+};
+
+const MINUTE_MS = 60_000;
+const UPLOAD_MAX_BYTES = DRAW_IT_UPLOAD_MAX_BYTES;
+const UPLOADS_PER_PLAYER_PER_MINUTE = 150;
+const READS_PER_VIEWER_PER_MINUTE = 600;
+const REQUESTS_PER_ADDRESS_PER_MINUTE = 6000;
+
+const UploadIdSchema = Type.String({ minLength: 1, maxLength: 32, pattern: "^[A-Za-z0-9_-]+$" });
+
+const PlayerUploadParamsSchema = Type.Object({
+  sessionId: Type.String({ format: "uuid" }),
+  playerId: Type.String({ format: "uuid" }),
+});
+
+const PlayerReadParamsSchema = Type.Object({
+  sessionId: Type.String({ format: "uuid" }),
+  playerId: Type.String({ format: "uuid" }),
+  uploadId: UploadIdSchema,
+});
+
+const HostReadParamsSchema = Type.Object({
+  sessionId: Type.String({ format: "uuid" }),
+  uploadId: UploadIdSchema,
+});
+
+const UploadBodySchema = Type.Object(
+  { phaseId: Type.Integer({ minimum: 1 }), upload: Type.Unknown() },
+  { additionalProperties: false },
+);
+
+const errorResponses = {
+  400: ApiErrorSchema,
+  401: ApiErrorSchema,
+  404: ApiErrorSchema,
+  409: ApiErrorSchema,
+  413: ApiErrorSchema,
+  429: ApiErrorSchema,
+};
+
+const perRoute = (max: number, key: (params: Record<string, string>) => string) => ({
+  rateLimit: {
+    max,
+    timeWindow: MINUTE_MS,
+    keyGenerator: (request: { params: unknown }) => key(request.params as Record<string, string>),
+  },
+});
+
+const sendUpload = (reply: FastifyReply, payload: string | null) => {
+  if (payload === null) return reply.code(404).send({ code: "not_found" });
+  return reply
+    .header("content-type", "application/json; charset=utf-8")
+    .header("cache-control", "no-store")
+    .header("x-content-type-options", "nosniff")
+    .send(payload);
+};
+
+const playerUploadRoutes =
+  (sessions: SessionService, uploads: GameUploads): FastifyPluginAsyncTypebox =>
+  async (app) => {
+    const playerOf = requirePlayer(app, sessions, REQUESTS_PER_ADDRESS_PER_MINUTE);
+
+    app.put(
+      "/api/sessions/:sessionId/players/:playerId/game/upload",
+      {
+        bodyLimit: UPLOAD_MAX_BYTES,
+        config: perRoute(UPLOADS_PER_PLAYER_PER_MINUTE, (params) => `${params.sessionId}:${params.playerId}`),
+        schema: {
+          params: PlayerUploadParamsSchema,
+          headers: BearerAuthHeadersSchema,
+          body: UploadBodySchema,
+          response: { 204: Type.Null(), ...errorResponses },
+        },
+      },
+      async (request, reply) => {
+        const { session, player } = playerOf(request);
+        const result = await uploads.upload(
+          session.id,
+          player.id,
+          request.body.phaseId,
+          request.body.upload,
+          uploads.connectedPlayers(session.id),
+        );
+        if (result === "accepted") return reply.code(204).send(null);
+        if (result === "invalid") return reply.code(400).send({ code: "bad_request" });
+        return reply.code(409).send({ code: "input_closed" });
+      },
+    );
+
+    app.get(
+      "/api/sessions/:sessionId/players/:playerId/game/uploads/:uploadId",
+      {
+        config: perRoute(READS_PER_VIEWER_PER_MINUTE, (params) => `${params.sessionId}:${params.playerId}`),
+        schema: { params: PlayerReadParamsSchema, headers: BearerAuthHeadersSchema },
+      },
+      async (request, reply) => {
+        const { session, player } = playerOf(request);
+        const viewer: UploadViewer = { kind: "player", playerId: player.id };
+        return sendUpload(reply, await uploads.readUpload(session.id, viewer, request.params.uploadId));
+      },
+    );
+  };
+
+const hostUploadRoutes =
+  (sessions: SessionService, uploads: GameUploads): FastifyPluginAsyncTypebox =>
+  async (app) => {
+    const hostOf = requireHost(app, sessions, REQUESTS_PER_ADDRESS_PER_MINUTE);
+
+    app.get(
+      "/api/sessions/:sessionId/game/uploads/:uploadId",
+      {
+        config: perRoute(READS_PER_VIEWER_PER_MINUTE, (params) => `${params.sessionId}:host`),
+        schema: { params: HostReadParamsSchema, headers: BearerAuthHeadersSchema },
+      },
+      async (request, reply) => {
+        const session = hostOf(request);
+        return sendUpload(reply, await uploads.readUpload(session.id, { kind: "host" }, request.params.uploadId));
+      },
+    );
+  };
+
+export const uploadRoutes =
+  (sessions: SessionService, uploads: GameUploads): FastifyPluginAsyncTypebox =>
+  async (app) => {
+    app.register(playerUploadRoutes(sessions, uploads));
+    app.register(hostUploadRoutes(sessions, uploads));
+  };

@@ -2,6 +2,7 @@ import type { QuizStageView } from "@gamemash/games/config";
 import type { GameSnapshot, PlayingSnapshot } from "@gamemash/shared";
 import { FormattedMessage } from "react-intl";
 import type { LobbyStatus } from "../../lib/lobby";
+import { StageDrawIt } from "../draw/StageDrawIt";
 import { StageQuizQuestion } from "../quiz/StageQuizQuestion";
 import { StageQuizReveal } from "../quiz/StageQuizReveal";
 import { HostNextButton } from "./HostNextButton";
@@ -32,6 +33,9 @@ export const StageGame = ({ sessionId, sessionName, snapshot, status }: StageGam
         players={players}
       />
     );
+  }
+  if (snapshot.gameType === "draw-it") {
+    return <StageDrawIt sessionId={sessionId} snapshot={snapshot} players={players} status={status} />;
   }
   if (snapshot.gameType !== "pop-quiz") return null;
 

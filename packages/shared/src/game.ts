@@ -14,6 +14,7 @@ export type PlayingSnapshot = {
   phase: string;
   phaseEndsAt: number | null;
   waitsForHost: boolean;
+  canSkip: boolean;
   serverNow: number;
   view: unknown;
 };
