@@ -1,11 +1,11 @@
 import {
+  answerKeysOf,
   isQuestionComplete,
   POP_QUIZ_ANSWER_MAX_LENGTH,
   POP_QUIZ_MAX_QUESTIONS,
   POP_QUIZ_QUESTION_MAX_LENGTH,
   POP_QUIZ_TEXT_MAX_RUNS,
   type PopQuizConfig,
-  QUIZ_ANSWER_KEYS,
   type QuizQuestion,
 } from "@gamemash/games/config";
 import { stripHiddenCharacters } from "@gamemash/shared";
@@ -21,6 +21,7 @@ import {
 import { useRef, useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { QuestionImages } from "./QuestionImages";
+import { QuestionKindField } from "./QuestionKindField";
 import { QuestionSettings } from "./QuestionSettings";
 import { addQuestion, deleteQuestion, insertQuestionAfter, newQuestionId, updateQuestion } from "./setup-changes";
 import type { ImageUploads } from "./useImageUploads";
@@ -106,9 +107,10 @@ export const QuizEditor = ({
               underline: intl.formatMessage({ id: "setup.underline" }),
             }}
           />
+          <QuestionKindField question={question} onChange={change} />
           <AnswerTileEditor
             legend={<FormattedMessage id="setup.answersLegend" />}
-            answers={QUIZ_ANSWER_KEYS.map((shape) => {
+            answers={answerKeysOf(question).map((shape) => {
               const shapeName = intl.formatMessage({ id: "setup.shapeName" }, { shape });
               return {
                 shape,

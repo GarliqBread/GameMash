@@ -4,6 +4,7 @@ import {
   POP_QUIZ_MAX_IMAGES_PER_QUESTION,
   POP_QUIZ_MAX_QUESTIONS,
   POP_QUIZ_POINT_LEVELS,
+  POP_QUIZ_QUESTION_KINDS,
   POP_QUIZ_QUESTION_MAX_LENGTH,
   POP_QUIZ_TEXT_MAX_RUNS,
   POP_QUIZ_TIME_LIMITS,
@@ -31,6 +32,7 @@ export type QuizText = Static<typeof QuizTextSchema>;
 export const QuizQuestionSchema = Type.Object(
   {
     id: ItemIdSchema,
+    kind: Type.Enum(POP_QUIZ_QUESTION_KINDS),
     text: QuizTextSchema,
     images: Type.Array(ItemIdSchema, { maxItems: POP_QUIZ_MAX_IMAGES_PER_QUESTION }),
     answers: Type.Object(

@@ -4,6 +4,7 @@ import {
   type GameSetup,
   type PopQuizConfig,
   type QuizQuestion,
+  type QuizQuestionKind,
   type SessionSetup,
 } from "@gamemash/games/config";
 import { createLocalId } from "../../lib/ids";
@@ -63,3 +64,24 @@ export const deleteQuestion = (config: PopQuizConfig, questionId: string): PopQu
   ...config,
   questions: config.questions.filter((question) => question.id !== questionId),
 });
+
+export type TrueFalseLabels = { true: string; false: string };
+
+export const changeQuestionKind = (
+  question: QuizQuestion,
+  kind: QuizQuestionKind,
+  labels: TrueFalseLabels,
+): QuizQuestion => {
+  if (kind === question.kind) return question;
+  const keepUnlessDefault = (value: string, label: string) => (value === label ? "" : value);
+  const answers =
+    kind === "trueFalse"
+      ? { squircle: labels.false, triangle: "", plus: labels.true, dome: "" }
+      : {
+          squircle: keepUnlessDefault(question.answers.squircle, labels.false),
+          triangle: "",
+          plus: keepUnlessDefault(question.answers.plus, labels.true),
+          dome: "",
+        };
+  return { ...question, kind, answers, correct: null };
+};

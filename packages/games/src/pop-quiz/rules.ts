@@ -1,8 +1,8 @@
 import type { GameRules, Phase, Points, Submission } from "../rules.js";
 import {
+  answerKeysOf,
   POP_QUIZ_POINTS,
   type PopQuizConfig,
-  QUIZ_ANSWER_KEYS,
   type QuizAnswerKey,
   type QuizQuestion,
   questionTimeLimit,
@@ -35,7 +35,8 @@ const answeringPhase = (config: PopQuizConfig, question: QuizQuestion, playerIds
   input: { from: playerIds, endsWhenAllSubmitted: true },
 });
 
-const isAnswerKey = (value: unknown): value is QuizAnswerKey => QUIZ_ANSWER_KEYS.some((key) => key === value);
+const isShownShape = (question: QuizQuestion, value: unknown): value is QuizAnswerKey =>
+  answerKeysOf(question).some((shape) => shape === value);
 
 const shuffled = <T>(items: T[], random: () => number) =>
   items
@@ -49,20 +50,26 @@ const questionAt = (config: PopQuizConfig, index: number): QuizQuestion => {
   return question;
 };
 
+const layoutOf = (config: PopQuizConfig, question: QuizQuestion, random: () => number) => {
+  const keys = answerKeysOf(question);
+  return config.shuffleAnswers && question.kind === "choice" ? shuffled(keys, random) : [...keys];
+};
+
 const startQuestion = (config: PopQuizConfig, questionIndex: number, random: () => number): QuizState => ({
   questionIndex,
-  layout: config.shuffleAnswers ? shuffled(QUIZ_ANSWER_KEYS, random) : [...QUIZ_ANSWER_KEYS],
+  layout: layoutOf(config, questionAt(config, questionIndex), random),
   participantCount: 0,
   results: {},
 });
 
-const originalKey = (state: QuizState, shape: QuizAnswerKey) => state.layout[QUIZ_ANSWER_KEYS.indexOf(shape)] ?? shape;
+const originalKey = (question: QuizQuestion, state: QuizState, shape: QuizAnswerKey) =>
+  state.layout[answerKeysOf(question).indexOf(shape)] ?? shape;
 
 const answersOf = (question: QuizQuestion, state: QuizState): QuizAnswerOption[] =>
-  QUIZ_ANSWER_KEYS.map((shape) => ({ shape, text: question.answers[originalKey(state, shape)] }));
+  answerKeysOf(question).map((shape) => ({ shape, text: question.answers[originalKey(question, state, shape)] }));
 
 const correctShape = (question: QuizQuestion, state: QuizState): QuizAnswerKey =>
-  QUIZ_ANSWER_KEYS.find((shape) => originalKey(state, shape) === question.correct) ?? "squircle";
+  answerKeysOf(question).find((shape) => originalKey(question, state, shape) === question.correct) ?? "squircle";
 
 const scoreAnswers = (
   config: PopQuizConfig,
@@ -75,7 +82,7 @@ const scoreAnswers = (
   const points = POP_QUIZ_POINTS[question.points];
   const entries = [...submissions].map(([playerId, { input, at }]): [string, QuizResult] => {
     const ms = Math.min(Math.max(at - phaseStartedAt, 0), limitMs);
-    const isCorrect = originalKey(state, input) === question.correct;
+    const isCorrect = originalKey(question, state, input) === question.correct;
     const earned = isCorrect ? quizPoints({ points, speedBonus: config.speedBonus, limitMs, elapsedMs: ms }) : 0;
     return [playerId, { shape: input, isCorrect, points: earned, ms }];
   });
@@ -104,7 +111,8 @@ const progressOf = (config: PopQuizConfig, state: QuizState) => ({
 export const popQuizRules: GameRules<PopQuizConfig, QuizState, QuizAnswerKey> = {
   type: "pop-quiz",
 
-  parseInput: ({ phase, input }) => (phase.name === "answering" && isAnswerKey(input) ? input : null),
+  parseInput: ({ config, state, phase, input }) =>
+    phase.name === "answering" && isShownShape(questionAt(config, state.questionIndex), input) ? input : null,
 
   begin: ({ config, random }) => ({ phase: questionPhase, state: startQuestion(config, 0, random) }),
 
@@ -178,7 +186,7 @@ export const popQuizRules: GameRules<PopQuizConfig, QuizState, QuizAnswerKey> = 
     return {
       ...progress,
       kind: "reveal",
-      correct: { shape: correct, text: question.answers[originalKey(state, correct)] },
+      correct: { shape: correct, text: question.answers[originalKey(question, state, correct)] },
       result: result ? { shape: result.shape, isCorrect: result.isCorrect, points: result.points } : null,
       total,
       rank: rankOf(totals, playerId),

@@ -6,6 +6,7 @@ export type PhoneShellProps = ComponentProps<"div"> & {
   header?: ReactNode;
   footer?: ReactNode;
   bottomAction?: ReactNode;
+  isBottomActionSticky?: boolean | undefined;
   contentClassName?: string | undefined;
   mainClassName?: string | undefined;
 };
@@ -15,6 +16,7 @@ export const PhoneShell = ({
   header,
   footer,
   bottomAction,
+  isBottomActionSticky = false,
   children,
   className,
   contentClassName,
@@ -32,7 +34,16 @@ export const PhoneShell = ({
       {header && <header className="flex shrink-0 items-center justify-between gap-3">{header}</header>}
       <main className={cn("flex min-h-0 flex-1 flex-col gap-4", mainClassName)}>{children}</main>
       {footer && <footer className="shrink-0">{footer}</footer>}
-      {bottomAction && <div className="flex shrink-0 flex-col gap-3">{bottomAction}</div>}
+      {bottomAction && (
+        <div
+          className={cn(
+            "flex shrink-0 flex-col gap-3",
+            isBottomActionSticky && "sticky bottom-0 z-10 -mx-4 border-t border-border bg-bg px-4 py-3",
+          )}
+        >
+          {bottomAction}
+        </div>
+      )}
     </div>
   </div>
 );

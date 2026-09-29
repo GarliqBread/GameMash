@@ -25,6 +25,14 @@ const capital: QuizQuestion = {
   correct: "squircle",
 };
 
+const pluto: QuizQuestion = {
+  ...emptyQuestion("q3"),
+  kind: "trueFalse",
+  text: [{ text: "Pluto is a planet" }],
+  answers: { squircle: "False", triangle: "", plus: "True", dome: "" },
+  correct: "squircle",
+};
+
 const PLAYERS = ["priya", "daan", "lars"];
 const STARTED_AT = 1_000;
 
@@ -239,6 +247,42 @@ describe("pop quiz rules", () => {
     );
     expect(reveal.points).toEqual({ priya: 1000, daan: 0 });
     expect(rules.stageView(viewContext(config, reveal.state, reveal.phase))).toMatchObject({ correct: "plus" });
+  });
+
+  it("shows a true or false question as two answers in their own order, even with shuffling on", () => {
+    const config = quizConfig({ questions: [pluto], shuffleAnswers: true });
+    const { answering } = toAnswering(config, sequence([0.9, 0.1]));
+    const parse = (input: unknown) =>
+      rules.parseInput({ config, state: answering.state, phase: answering.phase, playerId: "priya", input });
+
+    expect(rules.stageView(viewContext(config, answering.state, answering.phase))).toMatchObject({
+      answers: [
+        { shape: "plus", text: "True" },
+        { shape: "squircle", text: "False" },
+      ],
+    });
+    expect(parse("squircle")).toBe("squircle");
+    expect(parse("triangle")).toBeNull();
+
+    const reveal = expectPhase(
+      advance(
+        config,
+        answering.state,
+        answering.phase,
+        answers([
+          ["priya", "squircle", 0],
+          ["daan", "plus", 0],
+        ]),
+      ),
+    );
+    expect(reveal.points).toEqual({ priya: 1000, daan: 0 });
+    expect(rules.stageView(viewContext(config, reveal.state, reveal.phase))).toMatchObject({
+      answers: [
+        { shape: "plus", text: "True" },
+        { shape: "squircle", text: "False" },
+      ],
+      correct: "squircle",
+    });
   });
 
   it("never tells any screen the correct answer before the reveal", () => {

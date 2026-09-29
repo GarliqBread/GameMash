@@ -16,9 +16,14 @@ export const POP_QUIZ_POINTS: Record<QuizPointLevel, number> = { standard: 1000,
 
 export type QuizAnswerKey = "squircle" | "triangle" | "plus" | "dome";
 export const QUIZ_ANSWER_KEYS: QuizAnswerKey[] = ["squircle", "triangle", "plus", "dome"];
+export const TRUE_FALSE_ANSWER_KEYS: QuizAnswerKey[] = ["plus", "squircle"];
+
+export type QuizQuestionKind = "choice" | "trueFalse";
+export const POP_QUIZ_QUESTION_KINDS: QuizQuestionKind[] = ["choice", "trueFalse"];
 
 export const emptyQuestion = (id: string): QuizQuestion => ({
   id,
+  kind: "choice",
   text: [],
   images: [],
   answers: { squircle: "", triangle: "", plus: "", dome: "" },
@@ -51,9 +56,21 @@ export const isQuestionTextValid = (text: QuizText) => {
   return plain.length <= POP_QUIZ_QUESTION_MAX_LENGTH && !hasHiddenCharacters(plain);
 };
 
+export const answerKeysOf = (question: QuizQuestion) =>
+  question.kind === "trueFalse" ? TRUE_FALSE_ANSWER_KEYS : QUIZ_ANSWER_KEYS;
+
 const isFilled = (value: string) => value.trim().length > 0;
+
+export const hasOnlyActiveAnswers = (question: QuizQuestion) => {
+  const keys = answerKeysOf(question);
+  const isUnused = (key: QuizAnswerKey) => !keys.includes(key);
+  return (
+    QUIZ_ANSWER_KEYS.filter(isUnused).every((key) => question.answers[key] === "") &&
+    (question.correct === null || !isUnused(question.correct))
+  );
+};
 
 export const isQuestionComplete = (question: QuizQuestion) =>
   isFilled(quizPlainText(question.text)) &&
-  QUIZ_ANSWER_KEYS.every((key) => isFilled(question.answers[key])) &&
+  answerKeysOf(question).every((key) => isFilled(question.answers[key])) &&
   question.correct !== null;

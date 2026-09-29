@@ -125,11 +125,35 @@ describe("session setup", () => {
     expect(response.json()).toEqual({ code: "bad_request" });
   });
 
+  it("rejects answers hidden by a true or false question", async () => {
+    const { save } = await setup();
+    const base = quizSetup();
+    const [game] = base.games;
+    const [question] = game?.config.questions ?? [];
+    if (!game || !question) throw new Error("expected a quiz question");
+    const withQuestion = (changes: Partial<typeof question>) => ({
+      ...base,
+      games: [{ ...game, config: { ...game.config, questions: [{ ...question, ...changes }] } }],
+    });
+    const trueFalse = {
+      kind: "trueFalse" as const,
+      answers: { squircle: "False", triangle: "", plus: "True", dome: "" },
+      correct: "squircle" as const,
+    };
+
+    expect((await save(withQuestion(trueFalse))).statusCode).toBe(204);
+    expect(
+      (await save(withQuestion({ ...trueFalse, answers: { ...trueFalse.answers, dome: "Maybe" } }))).json(),
+    ).toEqual({ code: "bad_request" });
+    expect((await save(withQuestion({ ...trueFalse, correct: "triangle" }))).json()).toEqual({ code: "bad_request" });
+  });
+
   it("accepts the largest setup the schema allows, even in non-Latin scripts", async () => {
     const { save, uploadImage } = await setup();
     const images = await Promise.all(Array.from({ length: 9 }, uploadImage));
     const question = (index: number) => ({
       id: `q${index}`,
+      kind: "choice" as const,
       text: Array.from({ length: 40 }, () => ({ text: "問".repeat(2), bold: true, italic: true, underline: true })),
       images,
       timeLimitSeconds: 120,

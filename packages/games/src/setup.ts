@@ -1,5 +1,5 @@
 import type { LineupEntry } from "@gamemash/shared";
-import { isQuestionComplete, isQuestionTextValid, quizTimeRange } from "./pop-quiz/config.js";
+import { hasOnlyActiveAnswers, isQuestionComplete, isQuestionTextValid, quizTimeRange } from "./pop-quiz/config.js";
 import type { GameSetup, SessionSetup } from "./setup-schema.js";
 
 export type { GameSetup, HostSetupResponse, SessionSetup } from "./setup-schema.js";
@@ -17,6 +17,9 @@ export const hasUniqueIds = (setup: SessionSetup) =>
 
 export const hasValidText = (setup: SessionSetup) =>
   setup.games.every((game) => game.config.questions.every((question) => isQuestionTextValid(question.text)));
+
+export const hasValidAnswers = (setup: SessionSetup) =>
+  setup.games.every((game) => game.config.questions.every(hasOnlyActiveAnswers));
 
 export const setupImageIds = (setup: SessionSetup) => [
   ...new Set(setup.games.flatMap((game) => game.config.questions.flatMap((question) => question.images))),

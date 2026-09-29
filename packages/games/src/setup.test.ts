@@ -4,6 +4,7 @@ import { defaultPopQuizConfig, emptyQuestion, isQuestionComplete, type QuizQuest
 import {
   type GameSetup,
   hasUniqueIds,
+  hasValidAnswers,
   hasValidText,
   isGameReady,
   isSetupReady,
@@ -17,6 +18,14 @@ const complete: QuizQuestion = {
   text: [{ text: "Which planet has the " }, { text: "most", italic: true }, { text: " known moons?" }],
   answers: { squircle: "Jupiter", triangle: "Saturn", plus: "Uranus", dome: "Neptune" },
   correct: "triangle",
+};
+
+const trueFalse: QuizQuestion = {
+  ...emptyQuestion("q2"),
+  kind: "trueFalse",
+  text: [{ text: "Pluto is a planet" }],
+  answers: { squircle: "False", triangle: "", plus: "True", dome: "" },
+  correct: "squircle",
 };
 
 const quiz = (questions: QuizQuestion[], id = "quiz-1"): GameSetup => ({
@@ -41,6 +50,8 @@ describe("session setup schema", () => {
     ["more than 9 images", { ...complete, images: Array.from({ length: 10 }, (_, index) => `img${index}`) }],
     ["an unknown time limit", { ...complete, timeLimitSeconds: 45 }],
     ["unknown points", { ...complete, points: "triple" }],
+    ["an unknown question kind", { ...complete, kind: "poll" }],
+    ["a missing question kind", { ...complete, kind: undefined }],
   ])("rejects %s", (_, question) => {
     expect(Value.Check(SessionSetupSchema, { name: "", games: [quiz([question as QuizQuestion])] })).toBe(false);
   });
@@ -59,6 +70,22 @@ describe("quiz readiness", () => {
     expect(isQuestionComplete({ ...complete, text: [] })).toBe(false);
     expect(isQuestionComplete({ ...complete, answers: { ...complete.answers, plus: "" } })).toBe(false);
     expect(isQuestionComplete({ ...complete, correct: null })).toBe(false);
+  });
+
+  it("needs only the two answers of a true or false question", () => {
+    expect(isQuestionComplete(trueFalse)).toBe(true);
+    expect(isQuestionComplete({ ...trueFalse, answers: { ...trueFalse.answers, plus: " " } })).toBe(false);
+    expect(isQuestionComplete({ ...trueFalse, correct: null })).toBe(false);
+  });
+
+  it("rejects hidden answers on a true or false question", () => {
+    const setupWith = (question: QuizQuestion) => ({ name: "", games: [quiz([complete, question])] });
+
+    expect(hasValidAnswers(setupWith(trueFalse))).toBe(true);
+    expect(hasValidAnswers(setupWith({ ...trueFalse, answers: { ...trueFalse.answers, triangle: "Maybe" } }))).toBe(
+      false,
+    );
+    expect(hasValidAnswers(setupWith({ ...trueFalse, correct: "dome" }))).toBe(false);
   });
 
   it("is ready only when every game has questions and all of them are complete", () => {

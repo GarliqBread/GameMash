@@ -76,6 +76,7 @@ export const AvatarEditor = ({ credentials, name, character, onClose }: AvatarEd
     <PhoneShell
       theme="paper"
       mainClassName="gap-5"
+      isBottomActionSticky
       header={<Logo />}
       footer={
         <p className="text-caption text-fg-subtle">

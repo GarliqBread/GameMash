@@ -65,6 +65,28 @@ export const PhonePaper: Story = () => {
   );
 };
 
+export const PhoneStickyAction: Story = () => {
+  const t = useCopy();
+  return (
+    <PhoneShell
+      theme="paper"
+      header={<Logo />}
+      isBottomActionSticky
+      bottomAction={
+        <>
+          <Button size="lg">{t("Save")}</Button>
+          <Button variant="ghost">{t("Cancel")}</Button>
+        </>
+      }
+    >
+      <h1 className="font-display text-[38px] leading-[1.05] font-extrabold tracking-[-0.02em]">{t("Your look")}</h1>
+      {Array.from({ length: 12 }, (_, index) => `row-${index}`).map((key) => (
+        <div key={key} className="h-20 shrink-0 rounded-field bg-surface" />
+      ))}
+    </PhoneShell>
+  );
+};
+
 export const PhoneStage: Story = () => {
   const t = useCopy();
   return (
