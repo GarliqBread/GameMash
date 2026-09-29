@@ -38,7 +38,7 @@ const diskHarness = (): Harness => {
     store,
     download: async (url) => {
       const [sessionId = "", imageId = ""] = url.slice(DISK_IMAGE_PATH.length + 1).split("/");
-      return store.read(sessionId, imageId);
+      return store.get(sessionId, imageId);
     },
   };
 };
@@ -69,6 +69,16 @@ describe.each(harnesses)("%s image store", (_name, makeHarness) => {
     const url = await store.presignedUrl(sessionId, imageId);
 
     expect(await download(url)).toEqual({ bytes: bytes(1), contentType: "image/webp" });
+  });
+
+  run("reads a stored image back, and nothing for an unknown one", async () => {
+    const { store } = harness();
+    const sessionId = randomUUID();
+    const imageId = await upload(store, sessionId, 7, "image/jpeg");
+
+    expect(await store.get(sessionId, imageId)).toEqual({ bytes: bytes(7), contentType: "image/jpeg" });
+    expect(await store.get(sessionId, createImageId())).toBeNull();
+    await store.deleteSession(sessionId);
   });
 
   run("deletes every image of a session and leaves other sessions alone", async () => {

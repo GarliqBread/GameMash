@@ -8,6 +8,7 @@ const IMAGE_ID_BYTES = 16;
 
 export type ImageStore = {
   put: (sessionId: string, imageId: string, bytes: Buffer, contentType: QuestionImageContentType) => Promise<void>;
+  get: (sessionId: string, imageId: string) => Promise<StoredImage | null>;
   presignedUrl: (sessionId: string, imageId: string) => Promise<string>;
   deleteImages: (sessionId: string, imageIds: string[]) => Promise<void>;
   deleteSession: (sessionId: string) => Promise<void>;

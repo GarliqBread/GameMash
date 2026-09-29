@@ -1,7 +1,7 @@
 import { mkdir, readdir, readFile, rename, rm, statfs, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { QUESTION_IMAGE_CONTENT_TYPES, type QuestionImageContentType } from "@gamemash/shared";
-import { IMAGE_SESSIONS_PREFIX, type ImageStore, type StoredImage } from "./image-store.js";
+import { IMAGE_SESSIONS_PREFIX, type ImageStore } from "./image-store.js";
 
 const SAFE_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
@@ -17,9 +17,7 @@ export type DiskImageStoreOptions = {
   minFreeBytes: number;
 };
 
-export type DiskImageStore = ImageStore & {
-  read: (sessionId: string, imageId: string) => Promise<StoredImage | null>;
-};
+export type DiskImageStore = ImageStore;
 
 export const isSafeImagePathId = (value: string) => SAFE_ID.test(value);
 
@@ -55,7 +53,7 @@ export const createDiskImageStore = ({ directory, minFreeBytes }: DiskImageStore
       await rename(partial, target);
     },
     presignedUrl: async (sessionId, imageId) => `${DISK_IMAGE_PATH}/${sessionId}/${imageId}`,
-    read: async (sessionId, imageId) => {
+    get: async (sessionId, imageId) => {
       if (!isSafeImagePathId(sessionId) || !isSafeImagePathId(imageId)) return null;
       for (const contentType of QUESTION_IMAGE_CONTENT_TYPES) {
         const image = await readVariant(sessionId, imageId, contentType);

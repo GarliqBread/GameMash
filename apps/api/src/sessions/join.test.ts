@@ -134,8 +134,8 @@ describe("starting a session", () => {
     const listener = vi.fn();
     notifier.subscribe(listener);
 
-    await service.start(sessionId);
-    await service.start(sessionId);
+    expect(await service.start(sessionId)).toEqual({ ok: true, value: true });
+    expect(await service.start(sessionId)).toEqual({ ok: true, value: false });
 
     expect(listener).toHaveBeenCalledTimes(1);
   });

@@ -165,3 +165,19 @@ export const CloseIcon = (props: IconProps) => (
     <path d="M18 6 L6 18" />
   </Icon>
 );
+
+export const DownloadIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M12 4 V15" />
+    <path d="M7 10 L12 15 L17 10" />
+    <path d="M4 17 V20 H20 V17" />
+  </Icon>
+);
+
+export const UploadIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M12 15 V4" />
+    <path d="M7 9 L12 4 L17 9" />
+    <path d="M4 17 V20 H20 V17" />
+  </Icon>
+);

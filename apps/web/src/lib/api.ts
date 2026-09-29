@@ -35,6 +35,9 @@ const parseJson = async (response: Response): Promise<unknown> => {
   }
 };
 
+export const responseError = async (response: Response) =>
+  new ApiRequestError(toApiError(await parseJson(response)), response.status);
+
 export const fetchJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
   const response = await fetch(path, init);
   if (response.status === NO_CONTENT) return undefined as T;

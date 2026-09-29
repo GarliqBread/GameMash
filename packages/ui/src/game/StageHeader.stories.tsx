@@ -26,10 +26,12 @@ export const Examples: Story = () => {
       <Caption>Draw vote</Caption>
       <StageHeader
         game={t("Draw it")}
-        progress={t("Voting · “Lighthouse”")}
+        progress={t("Voting - “Lighthouse”")}
         right={
           <>
-            <span className="text-stage-body font-bold">{t("Drawing 3 of 9")}</span>
+            <span className="text-stage-body font-bold">
+              {t("Drawing 3 of 9")}
+            </span>
             <ProgressDots total={9} current={3} />
           </>
         }
@@ -37,8 +39,15 @@ export const Examples: Story = () => {
       <Caption>Long German progress text truncates</Caption>
       <StageHeader
         game="Zeichnen"
-        progress="Abstimmung läuft · „Leuchtturmwärterhäuschen am Wattenmeer“"
-        right={<CountStat value={5} total={8} caption="haben bewertet (der Künstler setzt aus)" size="md" />}
+        progress="Abstimmung läuft - „Leuchtturmwärterhäuschen am Wattenmeer“"
+        right={
+          <CountStat
+            value={5}
+            total={8}
+            caption="haben bewertet (der Künstler setzt aus)"
+            size="md"
+          />
+        }
       />
     </StageFrame>
   );

@@ -10,6 +10,7 @@ import {
   StageLayout,
   StageViewport,
 } from "@gamemash/ui";
+import type { ReactNode } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { avatarSrc } from "../../lib/players";
 
@@ -36,9 +37,10 @@ export type StageFinalScoresProps = {
   sessionName: string;
   standings: GameStanding[];
   players: Map<string, LobbyPlayer>;
+  actions?: ReactNode;
 };
 
-export const StageFinalScores = ({ sessionId, sessionName, standings, players }: StageFinalScoresProps) => {
+export const StageFinalScores = ({ sessionId, sessionName, standings, players, actions }: StageFinalScoresProps) => {
   const intl = useIntl();
   const ranked = rankPlayers(sessionId, standings, players);
   const formatNumber = (value: number) => intl.formatNumber(value);
@@ -49,6 +51,7 @@ export const StageFinalScores = ({ sessionId, sessionName, standings, players }:
         mainClassName="gap-6"
         backdrop={<DecorativeShapes />}
         header={<Logo size="lg" />}
+        footer={actions}
       >
         <div className="flex flex-col items-center gap-1">
           <Heading size="stage-hero">

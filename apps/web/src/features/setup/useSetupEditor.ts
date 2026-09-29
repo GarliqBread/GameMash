@@ -57,6 +57,16 @@ export const useSetupEditor = (credentials: HostCredentials, initialSetup: Sessi
     timer.current = setTimeout(() => void flush(), SAVE_DELAY_MS);
   };
 
+  const replace = (next: SessionSetup) => {
+    clearTimeout(timer.current);
+    timer.current = undefined;
+    latest.current = next;
+    pending.current = null;
+    setSetup(next);
+    setSaveError(null);
+    setStatus("saved");
+  };
+
   const flushRef = useRef(flush);
   flushRef.current = flush;
 
@@ -77,5 +87,5 @@ export const useSetupEditor = (credentials: HostCredentials, initialSetup: Sessi
     };
   }, []);
 
-  return { setup, status, saveError, update, flush };
+  return { setup, status, saveError, update, flush, replace };
 };

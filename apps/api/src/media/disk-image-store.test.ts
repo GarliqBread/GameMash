@@ -13,8 +13,8 @@ describe("disk image store", () => {
 
     await expect(store.put("../escape", "image", Buffer.from([1]), "image/jpeg")).rejects.toThrow();
     await expect(store.deleteSession("..")).rejects.toThrow();
-    expect(await store.read("..", "passwd")).toBeNull();
-    expect(await store.read(randomUUID(), "../../etc")).toBeNull();
+    expect(await store.get("..", "passwd")).toBeNull();
+    expect(await store.get(randomUUID(), "../../etc")).toBeNull();
   });
 
   it("leaves no partial files behind after a write", async () => {

@@ -15,10 +15,11 @@ import {
 import type { FastifyBaseLogger } from "fastify";
 import proxyAddr from "proxy-addr";
 import { Server, type Socket } from "socket.io";
+import type { Static, TSchema } from "typebox";
 import { Value } from "typebox/value";
 import type { GameRunner } from "../game/runner.js";
 import { clientKey } from "../limits/client-key.js";
-import { createRateLimiter } from "../limits/rate-limiter.js";
+import { createRateLimiter, type RateLimiter } from "../limits/rate-limiter.js";
 import type { SessionService } from "../sessions/service.js";
 import type { LobbyNotifier } from "./notifier.js";
 import { createPresence, HOST_MEMBER } from "./presence.js";
@@ -33,11 +34,13 @@ type SocketData = {
 type LobbyServer = Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>;
 type LobbySocket = Socket<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>;
 
+type ActionOptions = { role: SocketData["role"]; limiter: RateLimiter; failure: string };
+
 export type LobbyLimits = {
   handshakesPerAddressPerMinute: number;
   connectionsPerPlayer: number;
   connectionsPerHost: number;
-  startsPerSocketPerMinute: number;
+  sessionActionsPerSocketPerMinute: number;
   gameActionsPerSocketPerMinute: number;
 };
 
@@ -45,7 +48,7 @@ export const DEFAULT_LOBBY_LIMITS: LobbyLimits = {
   handshakesPerAddressPerMinute: 600,
   connectionsPerPlayer: 3,
   connectionsPerHost: 5,
-  startsPerSocketPerMinute: 10,
+  sessionActionsPerSocketPerMinute: 10,
   gameActionsPerSocketPerMinute: 60,
 };
 
@@ -112,7 +115,7 @@ export const attachLobby = (
     handshakesPerAddressPerMinute,
     connectionsPerPlayer,
     connectionsPerHost,
-    startsPerSocketPerMinute,
+    sessionActionsPerSocketPerMinute,
     gameActionsPerSocketPerMinute,
   } = {
     ...DEFAULT_LOBBY_LIMITS,
@@ -121,7 +124,7 @@ export const attachLobby = (
   const io: LobbyServer = new Server(httpServer, { serveClient: false, maxHttpBufferSize: MAX_MESSAGE_BYTES });
   const presence = createPresence();
   const handshakes = createRateLimiter({ max: handshakesPerAddressPerMinute, windowMs: MINUTE_MS });
-  const starts = createRateLimiter({ max: startsPerSocketPerMinute, windowMs: MINUTE_MS });
+  const sessionActions = createRateLimiter({ max: sessionActionsPerSocketPerMinute, windowMs: MINUTE_MS });
   const gameActions = createRateLimiter({ max: gameActionsPerSocketPerMinute, windowMs: MINUTE_MS });
   const trusted = proxyAddr.compile(trustProxy);
   const pendingBroadcasts = new Map<string, NodeJS.Timeout>();
@@ -276,18 +279,75 @@ export const attachLobby = (
     }
   });
 
-  const handleStart = (socket: LobbySocket) => async (ack: unknown) => {
-    const reply = replyTo(ack);
-    if (socket.data.role !== "host") return reply(unauthorized);
-    if (!starts.hit(socket.id)) return reply(rateLimited);
+  const guard = async (
+    socket: LobbySocket,
+    { role, limiter, failure }: ActionOptions,
+    run: () => Promise<SocketAck>,
+  ): Promise<SocketAck> => {
+    if (socket.data.role !== role) return unauthorized;
+    if (!limiter.hit(socket.id)) return rateLimited;
     try {
-      const result = await sessions.start(socket.data.sessionId);
-      if (!result.ok) return reply({ ok: false, error: { code: result.error } });
-      return reply((await game.begin(socket.data.sessionId)) ? accepted : internalError);
+      return await run();
     } catch (error) {
-      log.error({ err: error }, "failed to start session");
-      return reply(internalError);
+      log.error({ err: error, sessionId: socket.data.sessionId }, failure);
+      return internalError;
     }
+  };
+
+  const action = (socket: LobbySocket, options: ActionOptions, run: () => Promise<SocketAck>) => async (ack: unknown) =>
+    replyTo(ack)(await guard(socket, options, run));
+
+  const payloadAction =
+    <S extends TSchema>(
+      socket: LobbySocket,
+      options: ActionOptions,
+      schema: S,
+      run: (payload: Static<S>) => Promise<SocketAck>,
+    ) =>
+    async (payload: unknown, ack: unknown) =>
+      replyTo(ack)(
+        await guard(socket, options, async () => (Value.Check(schema, payload) ? run(payload) : badRequest)),
+      );
+
+  const hostSessionAction: Omit<ActionOptions, "failure"> = { role: "host", limiter: sessionActions };
+  const hostGameAction: Omit<ActionOptions, "failure"> = { role: "host", limiter: gameActions };
+
+  const startSession = async (sessionId: string): Promise<SocketAck> => {
+    const result = await sessions.start(sessionId);
+    if (!result.ok) return { ok: false, error: { code: result.error } };
+    return (await game.begin(sessionId, result.value)) ? accepted : internalError;
+  };
+
+  const resetSession = async (sessionId: string): Promise<SocketAck> => {
+    if (!(await game.reset(sessionId))) return { ok: false, error: { code: "game_not_finished" } };
+    scheduleBroadcast(sessionId);
+    return accepted;
+  };
+
+  const closeSession = async (sessionId: string): Promise<SocketAck> => {
+    await sessions.end(sessionId);
+    setImmediate(() => endSession(sessionId));
+    return accepted;
+  };
+
+  const kickPlayer = async (sessionId: string, playerId: string): Promise<SocketAck> => {
+    const result = await sessions.kick(sessionId, playerId);
+    if (!result.ok) return { ok: false, error: { code: result.error } };
+    const room = playerRoom(sessionId, playerId);
+    io.to(room).emit("player:removed");
+    io.in(room).disconnectSockets(true);
+    return accepted;
+  };
+
+  const submitInput = async (
+    sessionId: string,
+    playerId: string,
+    phaseId: number,
+    input: unknown,
+  ): Promise<SocketAck> => {
+    const result = await game.submit(sessionId, playerId, phaseId, input, presence.connectedPlayers(sessionId));
+    if (result === "accepted") return accepted;
+    return { ok: false, error: { code: result === "duplicate" ? "already_submitted" : "input_closed" } };
   };
 
   const dropIfRemoved = async (socket: LobbySocket) => {
@@ -295,61 +355,6 @@ export const attachLobby = (
     if (!(await sessions.isRemoved(sessionId, member))) return;
     socket.emit("player:removed");
     socket.disconnect(true);
-  };
-
-  const handleKick = (socket: LobbySocket) => async (payload: unknown, ack: unknown) => {
-    const reply = replyTo(ack);
-    const { sessionId, role } = socket.data;
-    if (role !== "host") return reply(unauthorized);
-    if (!gameActions.hit(socket.id)) return reply(rateLimited);
-    if (!Value.Check(KickPlayerPayloadSchema, payload)) return reply(badRequest);
-    try {
-      const result = await sessions.kick(sessionId, payload.playerId);
-      if (!result.ok) return reply({ ok: false, error: { code: result.error } });
-      const room = playerRoom(sessionId, payload.playerId);
-      io.to(room).emit("player:removed");
-      io.in(room).disconnectSockets(true);
-      return reply(accepted);
-    } catch (error) {
-      log.error({ err: error }, "failed to remove player");
-      return reply(internalError);
-    }
-  };
-
-  const handleNext = (socket: LobbySocket) => async (payload: unknown, ack: unknown) => {
-    const reply = replyTo(ack);
-    if (socket.data.role !== "host") return reply(unauthorized);
-    if (!gameActions.hit(socket.id)) return reply(rateLimited);
-    if (!Value.Check(GameNextPayloadSchema, payload)) return reply(badRequest);
-    try {
-      await game.next(socket.data.sessionId, payload.phaseId);
-      return reply(accepted);
-    } catch (error) {
-      log.error({ err: error }, "failed to advance game");
-      return reply(internalError);
-    }
-  };
-
-  const handleInput = (socket: LobbySocket) => async (payload: unknown, ack: unknown) => {
-    const reply = replyTo(ack);
-    const { sessionId, role, member } = socket.data;
-    if (role !== "player") return reply(unauthorized);
-    if (!gameActions.hit(socket.id)) return reply(rateLimited);
-    if (!Value.Check(GameInputPayloadSchema, payload)) return reply(badRequest);
-    try {
-      const result = await game.submit(
-        sessionId,
-        member,
-        payload.phaseId,
-        payload.input,
-        presence.connectedPlayers(sessionId),
-      );
-      if (result === "accepted") return reply(accepted);
-      return reply({ ok: false, error: { code: result === "duplicate" ? "already_submitted" : "input_closed" } });
-    } catch (error) {
-      log.error({ err: error }, "failed to submit game input");
-      return reply(internalError);
-    }
   };
 
   io.on("connection", (socket) => {
@@ -365,10 +370,48 @@ export const attachLobby = (
     void sendGame(socket).catch((error: unknown) => log.error({ err: error, sessionId }, "failed to send game"));
     scheduleBroadcast(sessionId);
 
-    socket.on("session:start", handleStart(socket));
-    socket.on("player:kick", handleKick(socket));
-    socket.on("game:next", handleNext(socket));
-    socket.on("game:input", handleInput(socket));
+    socket.on(
+      "session:start",
+      action(socket, { ...hostSessionAction, failure: "failed to start session" }, () => startSession(sessionId)),
+    );
+    socket.on(
+      "session:reset",
+      action(socket, { ...hostSessionAction, failure: "failed to reset session" }, () => resetSession(sessionId)),
+    );
+    socket.on(
+      "session:end",
+      action(socket, { ...hostSessionAction, failure: "failed to end session" }, () => closeSession(sessionId)),
+    );
+    socket.on(
+      "player:kick",
+      payloadAction(
+        socket,
+        { ...hostGameAction, failure: "failed to remove player" },
+        KickPlayerPayloadSchema,
+        ({ playerId }) => kickPlayer(sessionId, playerId),
+      ),
+    );
+    socket.on(
+      "game:next",
+      payloadAction(
+        socket,
+        { ...hostGameAction, failure: "failed to advance game" },
+        GameNextPayloadSchema,
+        async ({ phaseId }) => {
+          await game.next(sessionId, phaseId);
+          return accepted;
+        },
+      ),
+    );
+    socket.on(
+      "game:input",
+      payloadAction(
+        socket,
+        { role: "player", limiter: gameActions, failure: "failed to submit game input" },
+        GameInputPayloadSchema,
+        ({ phaseId, input }) => submitInput(sessionId, member, phaseId, input),
+      ),
+    );
 
     socket.on("disconnect", () => {
       releases.get(socket)?.();

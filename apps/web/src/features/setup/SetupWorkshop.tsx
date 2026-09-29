@@ -35,9 +35,11 @@ import { DrawItRules } from "./DrawItRules";
 import { QuizEditor } from "./QuizEditor";
 import { QuizRules } from "./QuizRules";
 import { SetupLineup } from "./SetupLineup";
+import { SetupTransferButtons, SetupTransferStatus } from "./SetupTransfer";
 import { addGame, newGame, removeGame, reorderGames, updateDrawItConfig, updateQuizConfig } from "./setup-changes";
 import { useImageUploads } from "./useImageUploads";
 import { useSetupEditor } from "./useSetupEditor";
+import { useSetupTransfer } from "./useSetupTransfer";
 
 const problemOf = (games: GameSetup[]) => {
   const unready = games.find((game) => !isGameReady(game));
@@ -55,13 +57,22 @@ export const SetupWorkshop = ({ credentials, initialSetup, imagesEnabled }: Setu
   const intl = useIntl();
   const navigate = useNavigate();
   const formatError = useErrorMessage();
-  const { setup, status, saveError, update, flush } = useSetupEditor(credentials, initialSetup);
+  const { setup, status, saveError, update, flush, replace } = useSetupEditor(credentials, initialSetup);
   const uploads = useImageUploads(credentials);
   const [selectedGameId, setSelectedGameId] = useState(initialSetup.games[0]?.id);
   const [selectedQuestions, setSelectedQuestions] = useState<Record<string, string>>({});
   const [hasTriedToOpen, setHasTriedToOpen] = useState(false);
   const [isConfirmingRemove, setIsConfirmingRemove] = useState(false);
   const insertSlotRef = useRef<HTMLButtonElement>(null);
+  const transfer = useSetupTransfer({
+    credentials,
+    setup,
+    flush,
+    replace,
+    onImported: ({ setup: merged, addedGames }) => {
+      if (addedGames > 0) setSelectedGameId(merged.games.at(-addedGames)?.id);
+    },
+  });
 
   const game = setup.games.find((item) => item.id === selectedGameId) ?? setup.games[0];
   const selectQuestion = (gameId: string, questionId: string) =>
@@ -132,6 +143,7 @@ export const SetupWorkshop = ({ credentials, initialSetup, imagesEnabled }: Setu
             placeholder={intl.formatMessage({ id: "setup.sessionPlaceholder" })}
           />
           <div className="flex-1" />
+          <SetupTransferButtons transfer={transfer} canExport={setup.games.length > 0} />
           <Button
             size="lg"
             icon={<PlayIcon size={22} />}
@@ -214,6 +226,7 @@ export const SetupWorkshop = ({ credentials, initialSetup, imagesEnabled }: Setu
               <FormattedMessage id={`setup.${problem}`} />
             </p>
           )}
+          <SetupTransferStatus transfer={transfer} />
           {game?.type === "draw-it" ? (
             <DrawItEditor
               key={game.id}

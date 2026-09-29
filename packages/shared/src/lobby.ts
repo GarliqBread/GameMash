@@ -69,6 +69,8 @@ export type ServerToClientEvents = {
 
 export type ClientToServerEvents = {
   "session:start": (ack: (result: SocketAck) => void) => void;
+  "session:reset": (ack: (result: SocketAck) => void) => void;
+  "session:end": (ack: (result: SocketAck) => void) => void;
   "player:kick": (payload: KickPlayerPayload, ack: (result: SocketAck) => void) => void;
   "game:next": (payload: GameNextPayload, ack: (result: SocketAck) => void) => void;
   "game:input": (payload: GameInputPayload, ack: (result: SocketAck) => void) => void;

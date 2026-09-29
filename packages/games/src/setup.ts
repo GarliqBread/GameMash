@@ -1,12 +1,12 @@
 import type { LineupEntry } from "@gamemash/shared";
 import { drawItConfigRules } from "./draw-it/config.js";
-import type { GameConfigRules } from "./game-config.js";
+import type { GameConfigRules, ImageIdMap } from "./game-config.js";
 import { popQuizConfigRules } from "./pop-quiz/config.js";
 import type { GameSetup, SessionSetup } from "./setup-schema.js";
 import { hasUniqueIds } from "./unique.js";
 
-export type { GameConfigRules } from "./game-config.js";
-export type { GameSetup, HostSetupResponse, SessionSetup } from "./setup-schema.js";
+export type { GameConfigRules, ImageIdMap } from "./game-config.js";
+export type { GameSetup, HostSetupResponse, SessionSetup, SetupFile, SetupImportResponse } from "./setup-schema.js";
 
 export const SESSION_NAME_MAX_LENGTH = 40;
 export const MAX_GAMES = 10;
@@ -31,14 +31,22 @@ export const setupImageIds = (setup: SessionSetup) => [
   ...new Set(setup.games.flatMap((game) => configRulesOf(game).imageIds(game.config))),
 ];
 
-const gameWithoutImages = <Game extends GameSetup>(game: Game): Game => ({
+const gameWithImages = <Game extends GameSetup>(game: Game, map: ImageIdMap): Game => ({
   ...game,
-  config: configRulesOf(game).withoutImages(game.config),
+  config: configRulesOf(game).mapImages(game.config, map),
 });
 
-export const withoutImages = (setup: SessionSetup): SessionSetup => ({
+export const mapImages = (setup: SessionSetup, map: ImageIdMap): SessionSetup => ({
   ...setup,
-  games: setup.games.map(gameWithoutImages),
+  games: setup.games.map((game) => gameWithImages(game, map)),
+});
+
+export const withoutImages = (setup: SessionSetup): SessionSetup => mapImages(setup, () => null);
+
+export const withNewIds = <Game extends GameSetup>(game: Game, newId: () => string): Game => ({
+  ...game,
+  id: newId(),
+  config: configRulesOf(game).withNewIds(game.config, newId),
 });
 
 export const isGameReady = (game: GameSetup) => configRulesOf(game).isReady(game.config);
@@ -54,3 +62,7 @@ export const summarizeGame = (game: GameSetup): LineupEntry => {
     roundSeconds: rules.roundSeconds(game.config),
   };
 };
+
+export const SETUP_FILE_FORMAT = "gamemash-setup";
+export const SETUP_FILE_VERSION = 1;
+export const SETUP_FILE_ENTRY = "setup.json";

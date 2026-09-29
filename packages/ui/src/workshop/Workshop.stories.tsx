@@ -16,6 +16,7 @@ import { KeyButton } from "./KeyButton";
 import { SectionTab } from "./SectionTab";
 import { Sticker } from "./Sticker";
 import { ToolButton } from "./ToolButton";
+import { WorkingDialog } from "./WorkingDialog";
 
 export default { title: "Workshop" } satisfies StoryDefault;
 
@@ -229,6 +230,23 @@ export const Words: Story = () => {
           placeholder={t("Something to draw")}
         />
       </div>
+    </Bench>
+  );
+};
+
+export const Working: Story = () => {
+  const t = useCopy();
+  const [open, setOpen] = useState(false);
+  const show = () => {
+    setOpen(true);
+    setTimeout(() => setOpen(false), 3000);
+  };
+  return (
+    <Bench>
+      <ToolButton icon={<CopyIcon size={18} strokeWidth={2.2} />} onClick={show}>
+        {t("Import")}
+      </ToolButton>
+      <WorkingDialog open={open} title={t("Adding the games from your file..")} />
     </Bench>
   );
 };

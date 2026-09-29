@@ -83,9 +83,16 @@ export const popQuizConfigRules: GameConfigRules<PopQuizConfig> = {
     config.questions.every((question) => isQuestionTextValid(question.text) && hasOnlyActiveAnswers(question)),
   isReady: (config) => config.questions.length > 0 && config.questions.every(isQuestionComplete),
   imageIds: (config) => config.questions.flatMap((question) => question.images),
-  withoutImages: (config) => ({
+  mapImages: (config, map) => ({
     ...config,
-    questions: config.questions.map((question) => ({ ...question, images: [] })),
+    questions: config.questions.map((question) => ({
+      ...question,
+      images: question.images.flatMap((imageId) => map(imageId) ?? []),
+    })),
+  }),
+  withNewIds: (config, newId) => ({
+    ...config,
+    questions: config.questions.map((question) => ({ ...question, id: newId() })),
   }),
   roundCount: (config) => config.questions.length,
   roundSeconds: quizTimeRange,

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { clientKey } from "./client-key.js";
+import { createConcurrencyLimit } from "./concurrency-limit.js";
 import { createRateLimiter } from "./rate-limiter.js";
 
 describe("clientKey", () => {
@@ -38,5 +39,23 @@ describe("createRateLimiter", () => {
 
     expect(limiter.isLimited("a")).toBe(false);
     expect(limiter.isLimited("c")).toBe(true);
+  });
+});
+
+describe("concurrency limit", () => {
+  it("turns away work beyond the limit and frees the slot when work ends, even on failure", async () => {
+    const limit = createConcurrencyLimit(1);
+    let release = () => {};
+    const blocked = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    const first = limit.run(() => blocked.then(() => "first"));
+    expect(await limit.run(async () => "second")).toEqual({ ok: false });
+    release();
+    expect(await first).toEqual({ ok: true, value: "first" });
+
+    await expect(limit.run(async () => Promise.reject(new Error("boom")))).rejects.toThrow("boom");
+    expect(await limit.run(async () => "third")).toEqual({ ok: true, value: "third" });
   });
 });

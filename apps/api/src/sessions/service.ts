@@ -31,6 +31,7 @@ import { sessionExpiresAt } from "./expiry.js";
 import { inspectImage } from "./image.js";
 import { fail, type Result } from "./result.js";
 import { createId, createRoomCode, createSecret, hashSecret, matchesSecretHash } from "./secrets.js";
+import { createSetupTransfer } from "./setup-transfer.js";
 import type { AvatarChangeResult, PlayerRecord, SessionRecord, SessionStore } from "./store.js";
 
 const MAX_ROOM_CODE_ATTEMPTS = 20;
@@ -261,6 +262,16 @@ export const createSessionService = ({
     return { ok: true, value: null };
   };
 
+  const transfer = createSetupTransfer({
+    imagesEnabled: media.imagesEnabled,
+    getSetup,
+    saveSetup,
+    readImage: media.readImage,
+    hasImageRoom: media.hasImageRoom,
+    uploadImage: media.uploadImage,
+    discardImages: media.discardImages,
+  });
+
   const lobbyState = async (sessionId: string, connectedPlayerIds: Set<string>): Promise<LobbyState | null> => {
     const [session, players, avatarVersions, summaryJson] = await Promise.all([
       store.findById(sessionId),
@@ -311,16 +322,21 @@ export const createSessionService = ({
     return session !== null && player === null;
   };
 
-  const start = async (sessionId: string): Promise<Result<null>> => {
+  const start = async (sessionId: string): Promise<Result<boolean>> => {
     const session = await store.findById(sessionId);
     if (!session) return fail("room_not_found");
     if (session.status === "finished") return fail("session_ended");
-    if (session.status === "playing") return { ok: true, value: null };
+    if (session.status === "playing") return { ok: true, value: false };
     if (!isSetupReady(await readSetup(sessionId))) return fail("setup_incomplete");
     if (!(await store.setStatus(sessionId, "playing"))) return fail("room_not_found");
     await touch(session);
     notifier?.notify(sessionId);
-    return { ok: true, value: null };
+    return { ok: true, value: true };
+  };
+
+  const end = async (sessionId: string) => {
+    const session = await store.findById(sessionId);
+    if (session) await store.deleteSession(session);
   };
 
   const keepAlive = async (sessionId: string) => {
@@ -343,8 +359,11 @@ export const createSessionService = ({
     getSetup,
     readSetup,
     saveSetup,
+    exportSetup: transfer.exportSetup,
+    importSetup: transfer.importSetup,
     lobbyState,
     start,
+    end,
     kick,
     isRemoved,
     keepAlive,

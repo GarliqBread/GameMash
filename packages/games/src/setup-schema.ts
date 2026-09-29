@@ -2,7 +2,7 @@ import { type Static, Type } from "typebox";
 import { DrawItConfigSchema } from "./draw-it/schema.js";
 import { ItemIdSchema } from "./item-id.js";
 import { PopQuizConfigSchema } from "./pop-quiz/schema.js";
-import { MAX_GAMES, SESSION_NAME_MAX_LENGTH } from "./setup.js";
+import { MAX_GAMES, SESSION_NAME_MAX_LENGTH, SETUP_FILE_FORMAT, SETUP_FILE_VERSION } from "./setup.js";
 
 const PopQuizSetupSchema = Type.Object(
   {
@@ -42,3 +42,19 @@ export const HostSetupResponseSchema = Type.Object(
   { additionalProperties: false },
 );
 export type HostSetupResponse = Static<typeof HostSetupResponseSchema>;
+
+export const SetupFileSchema = Type.Object(
+  {
+    format: Type.Literal(SETUP_FILE_FORMAT),
+    version: Type.Literal(SETUP_FILE_VERSION),
+    setup: SessionSetupSchema,
+  },
+  { additionalProperties: false },
+);
+export type SetupFile = Static<typeof SetupFileSchema>;
+
+export const SetupImportResponseSchema = Type.Object(
+  { setup: SessionSetupSchema, addedGames: Type.Integer({ minimum: 0 }) },
+  { additionalProperties: false },
+);
+export type SetupImportResponse = Static<typeof SetupImportResponseSchema>;

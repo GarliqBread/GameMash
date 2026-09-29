@@ -148,6 +148,19 @@ export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PRE
     key.avatars(sessionId),
     key.avatarMeta(sessionId),
   ];
+  const sessionKeys = (session: SessionRecord) => [
+    key.session(session.id),
+    key.room(session.roomCode),
+    key.players(session.id),
+    key.names(session.id),
+    key.avatars(session.id),
+    key.avatarMeta(session.id),
+    key.setup(session.id),
+    key.game(session.id),
+    key.inputs(session.id),
+    key.images(session.id),
+    key.uploads(session.id),
+  ];
   const binary = redis.withTypeMapping({ [RESP_TYPES.BLOB_STRING]: Buffer });
 
   return {
@@ -301,6 +314,11 @@ export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PRE
       if (!isSubmitInputResult(result)) throw new Error(`unexpected submit input result: ${String(result)}`);
       return result;
     },
+    resetGame: async (sessionId, version) =>
+      (await redis.resetGame(
+        [key.session(sessionId), key.game(sessionId), key.inputs(sessionId), key.uploads(sessionId)],
+        [String(version)],
+      )) === 1,
     listInputs: async (sessionId) => new Map(Object.entries(await redis.hGetAll(key.inputs(sessionId)))),
     saveUpload: async (sessionId, version, playerId, payload, expiresAt) => {
       const result = await redis.saveUpload(
@@ -312,22 +330,10 @@ export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PRE
     },
     getUpload: async (sessionId, playerId) => (await redis.hGet(key.uploads(sessionId), playerId)) ?? null,
     touch: async (session, expiresAt) => {
-      await redis.touchSession(
-        [
-          key.session(session.id),
-          key.room(session.roomCode),
-          key.players(session.id),
-          key.names(session.id),
-          key.avatars(session.id),
-          key.avatarMeta(session.id),
-          key.setup(session.id),
-          key.game(session.id),
-          key.inputs(session.id),
-          key.images(session.id),
-          key.uploads(session.id),
-        ],
-        [session.id, String(expiresAt)],
-      );
+      await redis.touchSession(sessionKeys(session), [session.id, String(expiresAt)]);
+    },
+    deleteSession: async (session) => {
+      await redis.deleteSession(sessionKeys(session), [session.id]);
     },
   };
 };

@@ -109,6 +109,7 @@ export type SessionStore = {
     expiresAt: number,
     replace: boolean,
   ) => Promise<SubmitInputResult>;
+  resetGame: (sessionId: string, version: number) => Promise<boolean>;
   listInputs: (sessionId: string) => Promise<Map<string, string>>;
   saveUpload: (
     sessionId: string,
@@ -119,4 +120,5 @@ export type SessionStore = {
   ) => Promise<SaveUploadResult>;
   getUpload: (sessionId: string, playerId: string) => Promise<string | null>;
   touch: (session: SessionRecord, expiresAt: number) => Promise<void>;
+  deleteSession: (session: SessionRecord) => Promise<void>;
 };

@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { QUESTION_IMAGE_CONTENT_TYPES } from "@gamemash/shared";
 import { AwsClient } from "aws4fetch";
 import type { S3Config } from "../config.js";
 import {
@@ -12,6 +13,7 @@ import {
 
 const MAX_PAGE_SIZE = 1000;
 const RETRIES = 2;
+const MISSING_STATUSES = new Set([403, 404]);
 const SIGNING_WINDOW_MS = 10 * 60 * 1000;
 const XML_ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
 
@@ -95,6 +97,14 @@ export const createS3ImageStore = (
         headers: { "content-type": contentType, "cache-control": IMAGE_CACHE_CONTROL },
         body: new Uint8Array(bytes),
       });
+    },
+    get: async (sessionId, imageId) => {
+      const response = await client.fetch(objectUrl(imageKey(sessionId, imageId)), { method: "GET" });
+      if (MISSING_STATUSES.has(response.status)) return null;
+      if (!response.ok) throw new S3RequestError("get", response.status, await response.text());
+      const header = response.headers.get("content-type")?.split(";")[0]?.trim();
+      const contentType = QUESTION_IMAGE_CONTENT_TYPES.find((type) => type === header);
+      return contentType ? { bytes: Buffer.from(await response.arrayBuffer()), contentType } : null;
     },
     presignedUrl: async (sessionId, imageId) => {
       const signedAt = Math.floor(now() / SIGNING_WINDOW_MS) * SIGNING_WINDOW_MS;

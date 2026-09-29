@@ -30,7 +30,8 @@ export const drawItConfigRules: GameConfigRules<DrawItConfig> = {
   isValid: (config) => hasUniqueIds(config.words) && config.words.every(isWordValid),
   isReady: (config) => config.words.length > 0 && config.words.every(isWordComplete),
   imageIds: () => [],
-  withoutImages: (config) => config,
+  mapImages: (config) => config,
+  withNewIds: (config, newId) => ({ ...config, words: config.words.map((word) => ({ ...word, id: newId() })) }),
   roundCount: (config) => config.words.length,
   roundSeconds: (config) => ({ min: config.drawSeconds, max: config.drawSeconds }),
 };

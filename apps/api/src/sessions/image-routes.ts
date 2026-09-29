@@ -3,12 +3,12 @@ import {
   type ErrorCode,
   QUESTION_IMAGE_CONTENT_TYPES,
   QUESTION_IMAGE_MAX_BYTES,
-  QUESTION_IMAGES_MAX_PER_SESSION,
   type QuestionImageContentType,
 } from "@gamemash/shared";
 import { ApiErrorSchema, BearerAuthHeadersSchema, SessionParamsSchema } from "@gamemash/shared/schemas";
 import { Type } from "typebox";
 import { requireHost, sessionRateLimitKey } from "./auth.js";
+import { errorBody } from "./error-body.js";
 import type { SessionService } from "./service.js";
 
 const MINUTE_MS = 60_000;
@@ -39,9 +39,6 @@ const errorResponses = {
 
 const toContentType = (header: string | undefined) =>
   QUESTION_IMAGE_CONTENT_TYPES.find((type) => type === header?.split(";")[0]?.trim().toLowerCase());
-
-const errorBody = (error: ErrorCode) =>
-  error === "image_limit_reached" ? { code: error, params: { max: QUESTION_IMAGES_MAX_PER_SESSION } } : { code: error };
 
 export const imageRoutes =
   (sessions: SessionService): FastifyPluginAsyncTypebox =>

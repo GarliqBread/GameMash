@@ -7,7 +7,13 @@ export type GameChipProps = Omit<ComponentProps<"li">, "children" | "title"> & {
   meta?: ReactNode;
 };
 
-export const GameChip = ({ position, title, meta, className, ...props }: GameChipProps) => (
+export const GameChip = ({
+  position,
+  title,
+  meta,
+  className,
+  ...props
+}: GameChipProps) => (
   <li
     className={cn(
       "flex min-w-0 items-center gap-3 rounded-field bg-surface px-[22px] py-3 text-stage-body font-bold",
@@ -17,6 +23,10 @@ export const GameChip = ({ position, title, meta, className, ...props }: GameChi
   >
     <span className="text-sun">{position}</span>
     <span className="shrink-0 whitespace-nowrap">{title}</span>
-    {meta && <span className="min-w-0 truncate font-normal text-fg-subtle">· {meta}</span>}
+    {meta && (
+      <span className="min-w-0 truncate font-normal text-fg-subtle">
+        - {meta}
+      </span>
+    )}
   </li>
 );

@@ -154,6 +154,17 @@ return 'saved'`,
     parseCommand: (parser: CommandParser, keys: RedisArgument[], args: RedisArgument[]) => pushAll(parser, keys, args),
     transformReply: undefined as unknown as () => string,
   }),
+  resetGame: defineScript({
+    NUMBER_OF_KEYS: 4,
+    SCRIPT: `
+if redis.call('HGET', KEYS[1], 'status') ~= 'playing' then return 0 end
+if redis.call('HGET', KEYS[2], 'version') ~= ARGV[1] then return 0 end
+redis.call('HSET', KEYS[1], 'status', 'lobby')
+redis.call('DEL', KEYS[3], KEYS[4])
+return 1`,
+    parseCommand: (parser: CommandParser, keys: RedisArgument[], args: RedisArgument[]) => pushAll(parser, keys, args),
+    transformReply: undefined as unknown as () => number,
+  }),
   submitInput: defineScript({
     NUMBER_OF_KEYS: 3,
     SCRIPT: `
@@ -179,6 +190,15 @@ redis.call('PEXPIREAT', KEYS[3], ARGV[4])
 return 'saved'`,
     parseCommand: (parser: CommandParser, keys: RedisArgument[], args: RedisArgument[]) => pushAll(parser, keys, args),
     transformReply: undefined as unknown as () => string,
+  }),
+  deleteSession: defineScript({
+    NUMBER_OF_KEYS: 11,
+    SCRIPT: `
+if redis.call('GET', KEYS[2]) == ARGV[1] then redis.call('DEL', KEYS[2]) end
+redis.call('DEL', KEYS[1], KEYS[3], KEYS[4], KEYS[5], KEYS[6], KEYS[7], KEYS[8], KEYS[9], KEYS[10], KEYS[11])
+return 1`,
+    parseCommand: (parser: CommandParser, keys: RedisArgument[], args: RedisArgument[]) => pushAll(parser, keys, args),
+    transformReply: undefined as unknown as () => number,
   }),
   touchSession: defineScript({
     NUMBER_OF_KEYS: 11,

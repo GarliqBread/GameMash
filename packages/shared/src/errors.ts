@@ -17,9 +17,13 @@ export const ERROR_CODES = [
   "unsupported_media_type",
   "input_closed",
   "already_submitted",
+  "game_not_finished",
   "images_unavailable",
   "image_limit_reached",
   "image_storage_full",
+  "import_invalid",
+  "import_too_many_games",
+  "export_too_large",
   "internal_error",
 ] as const;
 

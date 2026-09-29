@@ -189,6 +189,17 @@ export const createMemorySessionStore = (now: () => number = Date.now): SessionS
       sessions.set(sessionId, { ...entry, inputs: new Map(entry.inputs).set(playerId, input) });
       return "accepted";
     },
+    resetGame: async (sessionId, version) => {
+      const entry = live(sessionId);
+      if (entry?.session.status !== "playing" || entry.game?.version !== version) return false;
+      sessions.set(sessionId, {
+        ...entry,
+        session: { ...entry.session, status: "lobby" },
+        inputs: new Map(),
+        uploads: new Map(),
+      });
+      return true;
+    },
     listInputs: async (sessionId) => new Map(live(sessionId)?.inputs),
     saveUpload: async (sessionId, version, playerId, payload) => {
       const entry = live(sessionId);
@@ -199,6 +210,10 @@ export const createMemorySessionStore = (now: () => number = Date.now): SessionS
     getUpload: async (sessionId, playerId) => live(sessionId)?.uploads.get(playerId) ?? null,
     touch: async (session, expiresAt) => {
       update(session.id, (entry) => ({ ...entry, expiresAt }));
+    },
+    deleteSession: async (session) => {
+      sessions.delete(session.id);
+      if (rooms.get(session.roomCode) === session.id) rooms.delete(session.roomCode);
     },
   };
 };

@@ -180,8 +180,8 @@ export const createGameRunner = ({
     return true;
   };
 
-  const beginLoaded = async ({ session, setup }: Loaded) =>
-    commit(session, null, enterGame(0, {}, await transitionContext(session.id, setup)));
+  const beginLoaded = async ({ session, setup }: Loaded, expected: number | null) =>
+    commit(session, expected, enterGame(0, {}, await transitionContext(session.id, setup)));
 
   const advanceLoaded = async ({ session, setup }: Loaded, { version, state }: PlayingGame) => {
     const submissions = await readSubmissions(session.id, activeGame(setup, state));
@@ -210,12 +210,24 @@ export const createGameRunner = ({
   const advance = (sessionId: string, version: number) =>
     serialize(sessionId, () => withPlaying(sessionId, version, advanceLoaded));
 
-  const begin = (sessionId: string) =>
+  const begin = (sessionId: string, restart = false) =>
     serialize(sessionId, async () => {
       const loaded = await load(sessionId);
       if (!loaded) return false;
       running.add(sessionId);
-      return loaded.game !== null || beginLoaded(loaded);
+      const { game } = loaded;
+      if (!game) return beginLoaded(loaded, null);
+      if (restart && game.state.status === "finished") return beginLoaded(loaded, game.version);
+      return true;
+    });
+
+  const reset = (sessionId: string) =>
+    serialize(sessionId, async () => {
+      const record = await store.getGame(sessionId);
+      if (!record || parseState(record.state)?.status !== "finished") return false;
+      if (!(await store.resetGame(sessionId, record.version))) return false;
+      forget(sessionId);
+      return true;
     });
 
   const resume = (sessionId: string) =>
@@ -225,7 +237,7 @@ export const createGameRunner = ({
       if (!loaded) return;
       running.add(sessionId);
       if (loaded.game) schedule(sessionId, loaded.game);
-      else await beginLoaded(loaded);
+      else await beginLoaded(loaded, null);
     });
 
   const canHostAdvance = (phase: PlayingState["phase"]) => phase.durationMs === null || phase.skippable === true;
@@ -430,6 +442,7 @@ export const createGameRunner = ({
 
   return {
     begin,
+    reset,
     resume,
     next,
     submit,

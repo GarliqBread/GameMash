@@ -23,6 +23,7 @@ export const createMemoryImageStore = (now: () => number = Date.now): MemoryImag
     put: async (sessionId, imageId, bytes, contentType) => {
       objects.set(imageKey(sessionId, imageId), { bytes: Buffer.from(bytes), contentType });
     },
+    get: async (sessionId, imageId) => objects.get(imageKey(sessionId, imageId)) ?? null,
     presignedUrl: async (sessionId, imageId) => {
       const url = new URL(imageKey(sessionId, imageId), MEMORY_ORIGIN);
       url.searchParams.set("expires", String(now() + PRESIGNED_URL_TTL_SECONDS * 1000));

@@ -483,6 +483,52 @@ describe("lobby socket", () => {
     await expect.poll(() => images.keys()).toEqual([]);
   });
 
+  it("lets only the host play again, and only once the last game is over", async () => {
+    const server = await startServer();
+    const session = await server.post<CreateSessionResponse>("/api/sessions");
+    const priya = await server.post<JoinSessionResponse>(`/api/sessions/${session.sessionId}/players`, {
+      name: "Priya",
+    });
+    await fetch(`${server.url}/api/sessions/${session.sessionId}/setup`, {
+      method: "PUT",
+      headers: { authorization: `Bearer ${session.hostToken}`, "content-type": "application/json" },
+      body: JSON.stringify(readySetup()),
+    });
+    const phone = server.client(playerAuth(session, priya));
+    const host = server.client(hostAuth(session));
+    await nextState(host, () => true);
+    await new Promise<SocketAck>((resolve) => host.emit("session:start", resolve));
+
+    const playerAttempt = await new Promise<SocketAck>((resolve) => phone.emit("session:reset", resolve));
+    expect(playerAttempt).toEqual({ ok: false, error: { code: "unauthorized" } });
+    const midGame = await new Promise<SocketAck>((resolve) => host.emit("session:reset", resolve));
+    expect(midGame).toEqual({ ok: false, error: { code: "game_not_finished" } });
+  });
+
+  it("ends the session for everyone when the host asks, and frees the room code", async () => {
+    const server = await startServer();
+    const session = await server.post<CreateSessionResponse>("/api/sessions");
+    const priya = await server.post<JoinSessionResponse>(`/api/sessions/${session.sessionId}/players`, {
+      name: "Priya",
+    });
+    const phone = server.client(playerAuth(session, priya));
+    const host = server.client(hostAuth(session));
+    await nextState(phone, () => true);
+    await nextState(host, () => true);
+
+    const playerAttempt = await new Promise<SocketAck>((resolve) => phone.emit("session:end", resolve));
+    expect(playerAttempt).toEqual({ ok: false, error: { code: "unauthorized" } });
+
+    const ended = new Promise<void>((resolve) => phone.on("session:ended", () => resolve()));
+    const hostAttempt = await new Promise<SocketAck>((resolve) => host.emit("session:end", resolve));
+    expect(hostAttempt).toEqual({ ok: true });
+    await ended;
+
+    const lookup = await fetch(`${server.url}/api/sessions/by-code/${session.roomCode}`);
+    expect(lookup.status).toBe(404);
+    expect(await connectError(server.client(hostAuth(session)))).toBe("unauthorized");
+  });
+
   it("tells everyone and disconnects them when the session expires", async () => {
     let now = Date.now();
     const server = await startServer({ now: () => now, keepAliveMs: 50 });

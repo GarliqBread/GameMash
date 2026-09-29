@@ -46,7 +46,7 @@ export const PlayersJoining: Story = () => {
           <PlayerChip key={name} state="joined" name={name} />
         ))}
         {Array.from({ length: Math.min(waiting, 3) }, (_, index) => `waiting-${index}`).map((key) => (
-          <PlayerChip key={key} state="waiting" name={t("Waiting…")} />
+          <PlayerChip key={key} state="waiting" name={t("Empty")} />
         ))}
       </PlayerGrid>
     </StageFrame>

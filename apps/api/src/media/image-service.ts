@@ -57,10 +57,11 @@ export const createImageService = ({
     session: SessionRecord,
     bytes: Buffer,
     contentType: QuestionImageContentType,
+    { checkRoom }: { checkRoom: boolean } = { checkRoom: true },
   ): Promise<Result<QuestionImage>> => {
     if (!images) return fail("images_unavailable");
     if (!isAllowedImage(bytes, contentType)) return fail("invalid_image");
-    if (!(await images.hasRoom())) return fail("image_storage_full");
+    if (checkRoom && !(await images.hasRoom())) return fail("image_storage_full");
     const id = createImageId();
     const expiresAt = sessionExpiresAt(session.createdAt, now());
     const added = await store.addImage(session.id, id, {
@@ -107,6 +108,16 @@ export const createImageService = ({
     await images.deleteImages(sessionId, unused);
   };
 
+  const hasImageRoom = async () => (images ? images.hasRoom() : false);
+
+  const readImage = async (sessionId: string, imageId: string) => (images ? images.get(sessionId, imageId) : null);
+
+  const discardImages = async (sessionId: string, imageIds: string[]) => {
+    if (!images || imageIds.length === 0) return;
+    await store.removeImages(sessionId, imageIds);
+    await images.deleteImages(sessionId, imageIds);
+  };
+
   const deleteImages = async (sessionId: string) => {
     if (!images) return;
     await store.releaseImages(sessionId);
@@ -129,6 +140,9 @@ export const createImageService = ({
     listImages,
     hasImages,
     pruneImages,
+    readImage,
+    hasImageRoom,
+    discardImages,
     deleteImages,
     sweepImages,
   };

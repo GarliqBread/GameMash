@@ -5,6 +5,7 @@ import type { LobbyStatus } from "../../lib/lobby";
 import { StageDrawIt } from "../draw/StageDrawIt";
 import { StageQuizQuestion } from "../quiz/StageQuizQuestion";
 import { StageQuizReveal } from "../quiz/StageQuizReveal";
+import { HostFinalActions } from "./HostFinalActions";
 import { HostNextButton } from "./HostNextButton";
 import { StageFinalScores } from "./StageFinalScores";
 import { usePlayers } from "./usePlayers";
@@ -31,6 +32,7 @@ export const StageGame = ({ sessionId, sessionName, snapshot, status }: StageGam
         sessionName={sessionName}
         standings={snapshot.standings}
         players={players}
+        actions={<HostFinalActions sessionName={sessionName} status={status} />}
       />
     );
   }

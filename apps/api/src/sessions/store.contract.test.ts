@@ -433,6 +433,53 @@ describe.each(stores)("%s session store", (name, makeStore) => {
     expect(await store.getUpload(created.id, "priya")).toBeNull();
   });
 
+  run("resets a playing session to the lobby, keeping the game version and dropping inputs and uploads", async () => {
+    const store = makeStore?.() as SessionStore;
+    const created = session();
+    await store.create(created, inAMinute());
+    await store.saveGame(created.id, null, "finished", inAMinute(), false);
+    await store.submitInput(created.id, 1, "priya", "input", inAMinute(), false);
+    await store.saveUpload(created.id, 1, "priya", "drawing", inAMinute());
+
+    expect(await store.resetGame(created.id, 1)).toBe(false);
+    await store.setStatus(created.id, "playing");
+    expect(await store.resetGame(created.id, 2)).toBe(false);
+    expect(await store.resetGame(created.id, 1)).toBe(true);
+
+    expect((await store.findById(created.id))?.status).toBe("lobby");
+    expect(await store.getGame(created.id)).toEqual({ version: 1, state: "finished" });
+    expect(await store.listInputs(created.id)).toEqual(new Map());
+    expect(await store.getUpload(created.id, "priya")).toBeNull();
+    expect(await store.resetGame(randomUUID(), 1)).toBe(false);
+  });
+
+  run("deletes a session and frees its room code", async () => {
+    const store = makeStore?.() as SessionStore;
+    const created = session();
+    await store.create(created, inAMinute());
+    await store.addPlayer(created.id, player("Priya"), joinOptions("priya"));
+    await store.saveGame(created.id, null, "{}", inAMinute(), false);
+
+    await store.deleteSession(created);
+
+    expect(await store.findById(created.id)).toBeNull();
+    expect(await store.findByRoomCode(created.roomCode)).toBeNull();
+    expect(await store.listPlayers(created.id)).toEqual([]);
+    expect(await store.getGame(created.id)).toBeNull();
+    expect(await store.create(session(), inAMinute())).toBe("created");
+  });
+
+  run("keeps a room code that another session took over when deleting", async () => {
+    const store = makeStore?.() as SessionStore;
+    const expired = session();
+    const current = session();
+    await store.create(current, inAMinute());
+
+    await store.deleteSession(expired);
+
+    expect(await store.findByRoomCode(current.roomCode)).toEqual(current);
+  });
+
   if (name === "redis" && redis) {
     it("puts an expiry on every key it writes", async () => {
       const prefix = `${redisPrefix}${randomUUID()}:`;
@@ -472,6 +519,31 @@ describe.each(stores)("%s session store", (name, makeStore) => {
       const ttls = await Promise.all(keys.map((key) => redis.pTTL(key)));
       expect(keys).toHaveLength(12);
       expect(ttls.every((ttl) => ttl > 60_000 && ttl <= 10 * 60_000 + CLOCK_DRIFT_MS)).toBe(true);
+    });
+
+    it("removes every session key on delete", async () => {
+      const prefix = `${redisPrefix}${randomUUID()}:`;
+      const store = createRedisSessionStore(redis, prefix);
+      const created = session();
+      await store.create(created, inAMinute());
+      await store.addPlayer(created.id, player("Priya"), joinOptions("priya"));
+      const priyaId = (await store.listPlayers(created.id))[0]?.id ?? "";
+      await store.setAvatar(
+        created.id,
+        priyaId,
+        { bytes: Buffer.from([1]), type: "image/webp", version: 1 },
+        inAMinute(),
+      );
+      await store.saveSetup(created.id, "{}", "summary", inAMinute());
+      await store.saveGame(created.id, null, "{}", inAMinute(), false);
+      await store.addImage(created.id, "image", imageLimits(5));
+      await store.submitInput(created.id, 1, priyaId, "{}", inAMinute(), false);
+      await store.saveUpload(created.id, 1, priyaId, "{}", inAMinute());
+
+      await store.deleteSession(created);
+      await store.releaseImages(created.id);
+
+      expect(await redis.keys(`${prefix}*`)).toEqual([]);
     });
 
     it("leaves no key without an expiry, even when a session expires mid-update", async () => {

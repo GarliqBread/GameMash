@@ -19,7 +19,6 @@ import {
   StagePanel,
   StageViewport,
   spellOut,
-  TrustNote,
 } from "@gamemash/ui";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -43,11 +42,6 @@ export type StageLobbyProps = {
   actionError: string | null;
   onStart: () => void;
   onRemovePlayer: (playerId: string) => void;
-};
-
-const startHintId = (playerCount: number, isStarting: boolean) => {
-  if (isStarting) return "lobby.starting";
-  return playerCount === 0 ? "lobby.startNeedsPlayers" : "lobby.startHint";
 };
 
 export const StageLobby = ({
@@ -77,9 +71,13 @@ export const StageLobby = ({
             {sessionName && (
               <span className="truncate font-display text-stage-lg font-semibold text-fg-subtle">{sessionName}</span>
             )}
-            <TrustNote size="stage">
-              <FormattedMessage id="lobby.trust" />
-            </TrustNote>
+            <Link
+              to="/host/$sessionId/setup"
+              params={{ sessionId }}
+              className={cn(buttonVariants({ variant: "secondary", size: "stage-sm" }), "shrink-0")}
+            >
+              <FormattedMessage id="lobby.editGames" />
+            </Link>
           </>
         }
         footer={
@@ -109,16 +107,9 @@ export const StageLobby = ({
                   role={actionError ? "alert" : "status"}
                   className="min-w-0 text-right text-stage-caption text-fg-subtle"
                 >
-                  {actionError ?? <FormattedMessage id={startHintId(players.length, isStarting)} />}
+                  {actionError}
                 </p>
               )}
-              <Link
-                to="/host/$sessionId/setup"
-                params={{ sessionId }}
-                className={cn(buttonVariants({ variant: "secondary", size: "stage-sm" }), "shrink-0")}
-              >
-                <FormattedMessage id="lobby.editGames" />
-              </Link>
               <Button
                 size="stage"
                 className="shrink-0"
@@ -140,7 +131,9 @@ export const StageLobby = ({
               <FormattedMessage
                 key="address"
                 id="lobby.stepAddress"
-                values={{ address: <strong className="text-stage-xl text-fg">{displayHost()}</strong> }}
+                values={{
+                  address: <strong className="text-stage-xl text-fg">{displayHost()}</strong>,
+                }}
               />,
               <FormattedMessage key="code" id="lobby.stepCode" />,
             ]}
@@ -170,7 +163,9 @@ export const StageLobby = ({
           <PlayerGrid columns={3}>
             {lobbySlots(players).map((slot) => {
               if (slot.kind === "waiting") {
-                return <PlayerChip key={slot.key} state="waiting" name={intl.formatMessage({ id: "lobby.waiting" })} />;
+                return (
+                  <PlayerChip key={slot.key} state="waiting" name={intl.formatMessage({ id: "lobby.emptySlot" })} />
+                );
               }
               if (slot.kind === "more") {
                 return (

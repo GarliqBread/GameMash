@@ -3,14 +3,25 @@ import { useCopy } from "../../.ladle/pseudo";
 import { QUIZ_OPTIONS } from "../../.ladle/screen-data";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { AnswerTileEditor } from "../host/AnswerTileEditor";
-import { GameLineup, type GameLineupLabels, type LineupGame } from "../host/GameLineup";
+import {
+  GameLineup,
+  type GameLineupLabels,
+  type LineupGame,
+} from "../host/GameLineup";
 import { InsertGameSlot } from "../host/InsertGameSlot";
 import { QuestionTabs } from "../host/QuestionTabs";
 import { RichTextField } from "../host/RichTextField";
 import { SessionNameSticker } from "../host/SessionNameSticker";
 import { SettingsField } from "../host/Settings";
 import { AnswerShape } from "../icons/AnswerShape";
-import { CopyIcon, ImageIcon, MonitorIcon, PencilIcon, PlayIcon, TrashIcon } from "../icons/icons";
+import {
+  CopyIcon,
+  ImageIcon,
+  MonitorIcon,
+  PencilIcon,
+  PlayIcon,
+  TrashIcon,
+} from "../icons/icons";
 import { Logo } from "../icons/Logo";
 import { ANSWER_SHAPES, type AnswerShapeName } from "../lib/answers";
 import type { RichTextRun } from "../lib/rich-text";
@@ -43,7 +54,13 @@ const QuizIcon = () => (
 const useLineup = (): LineupGame[] => {
   const t = useCopy();
   return [
-    { id: "quiz", title: t("Pop quiz"), accent: "sun", icon: <QuizIcon />, metaChips: [t("10 questions"), t("20 s")] },
+    {
+      id: "quiz",
+      title: t("Pop quiz"),
+      accent: "sun",
+      icon: <QuizIcon />,
+      metaChips: [t("10 questions"), t("20 s")],
+    },
     {
       id: "draw",
       title: t("Draw it"),
@@ -60,16 +77,26 @@ const useLineupLabels = (): GameLineupLabels => {
     gameNumber: (position) => t(`Game ${position}`),
     editing: t("Editing"),
     dragHandle: (game) => t(`Reorder ${game.title}`),
-    instructions: t("Press space to pick up a game, use the arrow keys to move it, and space again to drop it."),
-    pickedUp: (game, position) => t(`Picked up ${game.title}, position ${position}`),
-    movedTo: (game, position) => t(`${game.title} moved to position ${position}`),
-    dropped: (game, position) => t(`${game.title} dropped at position ${position}`),
+    instructions: t(
+      "Press space to pick up a game, use the arrow keys to move it, and space again to drop it.",
+    ),
+    pickedUp: (game, position) =>
+      t(`Picked up ${game.title}, position ${position}`),
+    movedTo: (game, position) =>
+      t(`${game.title} moved to position ${position}`),
+    dropped: (game, position) =>
+      t(`${game.title} dropped at position ${position}`),
     cancelled: (game) => t(`Moving ${game.title} was cancelled`),
   };
 };
 
 const useRules = () => {
-  const [rules, setRules] = useState({ speed: true, board: true, shuffle: false, late: true });
+  const [rules, setRules] = useState({
+    speed: true,
+    board: true,
+    shuffle: false,
+    late: true,
+  });
   const toggle = (key: keyof typeof rules) => (checked: boolean) =>
     setRules((current) => ({ ...current, [key]: checked }));
   return { rules, toggle };
@@ -90,7 +117,9 @@ export const HostSetup: Story = () => {
     { text: " known moons?" },
   ]);
   const [answers, setAnswers] = useState(
-    Object.fromEntries(QUIZ_OPTIONS.map((option) => [option.shape, option.label])) as Record<AnswerShapeName, string>,
+    Object.fromEntries(
+      QUIZ_OPTIONS.map((option) => [option.shape, option.label]),
+    ) as Record<AnswerShapeName, string>,
   );
   const [correct, setCorrect] = useState<AnswerShapeName | null>("triangle");
   const [time, setTime] = useState("20");
@@ -108,12 +137,23 @@ export const HostSetup: Story = () => {
       header={
         <>
           <Logo size="md" />
-          <SessionNameSticker label={t("Session")} value={sessionName} onValueChange={setSessionName} />
+          <SessionNameSticker
+            label={t("Session")}
+            value={sessionName}
+            onValueChange={setSessionName}
+          />
           <div className="flex-1" />
-          <Button variant="secondary" icon={<MonitorIcon size={20} strokeWidth={2.2} />}>
+          <Button
+            variant="secondary"
+            icon={<MonitorIcon size={20} strokeWidth={2.2} />}
+          >
             {t("Preview on big screen")}
           </Button>
-          <Button size="lg" icon={<PlayIcon size={22} />} className="workshop:shadow-brutal-lg">
+          <Button
+            size="lg"
+            icon={<PlayIcon size={22} />}
+            className="workshop:shadow-brutal-lg"
+          >
             {t("Start session")}
           </Button>
         </>
@@ -130,7 +170,11 @@ export const HostSetup: Story = () => {
           />
           <InsertGameSlot className="mt-3">{t("+ Insert game")}</InsertGameSlot>
           <div className="flex-1" />
-          <TrustNote>{t("No accounts. Names, photos and answers are deleted when the session ends.")}</TrustNote>
+          <TrustNote>
+            {t(
+              "No accounts. Names, photos and answers are deleted when the session ends.",
+            )}
+          </TrustNote>
         </>
       }
       editor={
@@ -144,7 +188,11 @@ export const HostSetup: Story = () => {
             </div>
             <AutosaveIndicator
               status="saved"
-              labels={{ saving: t("Saving…"), saved: t("Auto-saved"), error: t("Not saved, retry") }}
+              labels={{
+                saving: t("Saving…"),
+                saved: t("Auto-saved"),
+                error: t("Not saved, retry"),
+              }}
             />
           </div>
           <QuestionTabs
@@ -153,11 +201,15 @@ export const HostSetup: Story = () => {
             onValueChange={setQuestion}
             listLabel={t("Questions")}
             tabLabel={(position, isIncomplete) =>
-              isIncomplete ? t(`Question ${position}, incomplete`) : t(`Question ${position}`)
+              isIncomplete
+                ? t(`Question ${position}, incomplete`)
+                : t(`Question ${position}`)
             }
             incompleteIds={["q7"]}
             addLabel={t("Add question")}
-            onAdd={() => setQuestionIds((ids) => [...ids, `q${ids.length + 1}`])}
+            onAdd={() =>
+              setQuestionIds((ids) => [...ids, `q${ids.length + 1}`])
+            }
           >
             <div className="flex flex-col gap-5">
               <RichTextField
@@ -169,17 +221,23 @@ export const HostSetup: Story = () => {
                 counterLabel={(length, max) => t(`${length} / ${max}`)}
                 placeholder={t("Type your question")}
                 toolbarLabel={t("Text formatting")}
-                markLabels={{ bold: t("Bold"), italic: t("Italic"), underline: t("Underline") }}
+                markLabels={{
+                  bold: t("Bold"),
+                  italic: t("Italic"),
+                  underline: t("Underline"),
+                }}
               />
               <AnswerTileEditor
-                legend={t("Answers · type right on the tiles")}
+                legend={t("Answers - type right on the tiles")}
                 answers={QUIZ_OPTIONS.map((option) => ({
                   shape: option.shape,
                   value: answers[option.shape],
                   inputLabel: t(`${option.shape} answer`),
                   correctAriaLabel: t(`Mark correct: ${option.shape}`),
                 }))}
-                onAnswerChange={(shape, value) => setAnswers((current) => ({ ...current, [shape]: value }))}
+                onAnswerChange={(shape, value) =>
+                  setAnswers((current) => ({ ...current, [shape]: value }))
+                }
                 correct={correct}
                 onCorrectChange={setCorrect}
                 correctLabel={t("Correct")}
@@ -194,7 +252,10 @@ export const HostSetup: Story = () => {
                       onValueChange={setQuestionTime}
                       options={[
                         { value: "default", label: t(`Default (${time} s)`) },
-                        ...TIME_LIMITS.map((seconds) => ({ value: seconds, label: t(`${seconds} s`) })),
+                        ...TIME_LIMITS.map((seconds) => ({
+                          value: seconds,
+                          label: t(`${seconds} s`),
+                        })),
                       ]}
                     />
                   )}
@@ -214,9 +275,16 @@ export const HostSetup: Story = () => {
                 </SettingsField>
               </div>
               <div className="mt-1 flex flex-wrap gap-3">
-                <ToolButton icon={<ImageIcon size={18} strokeWidth={2.2} />}>{t("Add image")}</ToolButton>
-                <ToolButton icon={<CopyIcon size={18} strokeWidth={2.2} />}>{t("Duplicate")}</ToolButton>
-                <ToolButton icon={<TrashIcon size={18} strokeWidth={2.2} />} onClick={() => setConfirmingDelete(true)}>
+                <ToolButton icon={<ImageIcon size={18} strokeWidth={2.2} />}>
+                  {t("Add image")}
+                </ToolButton>
+                <ToolButton icon={<CopyIcon size={18} strokeWidth={2.2} />}>
+                  {t("Duplicate")}
+                </ToolButton>
+                <ToolButton
+                  icon={<TrashIcon size={18} strokeWidth={2.2} />}
+                  onClick={() => setConfirmingDelete(true)}
+                >
                   {t("Delete")}
                 </ToolButton>
               </div>
@@ -241,7 +309,10 @@ export const HostSetup: Story = () => {
                 aria-labelledby={labelId}
                 value={time}
                 onValueChange={setTime}
-                options={TIME_LIMITS.map((seconds) => ({ value: seconds, label: t(`${seconds} s`) }))}
+                options={TIME_LIMITS.map((seconds) => ({
+                  value: seconds,
+                  label: t(`${seconds} s`),
+                }))}
               />
             )}
           </SettingsField>
@@ -267,7 +338,12 @@ export const HostSetup: Story = () => {
                 checked: rules.shuffle,
                 onCheckedChange: toggle("shuffle"),
               },
-              { id: "late", label: t("Let late joiners play"), checked: rules.late, onCheckedChange: toggle("late") },
+              {
+                id: "late",
+                label: t("Let late joiners play"),
+                checked: rules.late,
+                onCheckedChange: toggle("late"),
+              },
             ]}
           />
         </RulesPanel>

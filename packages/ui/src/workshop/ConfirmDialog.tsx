@@ -1,6 +1,7 @@
 import { AlertDialog } from "@base-ui/react/alert-dialog";
 import type { ReactNode, RefObject } from "react";
 import { cn } from "../lib/cn.js";
+import { dialogBackdropClassName, dialogPopupClassName, dialogTitleClassName } from "./dialog.js";
 import { keyButtonClassName } from "./KeyButton.js";
 
 export type ConfirmDialogProps = {
@@ -26,13 +27,13 @@ export const ConfirmDialog = ({
 }: ConfirmDialogProps) => (
   <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
     <AlertDialog.Portal>
-      <AlertDialog.Backdrop className="fixed inset-0 bg-ink-950/40" />
+      <AlertDialog.Backdrop className={dialogBackdropClassName} />
       <AlertDialog.Popup
         data-theme="workshop"
         finalFocus={finalFocus}
-        className="fixed top-1/2 left-1/2 flex w-[min(92vw,440px)] -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-card border-3 border-ink-950 bg-paper-white p-6 text-ink-950 shadow-brutal-xl"
+        className={cn(dialogPopupClassName, "flex-col gap-3")}
       >
-        <AlertDialog.Title className="font-display text-2xl font-extrabold">{title}</AlertDialog.Title>
+        <AlertDialog.Title className={dialogTitleClassName}>{title}</AlertDialog.Title>
         {description && (
           <AlertDialog.Description className="text-body text-fg-muted">{description}</AlertDialog.Description>
         )}

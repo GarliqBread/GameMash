@@ -25,7 +25,7 @@ export const imageFileRoutes =
         schema: { params: Type.Object({ sessionId: PathIdSchema, imageId: PathIdSchema }) },
       },
       async (request, reply) => {
-        const image = await images.read(request.params.sessionId, request.params.imageId);
+        const image = await images.get(request.params.sessionId, request.params.imageId);
         if (!image) return reply.code(404).send({ code: "not_found" });
         return reply
           .header("content-type", image.contentType)

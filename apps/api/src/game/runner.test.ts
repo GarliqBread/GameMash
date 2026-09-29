@@ -276,6 +276,39 @@ describe("game runner", () => {
     });
   });
 
+  it("goes back to the lobby after the last game and plays again from zero on the next start", async () => {
+    const { runner, sessions, store, sessionId, playerIds, everyone, host } = await startGame({ questions: 1 });
+    const [priya = "", daan = ""] = playerIds;
+
+    expect(await runner.reset(sessionId)).toBe(false);
+
+    await runner.submit(sessionId, priya, 1, "right", everyone);
+    await runner.submit(sessionId, daan, 1, "right", everyone);
+    await settle();
+    await runner.next(sessionId, 2);
+    expect(await runner.begin(sessionId, false)).toBe(true);
+    expect((await host())?.status).toBe("finished");
+
+    expect(await runner.reset(sessionId)).toBe(true);
+    expect((await store.findById(sessionId))?.status).toBe("lobby");
+    expect(await runner.snapshots(sessionId, [])).toBeNull();
+    expect(await runner.reset(sessionId)).toBe(false);
+
+    const started = await sessions.start(sessionId);
+    expect(started).toEqual({ ok: true, value: true });
+    expect(await runner.begin(sessionId, true)).toBe(true);
+
+    expect(playing(await host())).toMatchObject({ phaseId: 4, phase: "ask", view: { round: 0, answered: 0 } });
+    expect(await runner.submit(sessionId, priya, 1, "right", everyone)).toBe("closed");
+    await runner.submit(sessionId, priya, 4, "wrong", everyone);
+    await runner.submit(sessionId, daan, 4, "wrong", everyone);
+    await settle();
+    await runner.next(sessionId, 5);
+    const finished = await host();
+    if (finished?.status !== "finished") throw new Error("expected the session to finish");
+    expect(finished.standings.find((entry) => entry.playerId === priya)?.points).toBe(0);
+  });
+
   it("never acknowledges an answer that the closing phase then drops", async () => {
     const { store, sessionId, playerIds, everyone, runner, makeRunner } = await startGame();
     const [priya = ""] = playerIds;

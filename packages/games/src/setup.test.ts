@@ -2,7 +2,16 @@ import { Value } from "typebox/value";
 import { describe, expect, it } from "vitest";
 import { type DrawItWord, defaultDrawItConfig } from "./draw-it/config.js";
 import { defaultPopQuizConfig, emptyQuestion, isQuestionComplete, type QuizQuestion } from "./pop-quiz/config.js";
-import { type GameSetup, isGameReady, isSetupReady, isSetupValid, setupImageIds, summarizeGame } from "./setup.js";
+import {
+  type GameSetup,
+  isGameReady,
+  isSetupReady,
+  isSetupValid,
+  mapImages,
+  setupImageIds,
+  summarizeGame,
+  withNewIds,
+} from "./setup.js";
 import { SessionSetupSchema } from "./setup-schema.js";
 
 const complete: QuizQuestion = {
@@ -196,6 +205,38 @@ describe("draw it setup", () => {
       type: "draw-it",
       roundCount: 2,
       roundSeconds: { min: 90, max: 90 },
+    });
+  });
+});
+
+describe("setup transfer helpers", () => {
+  it("renames and drops question images", () => {
+    const withImages = { ...complete, images: ["a", "b", "c"] };
+    const setup = { name: "", games: [quiz([withImages]), drawIt([lighthouse])] };
+
+    const mapped = mapImages(setup, (imageId) => (imageId === "b" ? null : `new-${imageId}`));
+
+    expect(setupImageIds(mapped)).toEqual(["new-a", "new-c"]);
+    expect(mapped.games[1]).toEqual(setup.games[1]);
+  });
+
+  it("gives a game and all its items fresh ids", () => {
+    const ids = ["g", "i1", "i2"];
+    const newId = () => ids.shift() ?? "none";
+
+    expect(withNewIds(quiz([complete, trueFalse]), newId)).toMatchObject({
+      id: "g",
+      config: {
+        questions: [
+          { id: "i1", text: complete.text },
+          { id: "i2", text: trueFalse.text },
+        ],
+      },
+    });
+    ids.push("g2", "w9");
+    expect(withNewIds(drawIt([lighthouse]), newId)).toMatchObject({
+      id: "g2",
+      config: { words: [{ id: "w9", text: "Lighthouse" }] },
     });
   });
 });

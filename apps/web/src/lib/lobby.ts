@@ -73,7 +73,11 @@ const connectLobby = (credentials: Credentials) => {
     setStatus("reconnecting");
     if (!socket.active) retryTimer = setTimeout(() => socket.connect(), RETRY_MS);
   });
-  socket.on("lobby:state", (state) => useLobbyStore.setState({ state }));
+  socket.on("lobby:state", (state) =>
+    useLobbyStore.setState(({ game }) =>
+      state.status === "lobby" && game?.status === "finished" ? { state, game: null } : { state },
+    ),
+  );
   socket.on("game:state", receiveGame);
   socket.on("session:ended", end);
   socket.on("player:removed", finish("removed"));
@@ -103,6 +107,10 @@ const send = async (request: (socket: LobbySocket) => Promise<SocketAck>): Promi
 };
 
 export const startSession = () => send((socket) => socket.timeout(ACK_TIMEOUT_MS).emitWithAck("session:start"));
+
+export const resetSession = () => send((socket) => socket.timeout(ACK_TIMEOUT_MS).emitWithAck("session:reset"));
+
+export const endSession = () => send((socket) => socket.timeout(ACK_TIMEOUT_MS).emitWithAck("session:end"));
 
 export const kickPlayer = (playerId: string) =>
   send((socket) => socket.timeout(ACK_TIMEOUT_MS).emitWithAck("player:kick", { playerId }));
