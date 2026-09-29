@@ -4,6 +4,8 @@ packages:
 
 catalog:
   "@base-ui/react": ^1.8.0
+  "@dicebear/core": ^10.7.0
+  "@dicebear/styles": ^10.6.0
   "@tailwindcss/vite": ^4.3.3
   "@types/node": ^26.6.3
   "@types/react": ^19.3.0

@@ -1,6 +1,7 @@
 import {
   type ClientToServerEvents,
   type GameSnapshot,
+  type LobbyPlayer,
   type LobbyState,
   type ServerToClientEvents,
   SOCKET_AUTH_ERROR,
@@ -13,7 +14,7 @@ import { type Credentials, clearCredentials, toHandshakeAuth } from "./credentia
 
 type LobbySocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
-export type LobbyStatus = "connecting" | "connected" | "reconnecting" | "ended";
+export type LobbyStatus = "connecting" | "connected" | "reconnecting" | "ended" | "removed";
 
 type LobbyStore = {
   status: LobbyStatus;
@@ -31,8 +32,24 @@ const failed: SocketAck = { ok: false, error: { code: "internal_error" } };
 
 export const useLobbyStore = create<LobbyStore>(() => INITIAL_STORE);
 
+const isFinal = (status: LobbyStatus) => status === "ended" || status === "removed";
+
 const setStatus = (status: LobbyStatus) =>
-  useLobbyStore.setState((store) => (store.status === "ended" ? store : { status }));
+  useLobbyStore.setState((store) => (isFinal(store.status) ? store : { status }));
+
+export type PlayerLook = Partial<Pick<LobbyPlayer, "character" | "avatarVersion">>;
+
+export const showPlayerLook = (playerId: string, look: PlayerLook) =>
+  useLobbyStore.setState(({ state }) =>
+    state
+      ? {
+          state: {
+            ...state,
+            players: state.players.map((player) => (player.id === playerId ? { ...player, ...look } : player)),
+          },
+        }
+      : {},
+  );
 
 const receiveGame = (game: GameSnapshot) => useLobbyStore.setState({ game, clockOffset: game.serverNow - Date.now() });
 
@@ -40,10 +57,11 @@ const connectLobby = (credentials: Credentials) => {
   const socket: LobbySocket = io({ auth: toHandshakeAuth(credentials), autoConnect: false });
   let retryTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const end = () => {
+  const finish = (status: LobbyStatus) => () => {
     clearCredentials(credentials);
-    useLobbyStore.setState({ status: "ended" });
+    setStatus(status);
   };
+  const end = finish("ended");
 
   socket.on("connect", () => setStatus("connected"));
   socket.on("disconnect", (reason) => {
@@ -58,6 +76,7 @@ const connectLobby = (credentials: Credentials) => {
   socket.on("lobby:state", (state) => useLobbyStore.setState({ state }));
   socket.on("game:state", receiveGame);
   socket.on("session:ended", end);
+  socket.on("player:removed", finish("removed"));
   useLobbyStore.setState({ socket });
   socket.connect();
 
@@ -84,6 +103,9 @@ const send = async (request: (socket: LobbySocket) => Promise<SocketAck>): Promi
 };
 
 export const startSession = () => send((socket) => socket.timeout(ACK_TIMEOUT_MS).emitWithAck("session:start"));
+
+export const kickPlayer = (playerId: string) =>
+  send((socket) => socket.timeout(ACK_TIMEOUT_MS).emitWithAck("player:kick", { playerId }));
 
 export const nextPhase = (phaseId: number) =>
   send((socket) => socket.timeout(ACK_TIMEOUT_MS).emitWithAck("game:next", { phaseId }));

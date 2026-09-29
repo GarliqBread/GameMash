@@ -1,5 +1,10 @@
 import { readFileSync } from "node:fs";
-import { AVATAR_MAX_BYTES, type CreateSessionResponse, type JoinSessionResponse } from "@gamemash/shared";
+import {
+  AVATAR_MAX_BYTES,
+  type Character,
+  type CreateSessionResponse,
+  type JoinSessionResponse,
+} from "@gamemash/shared";
 import { describe, expect, it } from "vitest";
 import { buildApp } from "../app.js";
 import type { RedisHealth } from "../redis.js";
@@ -10,7 +15,8 @@ const fixture = (name: string) => readFileSync(new URL(`./fixtures/${name}`, imp
 const redis = { ping: async () => "PONG", isReady: true } as unknown as RedisHealth;
 
 const setup = async () => {
-  const sessions = createSessionService({ store: createMemorySessionStore() });
+  const store = createMemorySessionStore();
+  const sessions = createSessionService({ store });
   const app = buildApp({ redis, sessions, rateLimit: false });
   const session = (await app.inject({ method: "POST", url: "/api/sessions" })).json<CreateSessionResponse>();
   const join = async (name: string) =>
@@ -26,7 +32,20 @@ const setup = async () => {
       payload,
       headers: { "content-type": contentType, ...(token && { authorization: `Bearer ${token}` }) },
     });
-  return { app, sessions, session, priya, join, url, upload };
+  const bearer = (token: string | null) => (token ? { authorization: `Bearer ${token}` } : {});
+  const saveCharacter = (payload: unknown, token: string | null = priya.playerToken) =>
+    app.inject({
+      method: "PUT",
+      url: `/api/sessions/${session.sessionId}/players/${priya.playerId}/character`,
+      payload: payload as Record<string, unknown>,
+      headers: bearer(token),
+    });
+  const removePhoto = (token: string | null = priya.playerToken) =>
+    app.inject({ method: "DELETE", url: url(), headers: bearer(token) });
+  const priyaInLobby = async () =>
+    (await sessions.lobbyState(session.sessionId, new Set()))?.players.find((player) => player.id === priya.playerId);
+  const start = () => store.setStatus(session.sessionId, "playing");
+  return { app, sessions, session, priya, join, url, upload, saveCharacter, removePhoto, priyaInLobby, start };
 };
 
 describe("avatar upload", () => {
@@ -138,5 +157,70 @@ describe("avatar upload", () => {
 
     expect(response.statusCode).toBe(404);
     expect(response.json()).toEqual({ code: "not_found" });
+  });
+});
+
+const CHARACTER: Character = { head: 1, eyes: 2, nose: 3, mouth: 4, top: 5, topColor: 0, beard: null, mustache: 2 };
+
+describe("changing the look in the lobby", () => {
+  it("saves a character, which replaces the photo", async () => {
+    const { upload, saveCharacter, priyaInLobby } = await setup();
+    await upload(fixture("lossy-256.webp"), "image/webp");
+
+    const response = await saveCharacter(CHARACTER);
+
+    expect(response.statusCode).toBe(204);
+    expect(await priyaInLobby()).toMatchObject({ character: CHARACTER, avatarVersion: null });
+  });
+
+  it.each([
+    ["an unknown part", { ...CHARACTER, hat: 1 }],
+    ["a part the style doesn't have", { ...CHARACTER, top: 29 }],
+    ["a missing part", { ...CHARACTER, eyes: undefined }],
+  ])("rejects a character with %s", async (_label, payload) => {
+    const { saveCharacter, priyaInLobby } = await setup();
+    const before = await priyaInLobby();
+
+    const response = await saveCharacter(payload);
+
+    expect(response.statusCode).toBe(400);
+    expect(await priyaInLobby()).toEqual(before);
+  });
+
+  it("removes the photo so the character shows again", async () => {
+    const { app, url, upload, removePhoto, priyaInLobby } = await setup();
+    await upload(fixture("lossy-256.webp"), "image/webp");
+
+    const response = await removePhoto();
+
+    expect(response.statusCode).toBe(204);
+    expect((await priyaInLobby())?.avatarVersion).toBeNull();
+    expect((await app.inject({ method: "GET", url: url() })).statusCode).toBe(404);
+  });
+
+  it("requires the player's own token", async () => {
+    const { join, saveCharacter, removePhoto } = await setup();
+    const daan = await join("Daan");
+
+    expect((await saveCharacter(CHARACTER, null)).statusCode).toBe(401);
+    expect((await saveCharacter(CHARACTER, daan.playerToken)).json()).toEqual({ code: "unauthorized" });
+    expect((await removePhoto(daan.playerToken)).statusCode).toBe(401);
+  });
+
+  it("locks the photo and character once the session has started", async () => {
+    const { upload, saveCharacter, removePhoto, priyaInLobby, start } = await setup();
+    await upload(fixture("lossy-256.webp"), "image/webp");
+    const before = await priyaInLobby();
+    await start();
+
+    for (const response of [
+      await upload(fixture("photo-256.jpg"), "image/jpeg"),
+      await saveCharacter(CHARACTER),
+      await removePhoto(),
+    ]) {
+      expect(response.statusCode).toBe(409);
+      expect(response.json()).toEqual({ code: "avatar_locked" });
+    }
+    expect(await priyaInLobby()).toEqual(before);
   });
 });

@@ -38,18 +38,28 @@ type ServerOptions = {
   lobbyNow?: () => number;
   keepAliveMs?: number;
   authenticateHost?: (original: SessionService["authenticateHost"]) => SessionService["authenticateHost"];
+  authenticatePlayer?: (original: SessionService["authenticatePlayer"]) => SessionService["authenticatePlayer"];
   images?: MemoryImageStore;
 };
 
-const startServer = async ({ now, lobbyNow = now, keepAliveMs, authenticateHost, images }: ServerOptions = {}) => {
+const startServer = async ({
+  now,
+  lobbyNow = now,
+  keepAliveMs,
+  authenticateHost,
+  authenticatePlayer,
+  images,
+}: ServerOptions = {}) => {
   const notifier = createLobbyNotifier();
   const store = createMemorySessionStore(now);
   const sessions = createSessionService({ store, notifier, now, images });
   const app = buildApp({ redis, sessions, rateLimit: false });
   const game = createGameRunner({ store, readSetup: sessions.readSetup, rules: [testRules], log: app.log, now });
-  const lobbySessions = authenticateHost
-    ? { ...sessions, authenticateHost: authenticateHost(sessions.authenticateHost) }
-    : sessions;
+  const lobbySessions = {
+    ...sessions,
+    ...(authenticateHost && { authenticateHost: authenticateHost(sessions.authenticateHost) }),
+    ...(authenticatePlayer && { authenticatePlayer: authenticatePlayer(sessions.authenticatePlayer) }),
+  };
   const lobby = attachLobby(app.server, {
     log: app.log,
     sessions: lobbySessions,
@@ -202,6 +212,84 @@ describe("lobby socket", () => {
     const lateJoined = nextState(host, (state) => state.players.some((player) => player.name === "Late Lars"));
     await server.post(`/api/sessions/${session.sessionId}/players`, { name: "Late Lars" });
     expect((await lateJoined).status).toBe("playing");
+  });
+
+  it("lets the host remove a player, who is told, disconnected and can join again", async () => {
+    const server = await startServer();
+    const session = await server.post<CreateSessionResponse>("/api/sessions");
+    const join = () =>
+      server.post<JoinSessionResponse>(`/api/sessions/${session.sessionId}/players`, { name: "Priya" });
+    const priya = await join();
+    const host = server.client(hostAuth(session));
+    const phone = server.client(playerAuth(session, priya));
+    await nextState(host, (state) => state.players[0]?.isConnected === true);
+    const kick = (socket: Client, payload: unknown) =>
+      new Promise<SocketAck>((resolve) => socket.emit("player:kick", payload as { playerId: string }, resolve));
+
+    expect(await kick(phone, { playerId: priya.playerId })).toEqual({ ok: false, error: { code: "unauthorized" } });
+    expect(await kick(host, { playerId: "not-a-uuid" })).toEqual({ ok: false, error: { code: "bad_request" } });
+
+    const told = new Promise<void>((resolve) => phone.on("player:removed", () => resolve()));
+    const disconnected = new Promise<string>((resolve) => phone.on("disconnect", (reason) => resolve(reason)));
+    const emptied = nextState(host, (state) => state.players.length === 0);
+    expect(await kick(host, { playerId: priya.playerId })).toEqual({ ok: true });
+    await told;
+    expect(await disconnected).toBe("io server disconnect");
+    await emptied;
+
+    expect(await connectError(server.client(playerAuth(session, priya)))).toBe("unauthorized");
+    expect(await kick(host, { playerId: priya.playerId })).toEqual({ ok: false, error: { code: "not_found" } });
+    const rejoined = nextState(host, (state) => state.players.length === 1);
+    expect((await join()).playerId).toEqual(expect.any(String));
+    await rejoined;
+  });
+
+  it("drops a phone whose player was removed while it was connecting", async () => {
+    let kickDuringHandshake = async () => undefined as unknown;
+    const server = await startServer({
+      authenticatePlayer: (original) => async (sessionId, playerId, playerToken) => {
+        const match = await original(sessionId, playerId, playerToken);
+        await kickDuringHandshake();
+        return match;
+      },
+    });
+    const session = await server.post<CreateSessionResponse>("/api/sessions");
+    const priya = await server.post<JoinSessionResponse>(`/api/sessions/${session.sessionId}/players`, {
+      name: "Priya",
+    });
+    const host = server.client(hostAuth(session));
+    await nextState(host, (state) => state.players.length === 1);
+    kickDuringHandshake = () =>
+      new Promise<SocketAck>((resolve) => host.emit("player:kick", { playerId: priya.playerId }, resolve));
+
+    const phone = server.client(playerAuth(session, priya));
+    const told = new Promise<void>((resolve) => phone.on("player:removed", () => resolve()));
+    const disconnected = new Promise<string>((resolve) => phone.on("disconnect", (reason) => resolve(reason)));
+
+    await told;
+    expect(await disconnected).toBe("io server disconnect");
+  });
+
+  it("only removes players while the session is in the lobby", async () => {
+    const server = await startServer();
+    const session = await server.post<CreateSessionResponse>("/api/sessions");
+    const priya = await server.post<JoinSessionResponse>(`/api/sessions/${session.sessionId}/players`, {
+      name: "Priya",
+    });
+    await fetch(`${server.url}/api/sessions/${session.sessionId}/setup`, {
+      method: "PUT",
+      headers: { authorization: `Bearer ${session.hostToken}`, "content-type": "application/json" },
+      body: JSON.stringify(readySetup()),
+    });
+    const host = server.client(hostAuth(session));
+    await nextState(host, () => true);
+    await new Promise<SocketAck>((resolve) => host.emit("session:start", resolve));
+
+    const result = await new Promise<SocketAck>((resolve) =>
+      host.emit("player:kick", { playerId: priya.playerId }, resolve),
+    );
+
+    expect(result).toEqual({ ok: false, error: { code: "kick_locked" } });
   });
 
   it("runs the game: per-viewer state, one answer per player, host-only Next", async () => {

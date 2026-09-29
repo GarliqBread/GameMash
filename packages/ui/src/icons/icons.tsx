@@ -148,3 +148,20 @@ export const ArrowDownIcon = (props: IconProps) => (
     <path d="M12 21 L5 12 H10 V4 H14 V12 H19 Z" />
   </Icon>
 );
+
+export const ShuffleIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M3 7 H6.5 C10.5 7 13.5 17 17.5 17 H21" />
+    <path d="M3 17 H6.5 C8.5 17 10 15 11 13" />
+    <path d="M13 11 C14 9 15.5 7 17.5 7 H21" />
+    <path d="M18 4 L21 7 L18 10" />
+    <path d="M18 14 L21 17 L18 20" />
+  </Icon>
+);
+
+export const CloseIcon = (props: IconProps) => (
+  <Icon strokeWidth={2.2} {...props}>
+    <path d="M6 6 L18 18" />
+    <path d="M18 6 L6 18" />
+  </Icon>
+);

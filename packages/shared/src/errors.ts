@@ -9,6 +9,8 @@ export const ERROR_CODES = [
   "unauthorized",
   "rate_limited",
   "invalid_image",
+  "avatar_locked",
+  "kick_locked",
   "setup_locked",
   "setup_incomplete",
   "payload_too_large",

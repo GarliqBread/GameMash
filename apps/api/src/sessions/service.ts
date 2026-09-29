@@ -12,6 +12,7 @@ import { SessionSetupSchema } from "@gamemash/games/schemas";
 import {
   AVATAR_MAX_BYTES,
   AVATAR_MAX_DIMENSION,
+  type Character,
   type CreateSessionResponse,
   hasHiddenCharacters,
   type JoinSessionResponse,
@@ -20,6 +21,7 @@ import {
   normalizePlayerName,
   PLAYER_NAME_MAX_LENGTH,
   playerNameKey,
+  randomCharacter,
 } from "@gamemash/shared";
 import { type Static, Type } from "typebox";
 import { Value } from "typebox/value";
@@ -30,7 +32,7 @@ import { sessionExpiresAt } from "./expiry.js";
 import { inspectImage } from "./image.js";
 import { fail, type Result } from "./result.js";
 import { createId, createRoomCode, createSecret, hashSecret, matchesSecretHash } from "./secrets.js";
-import type { PlayerRecord, SessionRecord, SessionStore } from "./store.js";
+import type { AvatarChangeResult, PlayerRecord, SessionRecord, SessionStore } from "./store.js";
 
 const MAX_ROOM_CODE_ATTEMPTS = 20;
 
@@ -135,7 +137,13 @@ export const createSessionService = ({
     if (session.status === "finished") return fail("session_ended");
 
     const playerToken = createSecret();
-    const player: PlayerRecord = { id: createId(), name, tokenHash: hashSecret(playerToken), joinedAt: now() };
+    const player: PlayerRecord = {
+      id: createId(),
+      name,
+      tokenHash: hashSecret(playerToken),
+      joinedAt: now(),
+      character: randomCharacter(),
+    };
     const result = await store.addPlayer(sessionId, player, {
       nameKey: playerNameKey(name),
       maxPlayers,
@@ -157,6 +165,18 @@ export const createSessionService = ({
   const authenticatePlayer = async (sessionId: string, playerId: string, playerToken: string) => {
     const [session, player] = await Promise.all([store.findById(sessionId), store.findPlayer(sessionId, playerId)]);
     return session && player && matchesSecretHash(playerToken, player.tokenHash) ? { session, player } : null;
+  };
+
+  const finishAvatarChange = async <T>(
+    session: SessionRecord,
+    result: AvatarChangeResult,
+    value: T,
+  ): Promise<Result<T>> => {
+    if (result === "locked") return fail("avatar_locked");
+    if (result !== "saved") return fail("unauthorized");
+    await touch(session);
+    notifier?.notify(session.id);
+    return { ok: true, value };
   };
 
   const setAvatar = async (
@@ -183,10 +203,30 @@ export const createSessionService = ({
       { bytes, type: image.type, version },
       sessionExpiresAt(match.session.createdAt, now()),
     );
-    if (result !== "saved") return fail("unauthorized");
-    await touch(match.session);
-    notifier?.notify(sessionId);
-    return { ok: true, value: { version } };
+    return finishAvatarChange(match.session, result, { version });
+  };
+
+  const setCharacter = async (
+    sessionId: string,
+    playerId: string,
+    playerToken: string,
+    character: Character,
+  ): Promise<Result<null>> => {
+    const match = await authenticatePlayer(sessionId, playerId, playerToken);
+    if (!match) return fail("unauthorized");
+    const result = await store.setCharacter(
+      sessionId,
+      { ...match.player, character },
+      sessionExpiresAt(match.session.createdAt, now()),
+    );
+    return finishAvatarChange(match.session, result, null);
+  };
+
+  const removeAvatar = async (sessionId: string, playerId: string, playerToken: string): Promise<Result<null>> => {
+    const match = await authenticatePlayer(sessionId, playerId, playerToken);
+    if (!match) return fail("unauthorized");
+    const result = await store.removeAvatar(sessionId, playerId, sessionExpiresAt(match.session.createdAt, now()));
+    return finishAvatarChange(match.session, result, null);
   };
 
   const pruneImages = async (sessionId: string, usedIds: string[]) => {
@@ -244,8 +284,32 @@ export const createSessionService = ({
         joinedAt: player.joinedAt,
         isConnected: connectedPlayerIds.has(player.id),
         avatarVersion: avatarVersions.get(player.id) ?? null,
+        character: player.character,
       })),
     };
+  };
+
+  const kick = async (sessionId: string, playerId: string): Promise<Result<null>> => {
+    const [session, player] = await Promise.all([store.findById(sessionId), store.findPlayer(sessionId, playerId)]);
+    if (!session) return fail("room_not_found");
+    if (!player) return fail("not_found");
+    const result = await store.removePlayer(
+      sessionId,
+      playerId,
+      playerNameKey(player.name),
+      sessionExpiresAt(session.createdAt, now()),
+    );
+    if (result === "locked") return fail("kick_locked");
+    if (result === "session_not_found") return fail("room_not_found");
+    if (result === "player_not_found") return fail("not_found");
+    await touch(session);
+    notifier?.notify(sessionId);
+    return { ok: true, value: null };
+  };
+
+  const isRemoved = async (sessionId: string, playerId: string) => {
+    const [session, player] = await Promise.all([store.findById(sessionId), store.findPlayer(sessionId, playerId)]);
+    return session !== null && player === null;
   };
 
   const start = async (sessionId: string): Promise<Result<null>> => {
@@ -274,12 +338,16 @@ export const createSessionService = ({
     authenticateHost,
     authenticatePlayer,
     setAvatar,
+    setCharacter,
+    removeAvatar,
     getAvatar: (sessionId: string, playerId: string) => store.getAvatar(sessionId, playerId),
     getSetup,
     readSetup,
     saveSetup,
     lobbyState,
     start,
+    kick,
+    isRemoved,
     keepAlive,
     ...media,
   };

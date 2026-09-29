@@ -5,6 +5,7 @@ import type { Story, StoryDefault } from "../../.ladle/types";
 import { JoinSteps } from "./JoinSteps";
 import { PlayerChip } from "./PlayerChip";
 import { PlayerGrid } from "./PlayerGrid";
+import { PlayerRosterDialog } from "./PlayerRosterDialog";
 import { QrCode } from "./QrCode";
 import { RoomCodeDisplay, spellOut } from "./RoomCodeDisplay";
 
@@ -48,6 +49,52 @@ export const PlayersJoining: Story = () => {
           <PlayerChip key={key} state="waiting" name={t("Waiting…")} />
         ))}
       </PlayerGrid>
+    </StageFrame>
+  );
+};
+
+export const RemovablePlayers: Story = () => {
+  const t = useCopy();
+  const [names, setNames] = useState(PLAYER_NAMES.slice(0, 6));
+  return (
+    <StageFrame width={900}>
+      <Caption>Hover a player (always visible on touch screens)</Caption>
+      <PlayerGrid columns={3}>
+        {names.map((name) => (
+          <PlayerChip
+            key={name}
+            state="joined"
+            name={name}
+            remove={{
+              label: t(`Remove ${name}`),
+              onRemove: () => setNames((current) => current.filter((other) => other !== name)),
+            }}
+          />
+        ))}
+      </PlayerGrid>
+    </StageFrame>
+  );
+};
+
+export const AllPlayersDialog: Story = () => {
+  const t = useCopy();
+  const [names, setNames] = useState([...PLAYER_NAMES, ...LONG_NAMES]);
+  const [isOpen, setIsOpen] = useState(true);
+  return (
+    <StageFrame width={900}>
+      <button type="button" className="self-start underline" onClick={() => setIsOpen(true)}>
+        {t("Open")}
+      </button>
+      <PlayerRosterDialog
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        title={t(`All players (${names.length})`)}
+        players={names.map((name) => ({ id: name, name }))}
+        removeText={t("Remove")}
+        removeLabel={(name) => t(`Remove ${name}`)}
+        onRemove={(id) => setNames((current) => current.filter((name) => name !== id))}
+        closeLabel={t("Close")}
+      />
     </StageFrame>
   );
 };

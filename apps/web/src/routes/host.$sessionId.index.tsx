@@ -4,7 +4,7 @@ import { useSocketAction } from "../features/game/useSocketAction";
 import { useHostCredentials } from "../features/host/host-credentials";
 import { StageLobby } from "../features/lobby/StageLobby";
 import { useErrorMessage } from "../lib/errors";
-import { startSession, useLobbyStore } from "../lib/lobby";
+import { kickPlayer, startSession, useLobbyStore } from "../lib/lobby";
 
 const HostLobbyPage = () => {
   const credentials = useHostCredentials();
@@ -12,6 +12,8 @@ const HostLobbyPage = () => {
   const state = useLobbyStore((store) => store.state);
   const game = useLobbyStore((store) => store.game);
   const start = useSocketAction(startSession);
+  const kick = useSocketAction(kickPlayer);
+  const actionError = start.error ?? kick.error;
   const errorMessage = useErrorMessage();
   const sessionName = state?.sessionName ?? "";
 
@@ -28,8 +30,9 @@ const HostLobbyPage = () => {
       players={state?.players ?? []}
       status={status}
       isStarting={start.isPending || state?.status === "playing"}
-      startError={start.error ? errorMessage(start.error) : null}
+      actionError={actionError ? errorMessage(actionError) : null}
       onStart={() => void start.run()}
+      onRemovePlayer={(playerId) => void kick.run(playerId)}
     />
   );
 };

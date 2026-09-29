@@ -1,9 +1,17 @@
-import type { Avatar, GameRecord, PlayerRecord, SessionImage, SessionRecord, SessionStore } from "./store.js";
+import type {
+  Avatar,
+  AvatarChangeResult,
+  GameRecord,
+  PlayerRecord,
+  SessionImage,
+  SessionRecord,
+  SessionStore,
+} from "./store.js";
 
 type SessionEntry = {
   session: SessionRecord;
   players: PlayerRecord[];
-  nameKeys: Set<string>;
+  nameKeys: Map<string, string>;
   avatars: Map<string, Avatar>;
   setup: string | null;
   summary: string | null;
@@ -12,6 +20,9 @@ type SessionEntry = {
   inputs: Map<string, string>;
   expiresAt: number;
 };
+
+const withoutAvatar = (entry: SessionEntry, playerId: string) =>
+  new Map([...entry.avatars].filter(([id]) => id !== playerId));
 
 export const createMemorySessionStore = (now: () => number = Date.now): SessionStore => {
   const sessions = new Map<string, SessionEntry>();
@@ -33,6 +44,19 @@ export const createMemorySessionStore = (now: () => number = Date.now): SessionS
     return undefined;
   };
 
+  const changeAvatar = (
+    sessionId: string,
+    playerId: string,
+    change: (entry: SessionEntry) => SessionEntry,
+  ): AvatarChangeResult => {
+    const entry = live(sessionId);
+    if (!entry) return "session_not_found";
+    if (entry.session.status !== "lobby") return "locked";
+    if (!entry.players.some((player) => player.id === playerId)) return "player_not_found";
+    sessions.set(sessionId, change(entry));
+    return "saved";
+  };
+
   const update = (sessionId: string, change: (entry: SessionEntry) => SessionEntry) => {
     const entry = live(sessionId);
     if (!entry) return false;
@@ -47,7 +71,7 @@ export const createMemorySessionStore = (now: () => number = Date.now): SessionS
       sessions.set(session.id, {
         session,
         players: [],
-        nameKeys: new Set(),
+        nameKeys: new Map(),
         avatars: new Map(),
         setup: null,
         summary: null,
@@ -68,7 +92,7 @@ export const createMemorySessionStore = (now: () => number = Date.now): SessionS
       sessions.set(sessionId, {
         ...entry,
         players: [...entry.players, player],
-        nameKeys: new Set([...entry.nameKeys, nameKey]),
+        nameKeys: new Map(entry.nameKeys).set(nameKey, player.id),
         expiresAt,
       });
       return "added";
@@ -76,15 +100,39 @@ export const createMemorySessionStore = (now: () => number = Date.now): SessionS
     findPlayer: async (sessionId, playerId) =>
       live(sessionId)?.players.find((player) => player.id === playerId) ?? null,
     listPlayers: async (sessionId) => (live(sessionId)?.players ?? []).toSorted((a, b) => a.joinedAt - b.joinedAt),
-    setStatus: async (sessionId, status) =>
-      update(sessionId, (entry) => ({ ...entry, session: { ...entry.session, status } })),
-    setAvatar: async (sessionId, playerId, avatar, expiresAt) => {
+    removePlayer: async (sessionId, playerId, nameKey, expiresAt) => {
       const entry = live(sessionId);
       if (!entry) return "session_not_found";
+      if (entry.session.status !== "lobby") return "locked";
       if (!entry.players.some((player) => player.id === playerId)) return "player_not_found";
-      sessions.set(sessionId, { ...entry, avatars: new Map(entry.avatars).set(playerId, avatar), expiresAt });
-      return "saved";
+      const nameKeys = new Map(entry.nameKeys);
+      if (nameKeys.get(nameKey) === playerId) nameKeys.delete(nameKey);
+      sessions.set(sessionId, {
+        ...entry,
+        players: entry.players.filter((player) => player.id !== playerId),
+        nameKeys,
+        avatars: withoutAvatar(entry, playerId),
+        expiresAt,
+      });
+      return "removed";
     },
+    setStatus: async (sessionId, status) =>
+      update(sessionId, (entry) => ({ ...entry, session: { ...entry.session, status } })),
+    setAvatar: async (sessionId, playerId, avatar, expiresAt) =>
+      changeAvatar(sessionId, playerId, (entry) => ({
+        ...entry,
+        avatars: new Map(entry.avatars).set(playerId, avatar),
+        expiresAt,
+      })),
+    removeAvatar: async (sessionId, playerId, expiresAt) =>
+      changeAvatar(sessionId, playerId, (entry) => ({ ...entry, avatars: withoutAvatar(entry, playerId), expiresAt })),
+    setCharacter: async (sessionId, changed, expiresAt) =>
+      changeAvatar(sessionId, changed.id, (entry) => ({
+        ...entry,
+        players: entry.players.map((player) => (player.id === changed.id ? changed : player)),
+        avatars: withoutAvatar(entry, changed.id),
+        expiresAt,
+      })),
     getAvatar: async (sessionId, playerId) => live(sessionId)?.avatars.get(playerId) ?? null,
     avatarVersions: async (sessionId) =>
       new Map([...(live(sessionId)?.avatars ?? new Map<string, Avatar>())].map(([id, avatar]) => [id, avatar.version])),

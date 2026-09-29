@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { randomCharacter } from "@gamemash/shared";
 import { afterAll, describe, expect, it } from "vitest";
 import { createMemorySessionStore } from "./memory-store.js";
 import { createRedisSessionStore } from "./redis-store.js";
@@ -61,7 +62,13 @@ describe.each(stores)("%s session store", (name, makeStore) => {
     expect(await store.create(session(), inAMinute())).toBe("room_code_taken");
   });
 
-  const player = (name: string, joinedAt = Date.now()) => ({ id: randomUUID(), name, tokenHash: "hash", joinedAt });
+  const player = (name: string, joinedAt = Date.now()) => ({
+    id: randomUUID(),
+    name,
+    tokenHash: "hash",
+    joinedAt,
+    character: randomCharacter(),
+  });
   const joinOptions = (nameKey: string, maxPlayers = 100) => ({ nameKey, maxPlayers, expiresAt: inAMinute() });
 
   run("adds players and lists them in join order", async () => {
@@ -130,6 +137,116 @@ describe.each(stores)("%s session store", (name, makeStore) => {
 
     expect(await store.setAvatar(created.id, randomUUID(), avatar, inAMinute())).toBe("player_not_found");
     expect(await store.setAvatar(randomUUID(), randomUUID(), avatar, inAMinute())).toBe("session_not_found");
+  });
+
+  const withPhoto = async (store: SessionStore) => {
+    const created = session();
+    await store.create(created, inAMinute());
+    const priya = player("Priya");
+    await store.addPlayer(created.id, priya, joinOptions("priya"));
+    await store.setAvatar(
+      created.id,
+      priya.id,
+      { bytes: Buffer.from([1]), type: "image/webp", version: 3 },
+      inAMinute(),
+    );
+    return { created, priya };
+  };
+
+  run("saves a new character and drops the photo", async () => {
+    const store = makeStore?.() as SessionStore;
+    const { created, priya } = await withPhoto(store);
+    const changed = { ...priya, character: { ...priya.character, top: 0, beard: null } };
+
+    expect(await store.setCharacter(created.id, changed, inAMinute())).toBe("saved");
+
+    expect(await store.findPlayer(created.id, priya.id)).toEqual(changed);
+    expect(await store.getAvatar(created.id, priya.id)).toBeNull();
+    expect(await store.avatarVersions(created.id)).toEqual(new Map());
+  });
+
+  run("removes a player with their photo and frees their name", async () => {
+    const store = makeStore?.() as SessionStore;
+    const { created, priya } = await withPhoto(store);
+
+    expect(await store.removePlayer(created.id, priya.id, "priya", inAMinute())).toBe("removed");
+
+    expect(await store.findPlayer(created.id, priya.id)).toBeNull();
+    expect(await store.listPlayers(created.id)).toEqual([]);
+    expect(await store.getAvatar(created.id, priya.id)).toBeNull();
+    expect(await store.addPlayer(created.id, player("Priya"), joinOptions("priya"))).toBe("added");
+  });
+
+  run("keeps a name that belongs to another player when removing", async () => {
+    const store = makeStore?.() as SessionStore;
+    const created = session();
+    await store.create(created, inAMinute());
+    const priya = player("Priya");
+    const daan = player("Daan");
+    await store.addPlayer(created.id, priya, joinOptions("priya"));
+    await store.addPlayer(created.id, daan, joinOptions("daan"));
+
+    expect(await store.removePlayer(created.id, priya.id, "daan", inAMinute())).toBe("removed");
+
+    expect(await store.addPlayer(created.id, player("Daan"), joinOptions("daan"))).toBe("name_taken");
+    expect(await store.listPlayers(created.id)).toEqual([daan]);
+  });
+
+  run("only removes players in the lobby", async () => {
+    const store = makeStore?.() as SessionStore;
+    const { created, priya } = await withPhoto(store);
+    await store.setStatus(created.id, "playing");
+
+    expect(await store.removePlayer(created.id, priya.id, "priya", inAMinute())).toBe("locked");
+    expect(await store.findPlayer(created.id, priya.id)).toEqual(priya);
+    expect(await store.removePlayer(created.id, randomUUID(), "x", inAMinute())).toBe("locked");
+    expect(await store.removePlayer(randomUUID(), priya.id, "priya", inAMinute())).toBe("session_not_found");
+  });
+
+  run("reports unknown players when removing", async () => {
+    const store = makeStore?.() as SessionStore;
+    const created = session();
+    await store.create(created, inAMinute());
+
+    expect(await store.removePlayer(created.id, randomUUID(), "priya", inAMinute())).toBe("player_not_found");
+  });
+
+  run("removes a photo", async () => {
+    const store = makeStore?.() as SessionStore;
+    const { created, priya } = await withPhoto(store);
+
+    expect(await store.removeAvatar(created.id, priya.id, inAMinute())).toBe("saved");
+
+    expect(await store.getAvatar(created.id, priya.id)).toBeNull();
+    expect(await store.findPlayer(created.id, priya.id)).toEqual(priya);
+  });
+
+  run("locks avatars once the session has left the lobby", async () => {
+    const store = makeStore?.() as SessionStore;
+    const { created, priya } = await withPhoto(store);
+    await store.setStatus(created.id, "playing");
+    const photo = { bytes: Buffer.from([2]), type: "image/webp" as const, version: 4 };
+
+    expect(await store.setAvatar(created.id, priya.id, photo, inAMinute())).toBe("locked");
+    expect(
+      await store.setCharacter(created.id, { ...priya, character: { ...priya.character, top: 1 } }, inAMinute()),
+    ).toBe("locked");
+    expect(await store.removeAvatar(created.id, priya.id, inAMinute())).toBe("locked");
+    expect(await store.findPlayer(created.id, priya.id)).toEqual(priya);
+    expect(await store.avatarVersions(created.id)).toEqual(new Map([[priya.id, 3]]));
+  });
+
+  run("refuses character and photo changes for unknown players or sessions", async () => {
+    const store = makeStore?.() as SessionStore;
+    const created = session();
+    await store.create(created, inAMinute());
+    const stranger = player("Stranger");
+
+    expect(await store.setCharacter(created.id, stranger, inAMinute())).toBe("player_not_found");
+    expect(await store.removeAvatar(created.id, stranger.id, inAMinute())).toBe("player_not_found");
+    expect(await store.setCharacter(randomUUID(), stranger, inAMinute())).toBe("session_not_found");
+    expect(await store.removeAvatar(randomUUID(), stranger.id, inAMinute())).toBe("session_not_found");
+    expect(await store.listPlayers(created.id)).toEqual([]);
   });
 
   run("updates the status of a session", async () => {

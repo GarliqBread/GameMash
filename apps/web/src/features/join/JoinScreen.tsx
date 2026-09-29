@@ -6,24 +6,14 @@ import {
   PLAYER_NAME_MAX_LENGTH,
   ROOM_CODE_LENGTH,
 } from "@gamemash/shared";
-import {
-  Button,
-  Heading,
-  Logo,
-  PhoneShell,
-  PhotoPickerButton,
-  RoomCodeInput,
-  TextField,
-  TrustNote,
-} from "@gamemash/ui";
+import { Button, Heading, Logo, PhoneShell, RoomCodeInput, TextField, TrustNote } from "@gamemash/ui";
 import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { type FormEvent, useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { saveCredentials } from "../../lib/credentials";
 import { toApiError, useErrorMessage } from "../../lib/errors";
-import { joinWithPhoto } from "./join-session";
-import { usePhotoPicker } from "./usePhotoPicker";
+import { joinRoom } from "./join-session";
 
 type FieldErrors = {
   code?: string | undefined;
@@ -51,17 +41,12 @@ export const JoinScreen = ({ initialCode }: JoinScreenProps) => {
   const [code, setCode] = useState(initialCode);
   const [name, setName] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
-  const { photo, select } = usePhotoPicker();
 
   const join = useMutation({
-    mutationFn: joinWithPhoto,
-    onSuccess: ({ credentials, isPhotoFailed }) => {
+    mutationFn: joinRoom,
+    onSuccess: (credentials) => {
       saveCredentials(credentials);
-      void navigate({
-        to: "/play/$sessionId",
-        params: { sessionId: credentials.sessionId },
-        search: isPhotoFailed ? { photo: "failed" } : {},
-      });
+      void navigate({ to: "/play/$sessionId", params: { sessionId: credentials.sessionId } });
     },
     onError: (error) => {
       const apiError = toApiError(error);
@@ -81,11 +66,9 @@ export const JoinScreen = ({ initialCode }: JoinScreenProps) => {
       name: playerName ? undefined : formatError({ code: "invalid_name", params: { max: PLAYER_NAME_MAX_LENGTH } }),
     };
     setErrors(nextErrors);
-    if (nextErrors.code || nextErrors.name || photo.status === "processing") return;
-    join.mutate({ roomCode, name: playerName, avatar: photo.status === "ready" ? photo.blob : null });
+    if (nextErrors.code || nextErrors.name) return;
+    join.mutate({ roomCode, name: playerName });
   };
-
-  const isBusy = join.isPending || photo.status === "processing";
 
   return (
     <PhoneShell
@@ -103,7 +86,7 @@ export const JoinScreen = ({ initialCode }: JoinScreenProps) => {
         </div>
       }
       bottomAction={
-        <Button size="lg" type="submit" form="join" disabled={isBusy}>
+        <Button size="lg" type="submit" form="join" disabled={join.isPending}>
           <FormattedMessage id={join.isPending ? "join.submitting" : "join.submit"} />
         </Button>
       }
@@ -135,27 +118,6 @@ export const JoinScreen = ({ initialCode }: JoinScreenProps) => {
           }}
           error={errors.name}
         />
-        <div className="flex flex-col gap-2">
-          <PhotoPickerButton
-            label={
-              <>
-                <FormattedMessage id="join.photoLabel" />{" "}
-                <span className="font-normal text-fg-subtle">
-                  <FormattedMessage id="join.photoOptional" />
-                </span>
-              </>
-            }
-            hint={<FormattedMessage id={photo.status === "processing" ? "join.photoProcessing" : "join.photoHint"} />}
-            previewSrc={photo.status === "ready" ? photo.previewUrl : undefined}
-            onFileSelect={(file) => void select(file)}
-            disabled={join.isPending}
-          />
-          {photo.status === "failed" && (
-            <p role="alert" className="text-caption font-bold text-danger">
-              <FormattedMessage id="join.photoFailed" />
-            </p>
-          )}
-        </div>
         {errors.form && (
           <p role="alert" className="text-body font-bold text-danger">
             {errors.form}

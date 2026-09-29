@@ -1,5 +1,5 @@
 import { AVATAR_CONTENT_TYPES } from "@gamemash/shared";
-import { SessionStatusSchema } from "@gamemash/shared/schemas";
+import { CharacterSchema, SessionStatusSchema } from "@gamemash/shared/schemas";
 import { RESP_TYPES } from "redis";
 import { Type } from "typebox";
 import { Value } from "typebox/value";
@@ -7,14 +7,15 @@ import type { RedisClient } from "../redis.js";
 import type {
   AddImageResult,
   AddPlayerResult,
+  AvatarChangeResult,
   AvatarMeta,
   GameRecord,
   PlayerRecord,
+  RemovePlayerResult,
   SaveGameResult,
   SaveSetupResult,
   SessionRecord,
   SessionStore,
-  SetAvatarResult,
   SubmitInputResult,
 } from "./store.js";
 
@@ -25,10 +26,12 @@ const PlayerRecordSchema = Type.Object({
   name: Type.String(),
   tokenHash: Type.String(),
   joinedAt: Type.Number(),
+  character: CharacterSchema,
 });
 
 const ADD_PLAYER_RESULTS: AddPlayerResult[] = ["added", "name_taken", "session_full", "session_not_found"];
-const SET_AVATAR_RESULTS: SetAvatarResult[] = ["saved", "player_not_found", "session_not_found"];
+const REMOVE_PLAYER_RESULTS: RemovePlayerResult[] = ["removed", "locked", "player_not_found", "session_not_found"];
+const AVATAR_CHANGE_RESULTS: AvatarChangeResult[] = ["saved", "locked", "player_not_found", "session_not_found"];
 const SAVE_SETUP_RESULTS: SaveSetupResult[] = ["changed", "unchanged", "setup_locked", "session_not_found"];
 const ADD_IMAGE_RESULTS: AddImageResult[] = [
   "added",
@@ -97,8 +100,17 @@ const parseAvatarMeta = (json: string | null | undefined): AvatarMeta | null => 
   }
 };
 
-const isSetAvatarResult = (value: unknown): value is SetAvatarResult =>
-  SET_AVATAR_RESULTS.some((result) => result === value);
+const toRemovePlayerResult = (value: unknown): RemovePlayerResult => {
+  const result = REMOVE_PLAYER_RESULTS.find((known) => known === value);
+  if (!result) throw new Error(`unexpected remove player result: ${String(value)}`);
+  return result;
+};
+
+const toAvatarChangeResult = (value: unknown): AvatarChangeResult => {
+  const result = AVATAR_CHANGE_RESULTS.find((known) => known === value);
+  if (!result) throw new Error(`unexpected avatar change result: ${String(value)}`);
+  return result;
+};
 
 const isSaveSetupResult = (value: unknown): value is SaveSetupResult =>
   SAVE_SETUP_RESULTS.some((result) => result === value);
@@ -124,6 +136,12 @@ export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PRE
   const key = keys(prefix);
 
   const findById = async (sessionId: string) => fromHash(await redis.hGetAll(key.session(sessionId)));
+  const avatarKeys = (sessionId: string) => [
+    key.session(sessionId),
+    key.players(sessionId),
+    key.avatars(sessionId),
+    key.avatarMeta(sessionId),
+  ];
   const binary = redis.withTypeMapping({ [RESP_TYPES.BLOB_STRING]: Buffer });
 
   return {
@@ -155,14 +173,34 @@ export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PRE
         .filter((player): player is PlayerRecord => player !== null)
         .toSorted((a, b) => a.joinedAt - b.joinedAt);
     },
-    setAvatar: async (sessionId, playerId, { bytes, type, version }, expiresAt) => {
-      const result = await redis.setAvatar(
-        [key.session(sessionId), key.players(sessionId), key.avatars(sessionId), key.avatarMeta(sessionId)],
-        [playerId, bytes, JSON.stringify({ type, version }), String(expiresAt)],
+    removePlayer: async (sessionId, playerId, nameKey, expiresAt) => {
+      const result = await redis.removePlayer(
+        [
+          key.session(sessionId),
+          key.players(sessionId),
+          key.names(sessionId),
+          key.avatars(sessionId),
+          key.avatarMeta(sessionId),
+        ],
+        [playerId, nameKey, String(expiresAt)],
       );
-      if (!isSetAvatarResult(result)) throw new Error(`unexpected set avatar result: ${String(result)}`);
-      return result;
+      return toRemovePlayerResult(result);
     },
+    setAvatar: async (sessionId, playerId, { bytes, type, version }, expiresAt) => {
+      const result = await redis.setAvatar(avatarKeys(sessionId), [
+        playerId,
+        bytes,
+        JSON.stringify({ type, version }),
+        String(expiresAt),
+      ]);
+      return toAvatarChangeResult(result);
+    },
+    removeAvatar: async (sessionId, playerId, expiresAt) =>
+      toAvatarChangeResult(await redis.removeAvatar(avatarKeys(sessionId), [playerId, String(expiresAt)])),
+    setCharacter: async (sessionId, player, expiresAt) =>
+      toAvatarChangeResult(
+        await redis.setCharacter(avatarKeys(sessionId), [player.id, JSON.stringify(player), String(expiresAt)]),
+      ),
     getAvatar: async (sessionId, playerId) => {
       const [meta, bytes] = await Promise.all([
         redis.hGet(key.avatarMeta(sessionId), playerId),

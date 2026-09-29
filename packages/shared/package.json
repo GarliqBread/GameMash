@@ -20,5 +20,8 @@
   },
   "dependencies": {
     "typebox": "catalog:"
+  },
+  "devDependencies": {
+    "@dicebear/styles": "catalog:"
   }
 }

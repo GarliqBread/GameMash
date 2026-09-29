@@ -30,6 +30,21 @@ return 'added'`,
     parseCommand: (parser: CommandParser, keys: RedisArgument[], args: RedisArgument[]) => pushAll(parser, keys, args),
     transformReply: undefined as unknown as () => string,
   }),
+  removePlayer: defineScript({
+    NUMBER_OF_KEYS: 5,
+    SCRIPT: `
+local status = redis.call('HGET', KEYS[1], 'status')
+if not status then return 'session_not_found' end
+if status ~= 'lobby' then return 'locked' end
+if redis.call('HDEL', KEYS[2], ARGV[1]) == 0 then return 'player_not_found' end
+if redis.call('HGET', KEYS[3], ARGV[2]) == ARGV[1] then redis.call('HDEL', KEYS[3], ARGV[2]) end
+redis.call('HDEL', KEYS[4], ARGV[1])
+redis.call('HDEL', KEYS[5], ARGV[1])
+redis.call('PEXPIREAT', KEYS[1], ARGV[3])
+return 'removed'`,
+    parseCommand: (parser: CommandParser, keys: RedisArgument[], args: RedisArgument[]) => pushAll(parser, keys, args),
+    transformReply: undefined as unknown as () => string,
+  }),
   setSessionStatus: defineScript({
     NUMBER_OF_KEYS: 1,
     SCRIPT: `
@@ -42,13 +57,45 @@ return 1`,
   setAvatar: defineScript({
     NUMBER_OF_KEYS: 4,
     SCRIPT: `
-if redis.call('EXISTS', KEYS[1]) == 0 then return 'session_not_found' end
+local status = redis.call('HGET', KEYS[1], 'status')
+if not status then return 'session_not_found' end
+if status ~= 'lobby' then return 'locked' end
 if redis.call('HEXISTS', KEYS[2], ARGV[1]) == 0 then return 'player_not_found' end
 redis.call('HSET', KEYS[3], ARGV[1], ARGV[2])
 redis.call('HSET', KEYS[4], ARGV[1], ARGV[3])
 redis.call('PEXPIREAT', KEYS[1], ARGV[4])
 redis.call('PEXPIREAT', KEYS[3], ARGV[4])
 redis.call('PEXPIREAT', KEYS[4], ARGV[4])
+return 'saved'`,
+    parseCommand: (parser: CommandParser, keys: RedisArgument[], args: RedisArgument[]) => pushAll(parser, keys, args),
+    transformReply: undefined as unknown as () => string,
+  }),
+  removeAvatar: defineScript({
+    NUMBER_OF_KEYS: 4,
+    SCRIPT: `
+local status = redis.call('HGET', KEYS[1], 'status')
+if not status then return 'session_not_found' end
+if status ~= 'lobby' then return 'locked' end
+if redis.call('HEXISTS', KEYS[2], ARGV[1]) == 0 then return 'player_not_found' end
+redis.call('HDEL', KEYS[3], ARGV[1])
+redis.call('HDEL', KEYS[4], ARGV[1])
+redis.call('PEXPIREAT', KEYS[1], ARGV[2])
+return 'saved'`,
+    parseCommand: (parser: CommandParser, keys: RedisArgument[], args: RedisArgument[]) => pushAll(parser, keys, args),
+    transformReply: undefined as unknown as () => string,
+  }),
+  setCharacter: defineScript({
+    NUMBER_OF_KEYS: 4,
+    SCRIPT: `
+local status = redis.call('HGET', KEYS[1], 'status')
+if not status then return 'session_not_found' end
+if status ~= 'lobby' then return 'locked' end
+if redis.call('HEXISTS', KEYS[2], ARGV[1]) == 0 then return 'player_not_found' end
+redis.call('HSET', KEYS[2], ARGV[1], ARGV[2])
+redis.call('HDEL', KEYS[3], ARGV[1])
+redis.call('HDEL', KEYS[4], ARGV[1])
+redis.call('PEXPIREAT', KEYS[1], ARGV[3])
+redis.call('PEXPIREAT', KEYS[2], ARGV[3])
 return 'saved'`,
     parseCommand: (parser: CommandParser, keys: RedisArgument[], args: RedisArgument[]) => pushAll(parser, keys, args),
     transformReply: undefined as unknown as () => string,

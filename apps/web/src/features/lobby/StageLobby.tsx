@@ -3,6 +3,7 @@ import type { LineupEntry, LobbyPlayer } from "@gamemash/shared";
 import {
   Button,
   buttonVariants,
+  ConfirmDialog,
   cn,
   GameChip,
   Heading,
@@ -11,6 +12,7 @@ import {
   Pill,
   PlayerChip,
   PlayerGrid,
+  PlayerRosterDialog,
   QrCode,
   RoomCodeDisplay,
   StageLayout,
@@ -20,6 +22,7 @@ import {
   TrustNote,
 } from "@gamemash/ui";
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import type { LobbyStatus } from "../../lib/lobby";
 import { avatarSrc } from "../../lib/players";
@@ -37,8 +40,9 @@ export type StageLobbyProps = {
   players: LobbyPlayer[];
   status: LobbyStatus;
   isStarting: boolean;
-  startError: string | null;
+  actionError: string | null;
   onStart: () => void;
+  onRemovePlayer: (playerId: string) => void;
 };
 
 const startHintId = (playerCount: number, isStarting: boolean) => {
@@ -54,10 +58,14 @@ export const StageLobby = ({
   players,
   status,
   isStarting,
-  startError,
+  actionError,
   onStart,
+  onRemovePlayer,
 }: StageLobbyProps) => {
   const intl = useIntl();
+  const [removing, setRemoving] = useState<LobbyPlayer | null>(null);
+  const [isRosterOpen, setIsRosterOpen] = useState(false);
+  const askToRemove = (playerId: string) => setRemoving(players.find((player) => player.id === playerId) ?? null);
   return (
     <StageViewport>
       <StageLayout
@@ -98,10 +106,10 @@ export const StageLobby = ({
                 </p>
               ) : (
                 <p
-                  role={startError ? "alert" : "status"}
+                  role={actionError ? "alert" : "status"}
                   className="min-w-0 text-right text-stage-caption text-fg-subtle"
                 >
-                  {startError ?? <FormattedMessage id={startHintId(players.length, isStarting)} />}
+                  {actionError ?? <FormattedMessage id={startHintId(players.length, isStarting)} />}
                 </p>
               )}
               <Link
@@ -166,11 +174,18 @@ export const StageLobby = ({
               }
               if (slot.kind === "more") {
                 return (
-                  <PlayerChip
+                  <button
                     key="more"
-                    state="waiting"
-                    name={intl.formatMessage({ id: "lobby.morePlayers" }, { count: slot.count })}
-                  />
+                    type="button"
+                    aria-haspopup="dialog"
+                    onClick={() => setIsRosterOpen(true)}
+                    className="focus-ring min-w-0 cursor-pointer rounded-card text-left"
+                  >
+                    <PlayerChip
+                      state="waiting"
+                      name={intl.formatMessage({ id: "lobby.morePlayers" }, { count: slot.count })}
+                    />
+                  </button>
                 );
               }
               const { player } = slot;
@@ -182,12 +197,44 @@ export const StageLobby = ({
                   colorKey={player.id}
                   avatarSrc={avatarSrc(sessionId, player)}
                   className={player.isConnected ? undefined : "opacity-60"}
+                  remove={{
+                    label: intl.formatMessage({ id: "lobby.removePlayer" }, { name: player.name }),
+                    onRemove: () => askToRemove(player.id),
+                  }}
                 />
               );
             })}
           </PlayerGrid>
         </StagePanel>
       </StageLayout>
+      <PlayerRosterDialog
+        open={isRosterOpen}
+        onOpenChange={setIsRosterOpen}
+        title={<FormattedMessage id="lobby.allPlayers" values={{ count: players.length }} />}
+        players={players.map((player) => ({
+          id: player.id,
+          name: player.name,
+          colorKey: player.id,
+          avatarSrc: avatarSrc(sessionId, player),
+        }))}
+        removeText={<FormattedMessage id="lobby.removeConfirm" />}
+        removeLabel={(name) => intl.formatMessage({ id: "lobby.removePlayer" }, { name })}
+        onRemove={askToRemove}
+        closeLabel={<FormattedMessage id="lobby.closeAllPlayers" />}
+      />
+      <ConfirmDialog
+        open={removing !== null}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setRemoving(null);
+        }}
+        title={<FormattedMessage id="lobby.removeTitle" values={{ name: removing?.name ?? "" }} />}
+        description={<FormattedMessage id="lobby.removeBody" />}
+        confirmLabel={<FormattedMessage id="lobby.removeConfirm" />}
+        cancelLabel={<FormattedMessage id="lobby.removeCancel" />}
+        onConfirm={() => {
+          if (removing) onRemovePlayer(removing.id);
+        }}
+      />
     </StageViewport>
   );
 };

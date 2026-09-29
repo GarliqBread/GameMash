@@ -6,17 +6,24 @@ export type PhoneMessageProps = {
   title: ReactNode;
   body: ReactNode;
   actionLabel: ReactNode;
+  roomCode?: string | undefined;
 };
 
-export const PhoneMessage = ({ title, body, actionLabel }: PhoneMessageProps) => (
+export const PhoneMessage = ({ title, body, actionLabel, roomCode }: PhoneMessageProps) => (
   <PhoneShell
     theme="paper"
     mainClassName="gap-4"
     header={<Logo />}
     bottomAction={
-      <Link to="/" className={buttonVariants({ size: "lg" })}>
-        {actionLabel}
-      </Link>
+      roomCode ? (
+        <Link to="/join/$code" params={{ code: roomCode }} className={buttonVariants({ size: "lg" })}>
+          {actionLabel}
+        </Link>
+      ) : (
+        <Link to="/" className={buttonVariants({ size: "lg" })}>
+          {actionLabel}
+        </Link>
+      )
     }
   >
     <Heading>{title}</Heading>

@@ -1,3 +1,5 @@
+import { CharacterSchema } from "@gamemash/shared/schemas";
+import { Value } from "typebox/value";
 import { describe, expect, it, vi } from "vitest";
 import { createLobbyNotifier } from "../lobby/notifier.js";
 import { createMemorySessionStore } from "./memory-store.js";
@@ -27,6 +29,18 @@ describe("joining a session", () => {
     expect(player?.name).toBe("Priya");
     expect(player?.tokenHash).toBe(hashSecret(result.value.playerToken));
     expect(listener).toHaveBeenCalledWith(sessionId);
+  });
+
+  it("gives every new player a character that the lobby shows", async () => {
+    const { service } = setup();
+    const { sessionId } = await service.create();
+    const result = await service.join(sessionId, "Priya");
+    if (!result.ok) throw new Error("join failed");
+
+    const state = await service.lobbyState(sessionId, new Set());
+
+    const character = state?.players.find((player) => player.id === result.value.playerId)?.character;
+    expect(Value.Check(CharacterSchema, character)).toBe(true);
   });
 
   it.each(["", "   ", "x".repeat(21), "Pri\u0000ya", "Pri​ya", "Priya\u200D", "Priya\u{E0041}"])(

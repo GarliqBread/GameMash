@@ -1,4 +1,4 @@
-import type { AvatarContentType, SessionStatus } from "@gamemash/shared";
+import type { AvatarContentType, Character, SessionStatus } from "@gamemash/shared";
 
 export type SessionRecord = {
   id: string;
@@ -13,6 +13,7 @@ export type PlayerRecord = {
   name: string;
   tokenHash: string;
   joinedAt: number;
+  character: Character;
 };
 
 export type AvatarMeta = {
@@ -24,7 +25,9 @@ export type Avatar = AvatarMeta & {
   bytes: Buffer;
 };
 
-export type SetAvatarResult = "saved" | "player_not_found" | "session_not_found";
+export type RemovePlayerResult = "removed" | "locked" | "player_not_found" | "session_not_found";
+
+export type AvatarChangeResult = "saved" | "locked" | "player_not_found" | "session_not_found";
 
 export type SaveSetupResult = "changed" | "unchanged" | "setup_locked" | "session_not_found";
 
@@ -69,8 +72,16 @@ export type SessionStore = {
   addPlayer: (sessionId: string, player: PlayerRecord, options: AddPlayerOptions) => Promise<AddPlayerResult>;
   findPlayer: (sessionId: string, playerId: string) => Promise<PlayerRecord | null>;
   listPlayers: (sessionId: string) => Promise<PlayerRecord[]>;
+  removePlayer: (
+    sessionId: string,
+    playerId: string,
+    nameKey: string,
+    expiresAt: number,
+  ) => Promise<RemovePlayerResult>;
   setStatus: (sessionId: string, status: SessionStatus) => Promise<boolean>;
-  setAvatar: (sessionId: string, playerId: string, avatar: Avatar, expiresAt: number) => Promise<SetAvatarResult>;
+  setAvatar: (sessionId: string, playerId: string, avatar: Avatar, expiresAt: number) => Promise<AvatarChangeResult>;
+  removeAvatar: (sessionId: string, playerId: string, expiresAt: number) => Promise<AvatarChangeResult>;
+  setCharacter: (sessionId: string, player: PlayerRecord, expiresAt: number) => Promise<AvatarChangeResult>;
   getAvatar: (sessionId: string, playerId: string) => Promise<Avatar | null>;
   avatarVersions: (sessionId: string) => Promise<Map<string, number>>;
   getSetup: (sessionId: string) => Promise<string | null>;

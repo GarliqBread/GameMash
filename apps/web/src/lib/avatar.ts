@@ -1,4 +1,4 @@
-import { AVATAR_MAX_BYTES, AVATAR_SIZE } from "@gamemash/shared";
+import { AVATAR_MAX_BYTES, AVATAR_SIZE, type Character } from "@gamemash/shared";
 import { fetchJson } from "./api";
 import { createCanvas, decodeImage, encodeSmallest } from "./image-encoding";
 
@@ -26,9 +26,30 @@ export const resizeAvatar = async (file: Blob) => {
   }
 };
 
-export const uploadAvatar = (sessionId: string, playerId: string, playerToken: string, avatar: Blob) =>
-  fetchJson<{ avatarVersion: number }>(`/api/sessions/${sessionId}/players/${playerId}/avatar`, {
+export type PlayerAuth = {
+  sessionId: string;
+  playerId: string;
+  playerToken: string;
+};
+
+const playerUrl = ({ sessionId, playerId }: PlayerAuth, path: string) =>
+  `/api/sessions/${sessionId}/players/${playerId}/${path}`;
+
+const bearer = ({ playerToken }: PlayerAuth) => ({ authorization: `Bearer ${playerToken}` });
+
+export const uploadAvatar = (player: PlayerAuth, avatar: Blob) =>
+  fetchJson<{ avatarVersion: number }>(playerUrl(player, "avatar"), {
     method: "PUT",
-    headers: { "content-type": avatar.type, authorization: `Bearer ${playerToken}` },
+    headers: { "content-type": avatar.type, ...bearer(player) },
     body: avatar,
+  });
+
+export const removeAvatar = (player: PlayerAuth) =>
+  fetchJson<void>(playerUrl(player, "avatar"), { method: "DELETE", headers: bearer(player) });
+
+export const saveCharacter = (player: PlayerAuth, character: Character) =>
+  fetchJson<void>(playerUrl(player, "character"), {
+    method: "PUT",
+    headers: { "content-type": "application/json", ...bearer(player) },
+    body: JSON.stringify(character),
   });

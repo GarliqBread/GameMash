@@ -1,4 +1,5 @@
 import { type Static, Type } from "typebox";
+import { CHARACTER_PART_COUNTS } from "./character.js";
 import { ERROR_CODES } from "./errors.js";
 
 export const ApiErrorSchema = Type.Object({
@@ -46,6 +47,23 @@ export const SessionParamsSchema = Type.Object({
 });
 export type SessionParams = Static<typeof SessionParamsSchema>;
 
+const partSchema = (count: number) => Type.Integer({ minimum: 0, maximum: count - 1 });
+
+export const CharacterSchema = Type.Object(
+  {
+    head: partSchema(CHARACTER_PART_COUNTS.head),
+    eyes: partSchema(CHARACTER_PART_COUNTS.eyes),
+    nose: partSchema(CHARACTER_PART_COUNTS.nose),
+    mouth: partSchema(CHARACTER_PART_COUNTS.mouth),
+    top: partSchema(CHARACTER_PART_COUNTS.top),
+    topColor: partSchema(CHARACTER_PART_COUNTS.topColor),
+    beard: Type.Union([partSchema(CHARACTER_PART_COUNTS.beard), Type.Null()]),
+    mustache: Type.Union([partSchema(CHARACTER_PART_COUNTS.mustache), Type.Null()]),
+  },
+  { additionalProperties: false },
+);
+export type Character = Static<typeof CharacterSchema>;
+
 export const JoinSessionBodySchema = Type.Object({
   name: Type.String({ maxLength: 256 }),
 });
@@ -67,6 +85,12 @@ export const GameInputPayloadSchema = Type.Object(
   { additionalProperties: false },
 );
 export type GameInputPayload = Static<typeof GameInputPayloadSchema>;
+
+export const KickPlayerPayloadSchema = Type.Object(
+  { playerId: Type.String({ format: "uuid" }) },
+  { additionalProperties: false },
+);
+export type KickPlayerPayload = Static<typeof KickPlayerPayloadSchema>;
 
 export const HandshakeAuthSchema = Type.Union([
   Type.Object({

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useCopy } from "../../.ladle/pseudo";
 import { HOUSE, LIGHTHOUSE } from "../../.ladle/sample-drawings";
 import { QUIZ_OPTIONS, ROOM_CODE } from "../../.ladle/screen-data";
@@ -16,7 +16,6 @@ import { PhoneShell } from "../layout/PhoneShell";
 import type { AnswerShapeName } from "../lib/answers";
 import { Button } from "../primitives/Button";
 import { Heading } from "../primitives/Heading";
-import { PhotoPickerButton } from "../primitives/PhotoPickerButton";
 import { RoomCodeInput } from "../primitives/RoomCodeInput";
 import { TextField } from "../primitives/TextField";
 import { TrustNote } from "../primitives/TrustNote";
@@ -27,8 +26,6 @@ export default { title: "Screens / Phone" } satisfies StoryDefault;
 export const Join: Story = () => {
   const t = useCopy();
   const [code, setCode] = useState(ROOM_CODE);
-  const [photo, setPhoto] = useState<string | undefined>(undefined);
-  useEffect(() => () => (photo ? URL.revokeObjectURL(photo) : undefined), [photo]);
   return (
     <PhoneShell
       theme="paper"
@@ -50,16 +47,6 @@ export const Join: Story = () => {
           onValueChange={setCode}
         />
         <TextField label={t("Your name")} placeholder={t("e.g. Priya")} autoComplete="nickname" maxLength={20} />
-        <PhotoPickerButton
-          label={
-            <>
-              {t("Add a photo")} <span className="font-normal text-fg-subtle">{t("(optional)")}</span>
-            </>
-          }
-          hint={t("Otherwise we show your initials.")}
-          previewSrc={photo}
-          onFileSelect={(file) => setPhoto(URL.createObjectURL(file))}
-        />
       </form>
     </PhoneShell>
   );

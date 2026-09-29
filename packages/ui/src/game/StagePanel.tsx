@@ -7,13 +7,19 @@ export type StagePanelProps = Omit<ComponentProps<"section">, "title"> & {
   aside?: ReactNode;
 };
 
-export const StagePanel = ({ title, aside, className, children, ...props }: StagePanelProps) => {
+export const StagePanel = ({
+  title,
+  aside,
+  className,
+  children,
+  ...props
+}: StagePanelProps) => {
   const titleId = useId();
   return (
     <section
       aria-labelledby={title ? titleId : undefined}
       className={cn(
-        "flex min-w-0 flex-col gap-8 rounded-panel border-2 border-border bg-surface px-11 py-10",
+        "flex min-w-0 flex-col gap-8 rounded-panel border-2 border-border bg-surface p-8",
         className,
       )}
       {...props}

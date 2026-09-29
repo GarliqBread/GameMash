@@ -1,11 +1,13 @@
+import type { Character } from "./character.js";
 import type { ApiError } from "./errors.js";
 import type { GameInputPayload, GameNextPayload, GameSnapshot } from "./game.js";
-import type { SessionStatus } from "./schemas.js";
+import type { KickPlayerPayload, SessionStatus } from "./schemas.js";
 
 export type {
   HandshakeAuth,
   JoinSessionBody,
   JoinSessionResponse,
+  KickPlayerPayload,
   PlayerParams,
   SessionParams,
 } from "./schemas.js";
@@ -31,6 +33,7 @@ export type LobbyPlayer = {
   joinedAt: number;
   isConnected: boolean;
   avatarVersion: number | null;
+  character: Character;
 };
 
 export type SecondsRange = {
@@ -61,10 +64,12 @@ export type ServerToClientEvents = {
   "lobby:state": (state: LobbyState) => void;
   "game:state": (snapshot: GameSnapshot) => void;
   "session:ended": () => void;
+  "player:removed": () => void;
 };
 
 export type ClientToServerEvents = {
   "session:start": (ack: (result: SocketAck) => void) => void;
+  "player:kick": (payload: KickPlayerPayload, ack: (result: SocketAck) => void) => void;
   "game:next": (payload: GameNextPayload, ack: (result: SocketAck) => void) => void;
   "game:input": (payload: GameInputPayload, ack: (result: SocketAck) => void) => void;
 };

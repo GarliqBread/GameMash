@@ -11,6 +11,8 @@
     "test": "echo 'no web tests'"
   },
   "dependencies": {
+    "@dicebear/core": "catalog:",
+    "@dicebear/styles": "catalog:",
     "@gamemash/games": "workspace:*",
     "@gamemash/messages": "workspace:*",
     "@gamemash/shared": "workspace:*",

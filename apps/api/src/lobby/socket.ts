@@ -6,7 +6,12 @@ import {
   SOCKET_AUTH_ERROR,
   type SocketAck,
 } from "@gamemash/shared";
-import { GameInputPayloadSchema, GameNextPayloadSchema, HandshakeAuthSchema } from "@gamemash/shared/schemas";
+import {
+  GameInputPayloadSchema,
+  GameNextPayloadSchema,
+  HandshakeAuthSchema,
+  KickPlayerPayloadSchema,
+} from "@gamemash/shared/schemas";
 import type { FastifyBaseLogger } from "fastify";
 import proxyAddr from "proxy-addr";
 import { Server, type Socket } from "socket.io";
@@ -285,6 +290,32 @@ export const attachLobby = (
     }
   };
 
+  const dropIfRemoved = async (socket: LobbySocket) => {
+    const { sessionId, member } = socket.data;
+    if (!(await sessions.isRemoved(sessionId, member))) return;
+    socket.emit("player:removed");
+    socket.disconnect(true);
+  };
+
+  const handleKick = (socket: LobbySocket) => async (payload: unknown, ack: unknown) => {
+    const reply = replyTo(ack);
+    const { sessionId, role } = socket.data;
+    if (role !== "host") return reply(unauthorized);
+    if (!gameActions.hit(socket.id)) return reply(rateLimited);
+    if (!Value.Check(KickPlayerPayloadSchema, payload)) return reply(badRequest);
+    try {
+      const result = await sessions.kick(sessionId, payload.playerId);
+      if (!result.ok) return reply({ ok: false, error: { code: result.error } });
+      const room = playerRoom(sessionId, payload.playerId);
+      io.to(room).emit("player:removed");
+      io.in(room).disconnectSockets(true);
+      return reply(accepted);
+    } catch (error) {
+      log.error({ err: error }, "failed to remove player");
+      return reply(internalError);
+    }
+  };
+
   const handleNext = (socket: LobbySocket) => async (payload: unknown, ack: unknown) => {
     const reply = replyTo(ack);
     if (socket.data.role !== "host") return reply(unauthorized);
@@ -325,11 +356,17 @@ export const attachLobby = (
     const { sessionId, createdAt, role, member } = socket.data;
     void socket.join([sessionRoom(sessionId), role === "host" ? hostRoom(sessionId) : playerRoom(sessionId, member)]);
     scheduleDeadline(sessionId, createdAt);
+    if (role === "player") {
+      void dropIfRemoved(socket).catch((error: unknown) =>
+        log.error({ err: error, sessionId }, "failed to check removed player"),
+      );
+    }
     void sendState(socket).catch((error: unknown) => log.error({ err: error, sessionId }, "failed to send state"));
     void sendGame(socket).catch((error: unknown) => log.error({ err: error, sessionId }, "failed to send game"));
     scheduleBroadcast(sessionId);
 
     socket.on("session:start", handleStart(socket));
+    socket.on("player:kick", handleKick(socket));
     socket.on("game:next", handleNext(socket));
     socket.on("game:input", handleInput(socket));
 
