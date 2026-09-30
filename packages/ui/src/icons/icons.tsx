@@ -37,6 +37,13 @@ export const MonitorIcon = (props: IconProps) => (
   </Icon>
 );
 
+export const PhoneIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <rect x="7" y="2" width="10" height="20" rx="2" />
+    <path d="M11 18 H13" />
+  </Icon>
+);
+
 export const PlayIcon = (props: IconProps) => (
   <Icon fill="currentColor" stroke="none" {...props}>
     <path d="M7 4 L19 12 L7 20 Z" />

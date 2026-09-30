@@ -11,6 +11,7 @@ export const Sizes: Story = () => {
     <BothThemes themes={WITH_WORKSHOP}>
       {() => (
         <>
+          <Heading size="display">{t("Host a session")}</Heading>
           <Heading size="host">{t("Edit questions")}</Heading>
           <Heading size="phone">{t("Join the game")}</Heading>
           <Heading as="h2" size="phone-sm">

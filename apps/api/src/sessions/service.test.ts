@@ -40,6 +40,33 @@ describe("createSessionService", () => {
 
     await expect(service.create()).rejects.toBeInstanceOf(RoomCodesExhaustedError);
   });
+
+  it("refuses a session name with hidden characters", async () => {
+    const service = createSessionService({ store: createMemorySessionStore() });
+
+    const result = await service.createNamed("Friday\u200Bmash");
+
+    expect(result).toEqual({ ok: false, error: "bad_request" });
+  });
+
+  it("still creates the session when its name cannot be saved", async () => {
+    const store = createMemorySessionStore();
+    const warnings: unknown[] = [];
+    const service = createSessionService({
+      store: {
+        ...store,
+        saveSetup: async () => {
+          throw new Error("redis down");
+        },
+      },
+      log: { warn: (details: unknown) => warnings.push(details) },
+    });
+
+    const result = await service.createNamed("Friday team mash");
+
+    expect(result.ok).toBe(true);
+    expect(warnings).toHaveLength(1);
+  });
 });
 
 describe("sessionExpiresAt", () => {

@@ -6,25 +6,24 @@ import {
   PLAYER_NAME_MAX_LENGTH,
   ROOM_CODE_LENGTH,
 } from "@gamemash/shared";
-import { Button, Heading, Logo, PhoneShell, RoomCodeInput, TextField, TrustNote } from "@gamemash/ui";
+import { Button } from "@gamemash/ui";
 import { useMutation } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { type FormEvent, useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { saveCredentials } from "../../lib/credentials";
 import { toApiError, useErrorMessage } from "../../lib/errors";
+import { DESKTOP_QUERY, useMediaQuery } from "../../lib/use-media-query";
+import { JoinDesktop } from "./JoinDesktop";
+import { type JoinFieldErrors, JoinFields } from "./JoinFields";
+import { JoinPhone } from "./JoinPhone";
+import { JOIN_FORM_ID } from "./join-layout";
 import { joinRoom } from "./join-session";
-
-type FieldErrors = {
-  code?: string | undefined;
-  name?: string | undefined;
-  form?: string | undefined;
-};
 
 const CODE_ERRORS: ErrorCode[] = ["room_not_found"];
 const NAME_ERRORS: ErrorCode[] = ["invalid_name", "name_taken"];
 
-const fieldFor = (error: ApiError): keyof FieldErrors => {
+const fieldFor = (error: ApiError): keyof JoinFieldErrors => {
   if (CODE_ERRORS.includes(error.code)) return "code";
   if (NAME_ERRORS.includes(error.code)) return "name";
   return "form";
@@ -38,9 +37,10 @@ export const JoinScreen = ({ initialCode }: JoinScreenProps) => {
   const intl = useIntl();
   const formatError = useErrorMessage();
   const navigate = useNavigate();
+  const isDesktop = useMediaQuery(DESKTOP_QUERY);
   const [code, setCode] = useState(initialCode);
   const [name, setName] = useState("");
-  const [errors, setErrors] = useState<FieldErrors>({});
+  const [errors, setErrors] = useState<JoinFieldErrors>({});
 
   const join = useMutation({
     mutationFn: joinRoom,
@@ -58,7 +58,7 @@ export const JoinScreen = ({ initialCode }: JoinScreenProps) => {
     event.preventDefault();
     const roomCode = normalizeRoomCode(code);
     const playerName = normalizePlayerName(name);
-    const nextErrors: FieldErrors = {
+    const nextErrors: JoinFieldErrors = {
       code:
         roomCode.length === ROOM_CODE_LENGTH
           ? undefined
@@ -70,60 +70,35 @@ export const JoinScreen = ({ initialCode }: JoinScreenProps) => {
     join.mutate({ roomCode, name: playerName });
   };
 
-  return (
-    <PhoneShell
-      theme="paper"
-      mainClassName="gap-7"
-      header={<Logo />}
-      footer={
-        <div className="flex flex-col gap-4">
-          <TrustNote>
-            <FormattedMessage id="join.trust" />
-          </TrustNote>
-          <Link to="/host" className="focus-ring self-start text-caption text-fg-subtle underline">
-            <FormattedMessage id="join.hostLink" />
-          </Link>
-        </div>
-      }
-      bottomAction={
-        <Button size="lg" type="submit" form="join" disabled={join.isPending}>
-          <FormattedMessage id={join.isPending ? "join.submitting" : "join.submit"} />
-        </Button>
-      }
-    >
-      <Heading>
-        <FormattedMessage id="join.title" />
-      </Heading>
-      <form id="join" noValidate className="flex flex-col gap-[22px]" onSubmit={handleSubmit}>
-        <RoomCodeInput
-          label={<FormattedMessage id="join.codeLabel" />}
-          description={<FormattedMessage id="join.codeDescription" />}
-          value={code}
-          onValueChange={(value) => {
-            setCode(value);
-            setErrors((current) => ({ ...current, code: undefined }));
-          }}
-          error={errors.code}
-          length={ROOM_CODE_LENGTH}
-        />
-        <TextField
-          label={<FormattedMessage id="join.nameLabel" />}
-          placeholder={intl.formatMessage({ id: "join.namePlaceholder" })}
-          autoComplete="nickname"
-          maxLength={PLAYER_NAME_MAX_LENGTH}
-          value={name}
-          onValueChange={(value) => {
-            setName(value);
-            setErrors((current) => ({ ...current, name: undefined }));
-          }}
-          error={errors.name}
-        />
-        {errors.form && (
-          <p role="alert" className="text-body font-bold text-danger">
-            {errors.form}
-          </p>
-        )}
-      </form>
-    </PhoneShell>
+  const fields = (
+    <JoinFields
+      size={isDesktop ? "desktop" : "phone"}
+      code={code}
+      name={name}
+      errors={errors}
+      onCodeChange={(value) => {
+        setCode(value);
+        setErrors((current) => ({ ...current, code: undefined }));
+      }}
+      onNameChange={(value) => {
+        setName(value);
+        setErrors((current) => ({ ...current, name: undefined }));
+      }}
+    />
   );
+
+  const submit = (
+    <Button
+      size="lg"
+      type="submit"
+      form={JOIN_FORM_ID}
+      disabled={join.isPending}
+      className="workshop:h-16 workshop:text-2xl workshop:shadow-brutal-md"
+    >
+      <FormattedMessage id={join.isPending ? "join.submitting" : "join.submit"} />
+    </Button>
+  );
+
+  const Layout = isDesktop ? JoinDesktop : JoinPhone;
+  return <Layout fields={fields} submit={submit} onSubmit={handleSubmit} />;
 };

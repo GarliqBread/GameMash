@@ -2,7 +2,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { cn } from "../lib/cn.js";
 
 export type PhoneShellProps = ComponentProps<"div"> & {
-  theme: "stage" | "paper";
+  theme: "stage" | "paper" | "workshop";
   header?: ReactNode;
   footer?: ReactNode;
   bottomAction?: ReactNode;
@@ -23,7 +23,11 @@ export const PhoneShell = ({
   mainClassName,
   ...props
 }: PhoneShellProps) => (
-  <div data-theme={theme} className={cn("min-h-dvh bg-bg text-fg", className)} {...props}>
+  <div
+    data-theme={theme}
+    className={cn("min-h-dvh bg-bg text-fg", theme === "workshop" && "bg-graph-paper", className)}
+    {...props}
+  >
     <div
       className={cn(
         "mx-auto flex min-h-dvh w-full max-w-md flex-col gap-4 px-4 font-sans text-body",
@@ -38,7 +42,8 @@ export const PhoneShell = ({
         <div
           className={cn(
             "flex shrink-0 flex-col gap-3",
-            isBottomActionSticky && "sticky bottom-0 z-10 -mx-4 border-t border-border bg-bg px-4 py-3",
+            isBottomActionSticky &&
+              "sticky bottom-0 z-10 -mx-4 border-t border-border bg-bg px-4 py-3 workshop:mx-0 workshop:border-t-0 workshop:bg-transparent workshop:px-0 workshop:py-0",
           )}
         >
           {bottomAction}

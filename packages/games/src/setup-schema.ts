@@ -34,6 +34,14 @@ export const SessionSetupSchema = Type.Object(
 );
 export type SessionSetup = Static<typeof SessionSetupSchema>;
 
+export const CreateSessionBodySchema = Type.Object(
+  {
+    name: Type.Optional(Type.String({ maxLength: SESSION_NAME_MAX_LENGTH })),
+  },
+  { additionalProperties: false },
+);
+export type CreateSessionBody = Static<typeof CreateSessionBodySchema>;
+
 export const HostSetupResponseSchema = Type.Object(
   {
     setup: SessionSetupSchema,

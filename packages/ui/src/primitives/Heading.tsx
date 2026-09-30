@@ -13,6 +13,7 @@ const headingVariants = cva("font-display font-extrabold text-balance", {
       "phone-sm": "text-3xl/[1.1]",
       host: "text-3xl/[1.1] tracking-[-0.01em] workshop:text-stage-xl/[1] workshop:tracking-display-tight",
       panel: "text-2xl/[1.2]",
+      display: "text-stage-2xl/none tracking-display-tight",
     },
   },
   defaultVariants: {

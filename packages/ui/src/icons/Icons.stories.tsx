@@ -14,6 +14,7 @@ export const Logos: Story = () => (
         <Logo size="sm" />
         <Logo size="md" />
         <Logo size="lg" />
+        <Logo size="md" hasOutline={false} />
         <Logo size="lg" showWordmark={false} label="GameMash" />
       </>
     )}

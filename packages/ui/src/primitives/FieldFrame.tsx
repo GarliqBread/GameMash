@@ -24,7 +24,14 @@ export const FieldFrame = ({
   children,
 }: FieldFrameProps) => (
   <Field.Root invalid={hasError(error)} disabled={disabled} className={cn("flex min-w-0 flex-col gap-2", className)}>
-    <Field.Label className={cn("text-body font-bold text-fg", hideLabel && "sr-only")}>{label}</Field.Label>
+    <Field.Label
+      className={cn(
+        "text-body font-bold text-fg workshop:font-pixel workshop:text-label workshop:tracking-pixel",
+        hideLabel && "sr-only",
+      )}
+    >
+      {label}
+    </Field.Label>
     {children}
     {description && <Field.Description className="text-caption text-fg-subtle">{description}</Field.Description>}
     {hasError(error) && (

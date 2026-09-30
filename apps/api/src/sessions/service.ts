@@ -111,9 +111,25 @@ export const createSessionService = ({
 
   const touch = async (session: SessionRecord) => store.touch(session, sessionExpiresAt(session.createdAt, now()));
 
-  const create = async (): Promise<CreateSessionResponse> => {
+  const nameSession = async (session: SessionRecord, name: string) => {
+    const setup: SessionSetup = { ...emptySetup(), name };
+    const summary: LobbySummary = { ...EMPTY_SUMMARY, name };
+    try {
+      await store.saveSetup(
+        session.id,
+        JSON.stringify(setup),
+        JSON.stringify(summary),
+        sessionExpiresAt(session.createdAt, session.createdAt),
+      );
+    } catch (error) {
+      log?.warn({ sessionId: session.id, error }, "could not save the session name");
+    }
+  };
+
+  const create = async (name = ""): Promise<CreateSessionResponse> => {
     const hostToken = createSecret();
     const createdAt = now();
+    const sessionName = name.trim();
     for (let attempt = 0; attempt < MAX_ROOM_CODE_ATTEMPTS; attempt += 1) {
       const session: SessionRecord = {
         id: createId(),
@@ -123,10 +139,16 @@ export const createSessionService = ({
         createdAt,
       };
       if ((await store.create(session, sessionExpiresAt(createdAt, createdAt))) === "created") {
+        if (sessionName) await nameSession(session, sessionName);
         return { sessionId: session.id, roomCode: session.roomCode, hostToken };
       }
     }
     throw new RoomCodesExhaustedError();
+  };
+
+  const createNamed = async (name: string): Promise<Result<CreateSessionResponse>> => {
+    if (hasHiddenCharacters(name)) return fail("bad_request");
+    return { ok: true, value: await create(name) };
   };
 
   const join = async (sessionId: string, rawName: string): Promise<Result<JoinSessionResponse>> => {
@@ -348,6 +370,7 @@ export const createSessionService = ({
 
   return {
     create,
+    createNamed,
     findByRoomCode: (code: string) => store.findByRoomCode(code),
     join,
     authenticateHost,
