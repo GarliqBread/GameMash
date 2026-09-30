@@ -1,11 +1,19 @@
-import { DRAW_IT_MAX_POINTS, DRAW_IT_MAX_STROKES, type DrawItPlayerView, OWN_DRAWING_ID } from "@gamemash/games/config";
+import {
+  DRAW_IT_MAX_FILL_RINGS,
+  DRAW_IT_MAX_POINTS,
+  DRAW_IT_MAX_STROKES,
+  type DrawItPlayerView,
+  OWN_DRAWING_ID,
+} from "@gamemash/games/config";
 import {
   Button,
   compactDrawing,
+  type Drawing,
   DrawingCanvas,
   DrawingFrame,
   DrawingToolbar,
   Heading,
+  isFill,
   pointCount,
   TimerPill,
   useDrawing,
@@ -25,6 +33,11 @@ import { useDrawingSync } from "./useDrawingSync";
 type DrawingView = Extract<DrawItPlayerView, { kind: "draw" }>;
 
 const URGENT_SECONDS = 2;
+
+const isOverLimits = (drawing: Drawing) =>
+  pointCount(drawing) > DRAW_IT_MAX_POINTS ||
+  drawing.strokes.length > DRAW_IT_MAX_STROKES ||
+  drawing.strokes.some((mark) => isFill(mark) && mark.rings.length > DRAW_IT_MAX_FILL_RINGS);
 const PREVIEW_SIZE = 280;
 
 export type PhoneDrawingProps = {
@@ -61,7 +74,7 @@ export const PhoneDrawing = ({ credentials, me, view, phaseId, phaseEndsAt, stat
   }, [isRestored, saved.isPending, saved.data, isEmpty, load]);
 
   const compacted = useMemo(() => compactDrawing(controller.drawing, DRAW_IT_MAX_POINTS), [controller.drawing]);
-  const isTooDetailed = pointCount(compacted) > DRAW_IT_MAX_POINTS || compacted.strokes.length > DRAW_IT_MAX_STROKES;
+  const isTooDetailed = isOverLimits(compacted);
   const isTimeUp = seconds === 0;
   const isUrgent = seconds <= URGENT_SECONDS;
   const isFinished = view.isDone || sync.isDone;

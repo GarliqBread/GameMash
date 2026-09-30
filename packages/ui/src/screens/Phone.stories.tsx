@@ -151,12 +151,17 @@ export const Draw: Story = () => {
           colorGroup: t("Colour"),
           colors: {
             black: t("Black"),
+            gray: t("Gray"),
+            white: t("White"),
+            brown: t("Brown"),
             red: t("Red"),
             orange: t("Orange"),
             yellow: t("Yellow"),
             green: t("Green"),
+            sky: t("Light blue"),
             blue: t("Blue"),
             violet: t("Violet"),
+            pink: t("Pink"),
           },
           sizeGroup: t("Brush size"),
           sizes: {
@@ -165,15 +170,11 @@ export const Draw: Story = () => {
             thick: t("Thick brush"),
           },
           eraser: t("Eraser"),
+          fill: t("Fill"),
           undo: t("Undo"),
           clear: t("Clear drawing"),
         }}
       />
-      <p className="text-caption text-fg-subtle">
-        {t(
-          "Big, bold lines look best on the TV. Your name stays hidden while people vote.",
-        )}
-      </p>
     </PhoneShell>
   );
 };

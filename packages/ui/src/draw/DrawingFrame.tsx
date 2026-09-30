@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 import { cn } from "../lib/cn.js";
-import { DRAWING_UNITS, type Drawing, strokeColorVar, strokePath } from "../lib/drawing.js";
+import { DRAWING_UNITS, type Drawing, isFill, markColorVar, markPath } from "../lib/drawing.js";
 
 export type DrawingFrameProps = Omit<ComponentProps<"div">, "children"> & {
   label: string;
@@ -10,15 +10,16 @@ export type DrawingFrameProps = Omit<ComponentProps<"div">, "children"> & {
 };
 
 const DrawingPaths = ({ drawing }: { drawing: Drawing }) => {
-  const paths = drawing.strokes.map((stroke, order) => ({
-    id: `stroke-${order}`,
-    d: strokePath(stroke),
-    fill: `var(${strokeColorVar(stroke.color)})`,
+  const paths = drawing.strokes.map((mark, order) => ({
+    id: `mark-${order}`,
+    d: markPath(mark),
+    fill: `var(${markColorVar(mark.color)})`,
+    fillRule: isFill(mark) ? ("evenodd" as const) : ("nonzero" as const),
   }));
   return (
     <svg viewBox={`0 0 ${DRAWING_UNITS} ${DRAWING_UNITS}`} className="size-full" aria-hidden="true">
       {paths.map((path) => (
-        <path key={path.id} d={path.d} fill={path.fill} />
+        <path key={path.id} d={path.d} fill={path.fill} fillRule={path.fillRule} />
       ))}
     </svg>
   );

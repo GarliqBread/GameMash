@@ -97,6 +97,13 @@ describe("draw it drawing", () => {
 describe("draw it uploads", () => {
   const stroke = (color: string, points = [[0.1, 0.2, 0.5]]) => ({ color, size: "medium", points });
   const upload = (strokes: unknown[], done = true) => ({ done, drawing: { strokes } });
+  const square = [
+    [0.1, 0.1],
+    [0.4, 0.1],
+    [0.4, 0.4],
+    [0.1, 0.4],
+  ];
+  const fill = (color: string, rings: unknown[] = [square]) => ({ kind: "fill", color, rings });
   const parseUpload = (phase: Phase, state: DrawItState, input: unknown) =>
     rules.parseUpload?.({ config, state, phase, playerId: "priya", input });
 
@@ -109,10 +116,33 @@ describe("draw it uploads", () => {
     });
     expect(parseUpload(phase, state, upload([]))?.input).toEqual({ done: true, blank: true });
     expect(parseUpload(phase, state, upload([stroke("eraser")]))?.input).toEqual({ done: true, blank: true });
+    expect(parseUpload(phase, state, upload([stroke("white"), fill("white")]))?.input).toEqual({
+      done: true,
+      blank: true,
+    });
+  });
+
+  it("takes fills next to strokes", () => {
+    const { phase, state } = begin();
+    const drawing = [stroke("brown"), fill("sky", [square, square.toReversed()])];
+
+    expect(parseUpload(phase, state, upload(drawing))).toEqual({
+      input: { done: true, blank: false },
+      payload: { strokes: drawing },
+    });
   });
 
   it.each([
-    ["an unknown colour", upload([stroke("pink")])],
+    ["an unknown colour", upload([stroke("teal")])],
+    ["a fill with the eraser", upload([fill("eraser")])],
+    ["a fill without rings", upload([fill("red", [])])],
+    ["a fill ring with two points", upload([fill("red", [square.slice(0, 2)])])],
+    ["a fill point off the canvas", upload([fill("red", [[...square.slice(0, 3), [1.5, 0.2]]])])],
+    ["a fill with extra fields", upload([{ ...fill("red"), size: "thin" }])],
+    [
+      "too many fill points in total",
+      upload(Array.from({ length: 2 }, () => fill("red", [Array(2600).fill([0.1, 0.1])]))),
+    ],
     ["a point off the canvas", upload([stroke("red", [[1.2, 0, 0.5]])])],
     ["a stroke without points", upload([stroke("red", [])])],
     ["a point with extra values", upload([stroke("red", [[0.1, 0.1, 0.5, 1]])])],

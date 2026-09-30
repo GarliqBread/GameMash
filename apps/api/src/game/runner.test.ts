@@ -494,7 +494,7 @@ describe("draw it on the game runner", () => {
     const drawing = (strokes: unknown[], done = true) => ({ done, drawing: { strokes } });
 
     expect(await runner.submit(sessionId, priya, 1, { done: true, blank: false }, everyone)).toBe("closed");
-    expect(await runner.upload(sessionId, priya, 1, drawing([line, { ...line, color: "pink" }]), everyone)).toBe(
+    expect(await runner.upload(sessionId, priya, 1, drawing([line, { ...line, color: "teal" }]), everyone)).toBe(
       "invalid",
     );
     expect(await runner.upload(sessionId, priya, 1, drawing([line], false), everyone)).toBe("accepted");

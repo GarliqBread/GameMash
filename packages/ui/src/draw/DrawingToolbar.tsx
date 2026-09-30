@@ -1,7 +1,7 @@
 import { Radio } from "@base-ui/react/radio";
 import { RadioGroup } from "@base-ui/react/radio-group";
-import type { ComponentProps } from "react";
-import { EraserIcon, TrashIcon, UndoIcon } from "../icons/icons.js";
+import { Eraser, PaintBucket, Trash2, Undo2 } from "lucide-react";
+import type { ComponentProps, ReactNode } from "react";
 import { cn } from "../lib/cn.js";
 import { BRUSH_SIZES, type BrushSize, DRAW_COLORS, type DrawColor, type DrawTool } from "../lib/drawing.js";
 import { IconButton } from "../primitives/IconButton.js";
@@ -9,13 +9,20 @@ import { SegmentedControl } from "../primitives/SegmentedControl.js";
 
 const SWATCH_CLASSES: Record<DrawColor, string> = {
   black: "bg-draw-black not-data-[checked]:ring-fg-subtle",
+  gray: "bg-draw-gray",
+  white: "bg-draw-white",
+  brown: "bg-draw-brown",
   red: "bg-draw-red",
   orange: "bg-draw-orange",
   yellow: "bg-draw-yellow",
   green: "bg-draw-green",
+  sky: "bg-draw-sky",
   blue: "bg-draw-blue",
   violet: "bg-draw-violet",
+  pink: "bg-draw-pink",
 };
+
+const TOOL_BUTTON_SIZE = "h-13 w-11";
 
 const BRUSH_DOTS: Record<BrushSize, string> = {
   thin: "size-1.5",
@@ -45,7 +52,7 @@ export const ColorSwatchPicker = ({
     onValueChange={(next) => {
       if (next !== null) onValueChange(next);
     }}
-    className={cn("grid grid-cols-7 gap-1.5", className)}
+    className={cn("grid grid-cols-6 gap-1.5", className)}
     {...props}
   >
     {DRAW_COLORS.map((color) => (
@@ -54,7 +61,7 @@ export const ColorSwatchPicker = ({
         value={color}
         aria-label={colorLabels[color]}
         className={cn(
-          "focus-ring h-11 min-w-0 cursor-pointer rounded-full not-data-[checked]:ring-2 not-data-[checked]:ring-border-strong",
+          "focus-ring aspect-square w-full max-w-11 cursor-pointer justify-self-center rounded-full not-data-[checked]:ring-2 not-data-[checked]:ring-border-strong",
           "data-[checked]:ring-[3px] data-[checked]:ring-cream data-[checked]:ring-offset-[3px] data-[checked]:ring-offset-ink-950",
           SWATCH_CLASSES[color],
         )}
@@ -86,12 +93,37 @@ export const BrushSizePicker = ({ value, onValueChange, sizeLabels, groupLabel, 
   />
 );
 
+type ToolToggleProps = {
+  tool: Exclude<DrawTool, "brush">;
+  current: DrawTool;
+  label: string;
+  onToolChange: (tool: DrawTool) => void;
+  children: ReactNode;
+};
+
+const ToolToggle = ({ tool, current, label, onToolChange, children }: ToolToggleProps) => {
+  const isActive = current === tool;
+  return (
+    <IconButton
+      label={label}
+      variant="surface"
+      size="sm"
+      aria-pressed={isActive}
+      onClick={() => onToolChange(isActive ? "brush" : tool)}
+      className={cn(TOOL_BUTTON_SIZE, "aria-pressed:bg-selected aria-pressed:text-on-selected")}
+    >
+      {children}
+    </IconButton>
+  );
+};
+
 export type DrawingToolbarLabels = {
   colorGroup: string;
   colors: Record<DrawColor, string>;
   sizeGroup: string;
   sizes: Record<BrushSize, string>;
   eraser: string;
+  fill: string;
   undo: string;
   clear: string;
 };
@@ -132,30 +164,43 @@ export const DrawingToolbar = ({
         onValueChange={onColorChange}
         colorLabels={labels.colors}
       />
-      <div className="flex items-center gap-2">
-        <BrushSizePicker
-          value={size}
-          onValueChange={onSizeChange}
-          sizeLabels={labels.sizes}
-          groupLabel={labels.sizeGroup}
-        />
-        <div className="flex-1" />
-        <IconButton
-          label={labels.eraser}
-          variant="surface"
-          size="md"
-          aria-pressed={isErasing}
-          onClick={() => onToolChange(isErasing ? "brush" : "eraser")}
-          className="aria-pressed:bg-selected aria-pressed:text-on-selected"
-        >
-          <EraserIcon />
-        </IconButton>
-        <IconButton label={labels.undo} variant="surface" size="md" disabled={!canUndo} onClick={onUndo}>
-          <UndoIcon />
-        </IconButton>
-        <IconButton label={labels.clear} variant="surface" size="md" disabled={!canUndo} onClick={onClear}>
-          <TrashIcon />
-        </IconButton>
+      <div className="flex flex-wrap items-center justify-between gap-1.5">
+        <div className="flex items-center gap-1.5">
+          <BrushSizePicker
+            value={size}
+            onValueChange={onSizeChange}
+            sizeLabels={labels.sizes}
+            groupLabel={labels.sizeGroup}
+          />
+          <ToolToggle tool="eraser" current={tool} label={labels.eraser} onToolChange={onToolChange}>
+            <Eraser aria-hidden="true" />
+          </ToolToggle>
+          <ToolToggle tool="fill" current={tool} label={labels.fill} onToolChange={onToolChange}>
+            <PaintBucket aria-hidden="true" />
+          </ToolToggle>
+        </div>
+        <div className="ml-auto flex items-center gap-1.5">
+          <IconButton
+            label={labels.undo}
+            variant="surface"
+            size="sm"
+            className={TOOL_BUTTON_SIZE}
+            disabled={!canUndo}
+            onClick={onUndo}
+          >
+            <Undo2 aria-hidden="true" />
+          </IconButton>
+          <IconButton
+            label={labels.clear}
+            variant="surface"
+            size="sm"
+            className={TOOL_BUTTON_SIZE}
+            disabled={!canUndo}
+            onClick={onClear}
+          >
+            <Trash2 aria-hidden="true" />
+          </IconButton>
+        </div>
       </div>
     </div>
   );

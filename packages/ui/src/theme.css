@@ -93,12 +93,17 @@
 
   /* Drawing palette offered on the phone (order = UI order) */
   --color-draw-black: #1a1726;
+  --color-draw-gray: #8a8698;
+  --color-draw-white: #ffffff;
+  --color-draw-brown: #8a5a33;
   --color-draw-red: #e0413a;
   --color-draw-orange: #f26b3a;
   --color-draw-yellow: #f5c542;
   --color-draw-green: #3a9a4a;
+  --color-draw-sky: #5cc3ec;
   --color-draw-blue: #2f6fdb;
   --color-draw-violet: #6b4fd8;
+  --color-draw-pink: #f08bb4;
   --color-canvas: #ffffff;
 
   /* ── Type scale ──────────────────────────────────────────────────────────

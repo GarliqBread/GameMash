@@ -1,50 +1,24 @@
 import { type PointerEvent, type RefCallback, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   type BrushSize,
-  DRAWING_UNITS,
   type DrawColor,
   type Drawing,
   type DrawTool,
+  type Mark,
   normalizePoint,
   type Stroke,
-  strokeColorVar,
-  strokePath,
 } from "../lib/drawing.js";
+import { computeFill } from "../lib/fill.js";
+import { colorsOf, paintMarks } from "../lib/paint.js";
 
 type ActiveStroke = {
   pointerId: number;
   stroke: Stroke;
 };
 
-const canvasPaths = new WeakMap<Stroke, Path2D>();
-
-const pathFor = (stroke: Stroke) => {
-  const cached = canvasPaths.get(stroke);
-  if (cached) return cached;
-  const path = new Path2D(strokePath(stroke));
-  canvasPaths.set(stroke, path);
-  return path;
-};
-
-const paint = (canvas: HTMLCanvasElement, strokes: Stroke[], active: Stroke | undefined) => {
+const paint = (canvas: HTMLCanvasElement, marks: Mark[], active: Stroke | undefined) => {
   const context = canvas.getContext("2d");
-  if (!context) return;
-  const styles = getComputedStyle(canvas);
-  const colorOf = (stroke: Stroke) => styles.getPropertyValue(strokeColorVar(stroke.color)).trim();
-
-  context.setTransform(1, 0, 0, 1, 0, 0);
-  context.fillStyle = styles.getPropertyValue("--color-canvas").trim();
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.setTransform(canvas.width / DRAWING_UNITS, 0, 0, canvas.height / DRAWING_UNITS, 0, 0);
-
-  for (const stroke of strokes) {
-    context.fillStyle = colorOf(stroke);
-    context.fill(pathFor(stroke));
-  }
-  if (active) {
-    context.fillStyle = colorOf(active);
-    context.fill(new Path2D(strokePath(active)));
-  }
+  if (context) paintMarks(context, active ? [...marks, active] : marks, colorsOf(canvas));
 };
 
 const pointsFrom = (event: PointerEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement) => {
@@ -68,7 +42,7 @@ export type UseDrawingOptions = {
 };
 
 export const useDrawing = ({ initialColor = "black", initialSize = "medium" }: UseDrawingOptions = {}) => {
-  const [strokes, setStrokes] = useState<Stroke[]>([]);
+  const [strokes, setStrokes] = useState<Mark[]>([]);
   const [color, setColorState] = useState<DrawColor>(initialColor);
   const [size, setSize] = useState<BrushSize>(initialSize);
   const [tool, setTool] = useState<DrawTool>("brush");
@@ -125,6 +99,13 @@ export const useDrawing = ({ initialColor = "black", initialSize = "medium" }: U
   const onPointerDown = useCallback(
     (event: PointerEvent<HTMLCanvasElement>) => {
       if (activeRef.current || !event.isPrimary || event.button > 0) return;
+      const [point] = pointsFrom(event, event.currentTarget);
+      if (tool === "fill") {
+        if (!point) return;
+        const fill = computeFill(strokesRef.current, colorsOf(event.currentTarget), [point[0], point[1]], color);
+        if (fill) setStrokes((current) => [...current, fill]);
+        return;
+      }
       event.currentTarget.setPointerCapture(event.pointerId);
       activeRef.current = {
         pointerId: event.pointerId,
@@ -162,7 +143,7 @@ export const useDrawing = ({ initialColor = "black", initialSize = "medium" }: U
 
   const setColor = useCallback((next: DrawColor) => {
     setColorState(next);
-    setTool("brush");
+    setTool((current) => (current === "eraser" ? "brush" : current));
   }, []);
 
   const undo = useCallback(() => setStrokes((current) => current.slice(0, -1)), []);

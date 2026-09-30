@@ -5,8 +5,14 @@ import {
   type DrawColor,
   type Drawing,
   type DrawPoint,
+  type Fill,
+  type FillPoint,
+  isFill,
+  type Mark,
+  MIN_RING_POINTS,
   pointCount,
   type Stroke,
+  type StrokeColor,
 } from "@gamemash/shared";
 import { getStroke } from "perfect-freehand";
 
@@ -17,19 +23,22 @@ export {
   type DrawColor,
   type Drawing,
   type DrawPoint,
+  type Fill,
+  type FillPoint,
+  isFill,
+  type Mark,
   pointCount,
   type Stroke,
 };
 
-export type DrawTool = "brush" | "eraser";
+export type DrawTool = "brush" | "eraser" | "fill";
 
 export const DRAWING_UNITS = 1000;
 
 const BRUSH_WIDTHS: Record<BrushSize, number> = { thin: 16, medium: 32, thick: 56 };
 const POINT_PRECISION = 10_000;
 
-export const strokeColorVar = (color: Stroke["color"]) =>
-  color === "eraser" ? "--color-canvas" : `--color-draw-${color}`;
+export const markColorVar = (color: StrokeColor) => (color === "eraser" ? "--color-canvas" : `--color-draw-${color}`);
 
 const round = (value: number) => Math.round(value * POINT_PRECISION) / POINT_PRECISION;
 const clampUnit = (value: number) => Math.min(1, Math.max(0, value));
@@ -57,8 +66,6 @@ const outlineToPath = (outline: number[][]) => {
   return `${head}${tail}Z`;
 };
 
-const pathCache = new WeakMap<Stroke, string>();
-
 const buildStrokePath = (stroke: Stroke) =>
   outlineToPath(
     getStroke(
@@ -73,11 +80,21 @@ const buildStrokePath = (stroke: Stroke) =>
     ),
   );
 
-export const strokePath = (stroke: Stroke) => {
-  const cached = pathCache.get(stroke);
+const buildFillPath = (fill: Fill) =>
+  fill.rings
+    .map((ring) => {
+      const [first, ...rest] = ring.map(([x, y]) => `${format(x * DRAWING_UNITS)},${format(y * DRAWING_UNITS)}`);
+      return `M${first}L${rest.join(" ")}Z`;
+    })
+    .join("");
+
+const pathCache = new WeakMap<Mark, string>();
+
+export const markPath = (mark: Mark) => {
+  const cached = pathCache.get(mark);
   if (cached !== undefined) return cached;
-  const path = buildStrokePath(stroke);
-  pathCache.set(stroke, path);
+  const path = isFill(mark) ? buildFillPath(mark) : buildStrokePath(mark);
+  pathCache.set(mark, path);
   return path;
 };
 
@@ -87,31 +104,51 @@ const PRESSURE_PRECISION = 100;
 
 const roundTo = (value: number, precision: number) => Math.round(value * precision) / precision;
 
-const thinPoints = (points: DrawPoint[], minDistance: number) => {
-  const kept: DrawPoint[] = [];
+const thinPoints = <P extends number[]>(points: P[], minDistance: number) => {
+  const kept: P[] = [];
   for (const [index, point] of points.entries()) {
     const previous = kept.at(-1);
     const isLast = index === points.length - 1;
-    const isFar = !previous || Math.hypot(point[0] - previous[0], point[1] - previous[1]) >= minDistance;
+    const isFar =
+      !previous ||
+      Math.hypot((point[0] ?? 0) - (previous[0] ?? 0), (point[1] ?? 0) - (previous[1] ?? 0)) >= minDistance;
     if (isFar || isLast) kept.push(point);
   }
   return kept;
 };
 
-const thinDrawing = (drawing: Drawing, minDistance: number): Drawing => ({
-  strokes: drawing.strokes.map((stroke) => ({
-    ...stroke,
-    points: thinPoints(
-      stroke.points.map(
-        ([x, y, pressure]): DrawPoint => [
-          roundTo(x, COORDINATE_PRECISION),
-          roundTo(y, COORDINATE_PRECISION),
-          roundTo(pressure, PRESSURE_PRECISION),
-        ],
-      ),
-      minDistance,
+const thinStroke = (stroke: Stroke, minDistance: number): Stroke => ({
+  ...stroke,
+  points: thinPoints(
+    stroke.points.map(
+      ([x, y, pressure]): DrawPoint => [
+        roundTo(x, COORDINATE_PRECISION),
+        roundTo(y, COORDINATE_PRECISION),
+        roundTo(pressure, PRESSURE_PRECISION),
+      ],
     ),
-  })),
+    minDistance,
+  ),
+});
+
+const thinFill = (fill: Fill, minDistance: number): Fill => ({
+  ...fill,
+  rings: fill.rings
+    .map((ring) =>
+      thinPoints(
+        ring.map(([x, y]): FillPoint => [roundTo(x, COORDINATE_PRECISION), roundTo(y, COORDINATE_PRECISION)]),
+        minDistance,
+      ),
+    )
+    .filter((ring) => ring.length >= MIN_RING_POINTS),
+});
+
+const thinDrawing = (drawing: Drawing, minDistance: number): Drawing => ({
+  strokes: drawing.strokes.flatMap((mark): Mark[] => {
+    if (!isFill(mark)) return [thinStroke(mark, minDistance)];
+    const thinned = thinFill(mark, minDistance);
+    return thinned.rings.length > 0 ? [thinned] : [];
+  }),
 });
 
 const compactWith = (drawing: Drawing, maxPoints: number, steps: number[]): Drawing => {

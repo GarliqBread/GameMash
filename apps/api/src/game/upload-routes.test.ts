@@ -97,7 +97,7 @@ describe("game upload routes", () => {
   it.each([
     ["an unknown field", { ...body([line]), name: "Priya" }],
     ["a missing phase", { upload: body([line]).upload }],
-    ["a drawing the game rejects", body([{ ...line, color: "pink" }])],
+    ["a drawing the game rejects", body([{ ...line, color: "teal" }])],
   ])("rejects %s", async (_, payload) => {
     const { upload } = await setup();
 

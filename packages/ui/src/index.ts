@@ -56,6 +56,9 @@ export {
   type Drawing,
   type DrawPoint,
   type DrawTool,
+  type Fill,
+  isFill,
+  type Mark,
   pointCount,
   type Stroke,
 } from "./lib/drawing.js";

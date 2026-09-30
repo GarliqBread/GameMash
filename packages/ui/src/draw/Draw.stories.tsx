@@ -19,16 +19,26 @@ const useToolbarLabels = (): DrawingToolbarLabels => {
     colorGroup: t("Colour"),
     colors: {
       black: t("Black"),
+      gray: t("Gray"),
+      white: t("White"),
+      brown: t("Brown"),
       red: t("Red"),
       orange: t("Orange"),
       yellow: t("Yellow"),
       green: t("Green"),
+      sky: t("Light blue"),
       blue: t("Blue"),
       violet: t("Violet"),
+      pink: t("Pink"),
     },
     sizeGroup: t("Brush size"),
-    sizes: { thin: t("Thin brush"), medium: t("Medium brush"), thick: t("Thick brush") },
+    sizes: {
+      thin: t("Thin brush"),
+      medium: t("Medium brush"),
+      thick: t("Thick brush"),
+    },
     eraser: t("Eraser"),
+    fill: t("Fill"),
     undo: t("Undo"),
     clear: t("Clear drawing"),
   };
@@ -45,7 +55,10 @@ export const PhoneDraw: Story = () => {
   const labels = useToolbarLabels();
   const controller = useDrawing();
   return (
-    <div data-theme="stage" className="flex flex-wrap items-start gap-10 bg-bg p-8">
+    <div
+      data-theme="stage"
+      className="flex flex-wrap items-start gap-10 bg-bg p-8"
+    >
       <PhoneFrame>
         <PhoneShell
           theme="stage"
@@ -54,7 +67,9 @@ export const PhoneDraw: Story = () => {
             <>
               <div className="flex min-w-0 flex-col">
                 <span className="text-caption text-fg-subtle">{t("Draw")}</span>
-                <span className="truncate font-display text-3xl/tight font-extrabold">{t("Lighthouse")}</span>
+                <span className="truncate font-display text-3xl/tight font-extrabold">
+                  {t("Lighthouse")}
+                </span>
               </div>
               <TimerPill seconds={42} label={t("42 seconds left")} />
             </>
@@ -74,19 +89,31 @@ export const PhoneDraw: Story = () => {
             canUndo={!controller.isEmpty}
             labels={labels}
           />
-          <p className="text-caption text-fg-subtle">
-            {t("Big, bold lines look best on the TV. Your name stays hidden while people vote.")}
-          </p>
         </PhoneShell>
       </PhoneFrame>
       <div className="flex flex-col gap-4">
         <Caption>Vector round trip into DrawingFrame</Caption>
-        <DrawingFrame drawing={controller.drawing} label="Drawing preview" size={420} />
+        <DrawingFrame
+          drawing={controller.drawing}
+          label="Drawing preview"
+          size={420}
+        />
         <div className="flex gap-4">
-          <DrawingFrame drawing={controller.drawing} label="Drawing preview" size={128} />
-          <DrawingFrame drawing={controller.drawing} label="Drawing preview" size={64} />
+          <DrawingFrame
+            drawing={controller.drawing}
+            label="Drawing preview"
+            size={128}
+          />
+          <DrawingFrame
+            drawing={controller.drawing}
+            label="Drawing preview"
+            size={64}
+          />
         </div>
-        <span data-testid="stroke-count" className="text-caption text-fg-subtle">
+        <span
+          data-testid="stroke-count"
+          className="text-caption text-fg-subtle"
+        >
           {controller.drawing.strokes.length} strokes
         </span>
       </div>
@@ -102,7 +129,10 @@ const RESULTS = PLAYER_NAMES.map((name, index) => ({
 
 export const Results: Story = () => {
   const t = useCopy();
-  const format = new Intl.NumberFormat("en", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const format = new Intl.NumberFormat("en", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
   return (
     <StageFrame>
       <ol className="grid grid-cols-3 gap-8">

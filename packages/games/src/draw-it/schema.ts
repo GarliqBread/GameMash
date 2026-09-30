@@ -1,8 +1,9 @@
-import { BRUSH_SIZES, DRAW_COLORS, ERASER } from "@gamemash/shared";
+import { BRUSH_SIZES, DRAW_COLORS, ERASER, FILL, MIN_RING_POINTS } from "@gamemash/shared";
 import { type Static, Type } from "typebox";
 import { ItemIdSchema } from "../item-id.js";
 import {
   DRAW_IT_DRAW_SECONDS,
+  DRAW_IT_MAX_FILL_RINGS,
   DRAW_IT_MAX_POINTS,
   DRAW_IT_MAX_STROKES,
   DRAW_IT_MAX_WORDS,
@@ -37,8 +38,19 @@ export const StrokeSchema = Type.Object(
   },
   { additionalProperties: false },
 );
+export const FillSchema = Type.Object(
+  {
+    kind: Type.Literal(FILL),
+    color: Type.Enum(DRAW_COLORS),
+    rings: Type.Array(
+      Type.Array(Type.Tuple([UnitSchema, UnitSchema]), { minItems: MIN_RING_POINTS, maxItems: DRAW_IT_MAX_POINTS }),
+      { minItems: 1, maxItems: DRAW_IT_MAX_FILL_RINGS },
+    ),
+  },
+  { additionalProperties: false },
+);
 export const DrawingSchema = Type.Object(
-  { strokes: Type.Array(StrokeSchema, { maxItems: DRAW_IT_MAX_STROKES }) },
+  { strokes: Type.Array(Type.Union([StrokeSchema, FillSchema]), { maxItems: DRAW_IT_MAX_STROKES }) },
   { additionalProperties: false },
 );
 export const DrawingUploadSchema = Type.Object(
