@@ -1,0 +1,360 @@
+/*
+ * GameMash UI — design tokens for Tailwind CSS v4
+ * ------------------------------------------------
+ * Source of truth for colour, type, radius and shadow, taken from the GameMash
+ * design canvas. Import it AFTER Tailwind in each app's global stylesheet:
+ *
+ *   @import "tailwindcss";
+ *   @import "@gamemash/ui/theme.css";
+ *   @source "../../packages/ui/src";   // so Tailwind scans the component classes
+ *
+ * Two layers:
+ *   1. Raw palette (@theme)          → bg-ink-950, text-answer-plus, …
+ *   2. Semantic tokens (@theme inline) → bg-bg, bg-surface, text-fg-muted, bg-primary, …
+ *      which switch between the "stage" (dark, big screen + in-game phone)
+ *      and "paper" (light, join + host setup) themes via data-theme.
+ *
+ * Components should use SEMANTIC tokens wherever possible, and raw palette only
+ * for things that never change with theme (answer colours, avatar colours, medals).
+ */
+
+/* ── Fonts ────────────────────────────────────────────────────────────────
+ * Self-host both fonts (e.g. @fontsource-variable/bricolage-grotesque and
+ * @fontsource/atkinson-hyperlegible) rather than loading them from Google
+ * Fonts. That avoids sending player IPs to a third party, which fits the
+ * "nothing is stored" promise.
+ */
+
+@theme {
+  /* Type families */
+  --font-display: "Bricolage Grotesque Variable", "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --font-sans: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Pixel font: ONLY for short uppercase-ish labels (eyebrows, chips, stickers) in the workshop theme.
+     Never for body copy, inputs or anything longer than ~3 words. Self-host @fontsource/silkscreen. */
+  --font-pixel: "Silkscreen", "Courier New", ui-monospace, monospace;
+
+  /* ── Raw palette: ink (cool purple-black) ─────────────────────────────── */
+  --color-ink-950: #1a1726; /* stage background, text on light */
+  --color-ink-900: #25213a; /* stage panels, chips */
+  --color-ink-850: #2e2946; /* bar tracks */
+  --color-ink-800: #332e4d; /* highlighted row, timer track, card drop */
+  --color-ink-700: #3a3456; /* borders on stage; secondary text on paper */
+  --color-ink-600: #4a4468; /* dashed placeholders on stage */
+  --color-ink-500: #5e5872; /* subtle text on paper */
+  --color-ink-400: #8e87a6; /* faint text on stage, strong border on paper */
+  --color-ink-300: #b9b3cc; /* subtle text on stage */
+  --color-ink-200: #dcd7ea; /* secondary text on stage */
+
+  /* ── Raw palette: cream / sand (warm paper) ───────────────────────────── */
+  --color-cream: #fbf6ec;    /* paper background, text on stage */
+  --color-sand-100: #f1ebdf; /* tinted surface on paper */
+  --color-sand-200: #e6dfd0; /* segmented-control track, inactive number chip */
+  --color-sand-300: #dcd4c4; /* hairline borders on paper */
+
+  /* ── Answer colours: the "squishy" set (fixed, never themed) ─────────────
+   * Each answer = a SHAPE + a COLOUR + a distinct LIGHTNESS, so players can
+   * tell them apart without relying on colour (works in greyscale):
+   *   lime (lightest) > sky > violet > coral (darkest)
+   * All four are light enough for ink text.
+   * Slot 1 squircle/coral, 2 triangle/violet, 3 plus/lime, 4 dome/sky.
+   */
+  --color-answer-squircle: #f26b3a;
+  --color-on-answer-squircle: #1a1726;
+  --color-answer-triangle: #a88ef8;
+  --color-on-answer-triangle: #1a1726;
+  --color-answer-plus: #c4de4a;
+  --color-on-answer-plus: #1a1726;
+  --color-answer-dome: #5cc8ee;
+  --color-on-answer-dome: #1a1726;
+
+  /* Brand colours: the same four hues. Used for the logo, avatars, buddies, teams
+     and decoration. violet-light replaces violet wherever ink text or icons sit
+     on top of it, or it sits on the dark stage (avatars, stickers). Always ink text. */
+  --color-brand-coral: #f26b3a;
+  --color-brand-violet: #6b4fd8;
+  --color-brand-violet-light: #9b86ee;
+  --color-brand-lime: #c4de4a;
+  --color-brand-sky: #5cc8ee;
+
+  /* ── Accent: "sun" (primary action on stage) ──────────────────────────── */
+  --color-sun: #f5c542;
+  --color-sun-hover: #ffd970;
+  --color-sun-press: #b8901f; /* the hard drop shadow under yellow buttons */
+  --color-sun-deep: #e0ae1f;  /* inset ring on pressed workshop coins */
+
+  /* ── Status & misc ─────────────────────────────────────────────────────── */
+  --color-success: #c4de4a;       /* switches on, "correct" radio, "done" chips: lime, always ink text */
+  --color-success-ink: #3f5a0a;   /* success text/icon on light backgrounds */
+  --color-link: #2350c8;
+  --color-link-hover: #1a3c99;
+  --color-medal-gold: #f5c542;
+  --color-medal-silver: #dad5e8;
+  --color-medal-bronze: #d98c5f; /* no longer the same as answer coral */
+
+  /* Drawing palette offered on the phone (order = UI order) */
+  --color-draw-black: #1a1726;
+  --color-draw-gray: #8a8698;
+  --color-draw-white: #ffffff;
+  --color-draw-brown: #8a5a33;
+  --color-draw-red: #e0413a;
+  --color-draw-orange: #f26b3a;
+  --color-draw-yellow: #f5c542;
+  --color-draw-green: #3a9a4a;
+  --color-draw-sky: #5cc3ec;
+  --color-draw-blue: #2f6fdb;
+  --color-draw-violet: #6b4fd8;
+  --color-draw-pink: #f08bb4;
+  --color-canvas: #ffffff;
+
+  /* ── Type scale ──────────────────────────────────────────────────────────
+   * Phone / desktop sizes use Tailwind's rem scale plus two extras.
+   * Stage sizes are in px ON PURPOSE: stage screens are drawn on a fixed
+   * 1920×1080 logical canvas that <StageViewport> scales to fit the TV.
+   */
+  --text-caption: 15px;
+  --text-caption--line-height: 1.4;
+  --text-body: 17px;
+  --text-body--line-height: 1.4;
+
+  --text-stage-caption: 24px;
+  --text-stage-caption--line-height: 1.3;
+  --text-stage-body: 28px;
+  --text-stage-body--line-height: 1.3;
+  --text-stage-lg: 34px;
+  --text-stage-lg--line-height: 1.2;
+  --text-stage-xl: 44px;
+  --text-stage-xl--line-height: 1.1;
+  --text-stage-2xl: 60px;
+  --text-stage-2xl--line-height: 1.05;
+  --text-stage-3xl: 80px;
+  --text-stage-3xl--line-height: 1;
+  --text-stage-4xl: 96px;
+  --text-stage-4xl--line-height: 1.08;
+  --text-stage-display: 150px; /* room-code letters */
+  --text-stage-display--line-height: 1;
+  --text-stage-word: 176px;    /* the Draw it word */
+  --text-stage-word--line-height: 1;
+  --text-key: 19px;            /* workshop key buttons and question tabs */
+  --text-label: 13px;          /* small Silkscreen labels: stickers, eyebrow tab, field labels */
+  --text-title-sm: 22px;       /* workshop large button, small wordmark */
+  --text-title: 26px;          /* game cartridge title, medium wordmark */
+  --text-title-lg: 28px;       /* workshop question and answer inputs */
+  --text-wordmark-lg: 40px;    /* large wordmark */
+
+  --tracking-pixel: 0.04em; /* Silkscreen labels need a little air */
+  --tracking-display: -0.02em;       /* display headings and wordmark */
+  --tracking-display-tight: -0.03em; /* the largest display headings */
+
+  /* ── Radius (consolidated from the canvas) ───────────────────────────── */
+  --radius-control: 12px; /* desktop inputs & buttons, question chips */
+  --radius-field: 16px;   /* phone inputs, info notes, small tiles */
+  --radius-button: 18px;  /* phone primary button */
+  --radius-card: 20px;    /* drawing frames, stage buttons */
+  --radius-tile: 28px;    /* answer tiles, room-code tiles, podium tops */
+  --radius-panel: 36px;   /* stage panels */
+
+  /* ── Shadows: flat, hard "pressable" drops, no blur ──────────────────── */
+  --shadow-press-sun: 0 8px 0 #b8901f;
+  --shadow-press-sm: 0 6px 0 #b8901f;
+  --shadow-card-stage: 0 16px 0 #332e4d;
+  --shadow-knob: 0 1px 2px rgb(26 23 38 / 0.3);
+  --shadow-tile-coral: 0 10px 0 #f26b3a;
+  --shadow-tile-violet: 0 10px 0 #9b86ee;
+  --shadow-tile-lime: 0 10px 0 #c4de4a;
+  --shadow-tile-sky: 0 10px 0 #5cc8ee;
+  --shadow-card-word: 0 14px 0 #f26b3a;
+
+  /* ── Workshop (neubrutalist host UI) ─────────────────────────────────
+   * Everything gets a 3px ink outline and a HARD offset shadow (no blur).
+   * Pressed / selected = move toward the shadow and shrink it (see
+   * the `brutal-pressed` utility below).
+   */
+  --color-lavender: #dcd7ea;   /* settings panel fill */
+  --color-paper-white: #ffffff;/* cards, inputs, buttons */
+  --shadow-brutal-xs: 1px 1px 0 #1a1726;   /* pressed state */
+  --shadow-brutal-sm: 3px 3px 0 #1a1726;   /* small buttons, chips */
+  --shadow-brutal: 4px 4px 0 #1a1726;      /* default controls */
+  --shadow-brutal-md: 5px 5px 0 #1a1726;   /* inputs, answer tiles */
+  --shadow-brutal-lg: 7px 7px 0 #1a1726;   /* selected cartridge */
+  --shadow-brutal-xl: 8px 8px 0 #1a1726;   /* panels, correct answer */
+  --radius-sticker: 6px;
+  --radius-key: 10px;
+
+  /* ── Motion ─────────────────────────────────────────────────────────── */
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-pop-in: pop-in 320ms var(--ease-bounce) both;
+  --animate-timer-pulse: timer-pulse 1s ease-in-out infinite;
+
+  @keyframes pop-in {
+    from { opacity: 0; transform: scale(0.6); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes timer-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+}
+
+/* ── Semantic tokens, switched per theme ───────────────────────────────── */
+
+:root,
+[data-theme="paper"] {
+  --gm-bg: #fbf6ec;
+  --gm-surface: #f1ebdf;
+  --gm-surface-2: #e6dfd0;
+  --gm-field: #ffffff;
+  --gm-border: #dcd4c4;
+  --gm-border-strong: #8e87a6;
+  --gm-fg: #1a1726;
+  --gm-fg-muted: #3a3456;
+  --gm-fg-subtle: #5e5872;
+  --gm-primary: #1a1726;
+  --gm-on-primary: #fbf6ec;
+  --gm-primary-press: #000000;
+  --gm-focus: #2350c8;
+  --gm-primary-hover: #000000;
+  --gm-primary-shadow: 0 0 #0000;
+  --gm-primary-shadow-sm: 0 0 #0000;
+  --gm-press-offset: 0px;
+  --gm-press-offset-sm: 0px;
+  --gm-selected: #1a1726;
+  --gm-on-selected: #fbf6ec;
+  --gm-trust-icon: #3f5a0a;
+  --gm-danger: #b3261e;
+  color-scheme: light;
+}
+
+[data-theme="stage"] {
+  --gm-bg: #1a1726;
+  --gm-surface: #25213a;
+  --gm-surface-2: #332e4d;
+  --gm-field: #25213a;
+  --gm-border: #3a3456;
+  --gm-border-strong: #4a4468;
+  --gm-fg: #fbf6ec;
+  --gm-fg-muted: #dcd7ea;
+  --gm-fg-subtle: #b9b3cc;
+  --gm-primary: #f5c542;
+  --gm-on-primary: #1a1726;
+  --gm-primary-press: #b8901f;
+  --gm-focus: #f5c542;
+  --gm-primary-hover: #ffd970;
+  --gm-primary-shadow: 0 8px 0 #b8901f;
+  --gm-primary-shadow-sm: 0 6px 0 #b8901f;
+  --gm-press-offset: 8px;
+  --gm-press-offset-sm: 6px;
+  --gm-selected: #fbf6ec;
+  --gm-on-selected: #1a1726;
+  --gm-trust-icon: #f5c542;
+  --gm-danger: #ff8a80;
+  color-scheme: dark;
+}
+
+/* Workshop: the host's session builder. Light graph paper, ink outlines, hard shadows. */
+[data-theme="workshop"] {
+  --gm-bg: #fbf6ec;
+  --gm-surface: #ffffff;
+  --gm-surface-2: #dcd7ea;
+  --gm-field: #ffffff;
+  --gm-border: #1a1726;
+  --gm-border-strong: #1a1726;
+  --gm-fg: #1a1726;
+  --gm-fg-muted: #3a3456;
+  --gm-fg-subtle: #5e5872;
+  --gm-primary: #f5c542;
+  --gm-on-primary: #1a1726;
+  --gm-primary-press: #1a1726;
+  --gm-focus: #2350c8;
+  --gm-primary-hover: #ffd970;
+  --gm-primary-shadow: 0 0 #0000;
+  --gm-primary-shadow-sm: 0 0 #0000;
+  --gm-press-offset: 0px;
+  --gm-press-offset-sm: 0px;
+  --gm-selected: #f5c542;
+  --gm-on-selected: #1a1726;
+  --gm-trust-icon: #1a1726;
+  --gm-danger: #b3261e;
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-bg: var(--gm-bg);
+  --color-surface: var(--gm-surface);
+  --color-surface-2: var(--gm-surface-2);
+  --color-field: var(--gm-field);
+  --color-border: var(--gm-border);
+  --color-border-strong: var(--gm-border-strong);
+  --color-fg: var(--gm-fg);
+  --color-fg-muted: var(--gm-fg-muted);
+  --color-fg-subtle: var(--gm-fg-subtle);
+  --color-primary: var(--gm-primary);
+  --color-on-primary: var(--gm-on-primary);
+  --color-primary-press: var(--gm-primary-press);
+  --color-focus: var(--gm-focus);
+  --color-primary-hover: var(--gm-primary-hover);
+  --color-selected: var(--gm-selected);
+  --color-on-selected: var(--gm-on-selected);
+  --color-trust-icon: var(--gm-trust-icon);
+  --color-danger: var(--gm-danger);
+  --shadow-primary: var(--gm-primary-shadow);
+  --shadow-primary-sm: var(--gm-primary-shadow-sm);
+}
+
+/* `workshop:` variant: styles that apply only inside a data-theme="workshop" container */
+@custom-variant workshop (&:where([data-theme="workshop"], [data-theme="workshop"] *));
+
+/* ── Utilities ─────────────────────────────────────────────────────────── */
+
+/* The faint dot grid behind every stage screen */
+@utility bg-stage-dots {
+  background-image: radial-gradient(rgb(251 246 236 / 0.07) 1.5px, transparent 1.6px);
+  background-size: 32px 32px;
+}
+
+/* One focus style everywhere: thick, offset and theme-aware */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 3px;
+  }
+}
+
+/* Workshop background: faint graph paper */
+@utility bg-graph-paper {
+  background-image:
+    linear-gradient(rgb(26 23 38 / 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(26 23 38 / 0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* The neubrutalist box: 3px ink outline + hard shadow. Pair with a shadow-brutal-* size. */
+@utility brutal {
+  border: 3px solid #1a1726;
+}
+
+/* Pressed / selected: slide into the shadow. Use on aria-pressed, aria-selected, data-[pressed], :active */
+@utility brutal-pressed {
+  transform: translate(3px, 3px);
+  box-shadow: var(--shadow-brutal-xs);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    background: var(--color-bg);
+    color: var(--color-fg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}

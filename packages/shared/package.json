@@ -7,12 +7,21 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./schemas": {
+      "types": "./dist/schemas.d.ts",
+      "default": "./dist/schemas.js"
     }
   },
   "scripts": {
     "build": "tsc -b",
-    "dev": "tsc -b --watch --preserveWatchOutput",
     "typecheck": "tsc -b",
     "test": "vitest run"
+  },
+  "dependencies": {
+    "typebox": "catalog:"
+  },
+  "devDependencies": {
+    "@dicebear/styles": "catalog:"
   }
 }

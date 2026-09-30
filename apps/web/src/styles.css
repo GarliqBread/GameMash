@@ -1,1 +1,7 @@
 @import "tailwindcss";
+@import "@gamemash/ui/theme.css";
+@import "@gamemash/ui/fonts.css";
+
+@source "../../../packages/ui/src";
+@source not "../../../packages/ui/src/**/*.stories.tsx";
+@source "../../../packages/games/src";

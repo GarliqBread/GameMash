@@ -1,0 +1,65 @@
+name: gamemash
+
+services:
+  redis:
+    image: redis:8-alpine
+    command: ["redis-server", "--maxmemory", "512mb", "--maxmemory-policy", "noeviction", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ..
+      target: api
+    environment:
+      HOST: 0.0.0.0
+      PORT: "3000"
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      TRUST_PROXY: 172.30.0.0/24
+      IMAGES_DIR: /data/images
+      IMAGES_MAX_ACTIVE: ${IMAGES_MAX_ACTIVE:-3000}
+      IMAGES_MIN_FREE_MB: ${IMAGES_MIN_FREE_MB:-2048}
+    volumes:
+      - images:/data/images
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ..
+      target: web
+      args:
+        VITE_PUBLIC_URL: ${PUBLIC_URL:-}
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in deploy/.env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - api
+    restart: unless-stopped
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+volumes:
+  redis-data:
+  images:
+  caddy-data:
+  caddy-config:

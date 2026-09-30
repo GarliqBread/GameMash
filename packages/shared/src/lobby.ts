@@ -1,0 +1,79 @@
+import type { Character } from "./character.js";
+import type { ApiError } from "./errors.js";
+import type { GameInputPayload, GameNextPayload, GameSnapshot } from "./game.js";
+import type { KickPlayerPayload, SessionStatus } from "./schemas.js";
+
+export type {
+  HandshakeAuth,
+  JoinSessionBody,
+  JoinSessionResponse,
+  KickPlayerPayload,
+  PlayerParams,
+  SessionParams,
+} from "./schemas.js";
+
+export const PLAYER_NAME_MAX_LENGTH = 20;
+
+export const AVATAR_SIZE = 256;
+export const AVATAR_MAX_BYTES = 32 * 1024;
+export const AVATAR_MAX_DIMENSION = 512;
+export type AvatarContentType = "image/webp" | "image/jpeg";
+export const AVATAR_CONTENT_TYPES: AvatarContentType[] = ["image/webp", "image/jpeg"];
+
+export const avatarPath = (sessionId: string, playerId: string, version: number) =>
+  `/api/sessions/${sessionId}/players/${playerId}/avatar?v=${version}`;
+
+export const normalizePlayerName = (raw: string) => raw.normalize("NFC").trim().replace(/\s+/g, " ");
+
+export const playerNameKey = (name: string) => normalizePlayerName(name).normalize("NFKC").toLocaleLowerCase("und");
+
+export type LobbyPlayer = {
+  id: string;
+  name: string;
+  joinedAt: number;
+  isConnected: boolean;
+  avatarVersion: number | null;
+  character: Character;
+};
+
+export type SecondsRange = {
+  min: number;
+  max: number;
+};
+
+export type LineupEntry = {
+  id: string;
+  type: string;
+  roundCount: number;
+  roundSeconds: SecondsRange;
+};
+
+export type LobbyState = {
+  sessionId: string;
+  roomCode: string;
+  sessionName: string;
+  lineup: LineupEntry[];
+  status: SessionStatus;
+  players: LobbyPlayer[];
+  maxPlayers: number;
+};
+
+export type SocketAck = { ok: true } | { ok: false; error: ApiError };
+
+export type ServerToClientEvents = {
+  "lobby:state": (state: LobbyState) => void;
+  "game:state": (snapshot: GameSnapshot) => void;
+  "session:ended": () => void;
+  "player:removed": () => void;
+};
+
+export type ClientToServerEvents = {
+  "session:start": (ack: (result: SocketAck) => void) => void;
+  "session:reset": (ack: (result: SocketAck) => void) => void;
+  "session:end": (ack: (result: SocketAck) => void) => void;
+  "player:kick": (payload: KickPlayerPayload, ack: (result: SocketAck) => void) => void;
+  "game:next": (payload: GameNextPayload, ack: (result: SocketAck) => void) => void;
+  "game:input": (payload: GameInputPayload, ack: (result: SocketAck) => void) => void;
+};
+
+export const SOCKET_AUTH_ERROR = "unauthorized";

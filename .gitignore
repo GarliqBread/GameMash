@@ -5,4 +5,6 @@ dist
 .env.*
 !.env.example
 coverage
+.images
 .DS_Store
+AGENTS.md

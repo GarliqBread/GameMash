@@ -7,14 +7,17 @@
     "node": ">=24"
   },
   "scripts": {
-    "build:packages": "tsc -b packages/shared packages/messages",
-    "dev": "pnpm build:packages && pnpm -r --parallel dev",
+    "build:packages": "tsc -b packages/shared packages/messages packages/ui packages/games",
+    "dev": "pnpm build:packages && pnpm run \"/^dev:/\"",
+    "dev:packages": "tsc -b --watch --preserveWatchOutput packages/shared packages/messages packages/ui packages/games",
+    "dev:apps": "pnpm --parallel --filter './apps/*' dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm build:packages && pnpm -r typecheck",
     "lint": "biome check .",
     "format": "biome check --write .",
     "test": "pnpm build:packages && pnpm -r test",
-    "redis": "docker compose up -d --wait redis"
+    "services": "docker compose up -d --wait redis minio && docker compose run --rm minio-setup",
+    "stories": "pnpm --filter @gamemash/ui stories"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.14",
