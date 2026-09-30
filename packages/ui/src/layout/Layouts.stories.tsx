@@ -48,7 +48,7 @@ export const PhonePaper: Story = () => {
     <PhoneShell
       theme="paper"
       header={<Logo />}
-      footer={<TrustNote>{t("No account needed. Your name and photo are deleted when the session ends.")}</TrustNote>}
+      footer={<TrustNote>{t("Your name and photo are deleted when the session ends.")}</TrustNote>}
       bottomAction={<Button size="lg">{t("Join")}</Button>}
     >
       <h1 className="font-display text-[38px] leading-[1.05] font-extrabold tracking-[-0.02em]">
@@ -59,6 +59,7 @@ export const PhonePaper: Story = () => {
         description={t("It's shown on the big screen")}
         value={code}
         onValueChange={setCode}
+        letterLabel={(position, length) => t(`Letter ${position} of ${length}`)}
       />
       <TextField label={t("Your name")} placeholder={t("e.g. Priya")} autoComplete="nickname" maxLength={20} />
     </PhoneShell>

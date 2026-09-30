@@ -21,10 +21,18 @@ const SIZES: Record<LogoSize, { mark: string; gap: string; shape: number; wordma
 export type LogoProps = ComponentProps<"span"> & {
   size?: LogoSize | undefined;
   showWordmark?: boolean | undefined;
+  hasOutline?: boolean | undefined;
   label?: string | undefined;
 };
 
-export const Logo = ({ size = "sm", showWordmark = true, label, className, ...props }: LogoProps) => {
+export const Logo = ({
+  size = "sm",
+  showWordmark = true,
+  hasOutline = true,
+  label,
+  className,
+  ...props
+}: LogoProps) => {
   const sizing = SIZES[size];
   const imageProps = !showWordmark && label ? { role: "img", "aria-label": label } : {};
   return (
@@ -35,7 +43,10 @@ export const Logo = ({ size = "sm", showWordmark = true, label, className, ...pr
             key={shape}
             shape={shape}
             size={sizing.shape}
-            className={cn(FILLS[shape], "workshop:stroke-ink-950 workshop:stroke-2 workshop:[stroke-linejoin:round]")}
+            className={cn(
+              FILLS[shape],
+              hasOutline && "workshop:stroke-ink-950 workshop:stroke-2 workshop:[stroke-linejoin:round]",
+            )}
           />
         ))}
       </span>

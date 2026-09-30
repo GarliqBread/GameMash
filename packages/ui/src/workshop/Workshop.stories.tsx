@@ -66,6 +66,9 @@ export const Stickers: Story = () => {
           {t("Editing")}
         </Sticker>
         <Sticker tone="white">{t("Draft")}</Sticker>
+        <Sticker tone="sky" rotate={-2}>
+          {t("For the host")}
+        </Sticker>
         <Sticker tone="sun">Nachzügler willkommen</Sticker>
       </Row>
       <Row label="Section tabs">

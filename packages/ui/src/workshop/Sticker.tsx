@@ -9,6 +9,7 @@ const stickerVariants = cva(
       tone: {
         sun: "bg-sun",
         coral: "bg-brand-coral",
+        sky: "bg-brand-sky",
         white: "bg-paper-white",
       },
     },

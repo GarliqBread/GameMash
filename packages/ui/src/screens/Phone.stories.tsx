@@ -30,13 +30,7 @@ export const Join: Story = () => {
       theme="paper"
       mainClassName="gap-7"
       header={<Logo />}
-      footer={
-        <TrustNote>
-          {t(
-            "No account needed. Your name and photo are deleted when the session ends.",
-          )}
-        </TrustNote>
-      }
+      footer={<TrustNote>{t("Your name and photo are deleted when the session ends.")}</TrustNote>}
       bottomAction={
         <Button size="lg" type="submit" form="join">
           {t("Join")}
@@ -44,23 +38,15 @@ export const Join: Story = () => {
       }
     >
       <Heading>{t("Join the game")}</Heading>
-      <form
-        id="join"
-        className="flex flex-col gap-[22px]"
-        onSubmit={(event) => event.preventDefault()}
-      >
+      <form id="join" className="flex flex-col gap-[22px]" onSubmit={(event) => event.preventDefault()}>
         <RoomCodeInput
           label={t("Room code")}
           description={t("It's shown on the big screen")}
           value={code}
           onValueChange={setCode}
+          letterLabel={(position, length) => t(`Letter ${position} of ${length}`)}
         />
-        <TextField
-          label={t("Your name")}
-          placeholder={t("e.g. Priya")}
-          autoComplete="nickname"
-          maxLength={20}
-        />
+        <TextField label={t("Your name")} placeholder={t("e.g. Priya")} autoComplete="nickname" maxLength={20} />
       </form>
     </PhoneShell>
   );
@@ -68,9 +54,7 @@ export const Join: Story = () => {
 
 export const Answer: Story = () => {
   const t = useCopy();
-  const [selected, setSelected] = useState<AnswerShapeName | undefined>(
-    undefined,
-  );
+  const [selected, setSelected] = useState<AnswerShapeName | undefined>(undefined);
   return (
     <PhoneShell
       theme="stage"
@@ -78,14 +62,8 @@ export const Answer: Story = () => {
       mainClassName="gap-3.5"
       header={
         <>
-          <span className="font-bold text-fg-muted">
-            {t("Question 4 / 10")}
-          </span>
-          <TimerPill
-            seconds={14}
-            label={t("14 seconds left")}
-            tone={selected ? "idle" : "active"}
-          />
+          <span className="font-bold text-fg-muted">{t("Question 4 / 10")}</span>
+          <TimerPill seconds={14} label={t("14 seconds left")} tone={selected ? "idle" : "active"} />
         </>
       }
       footer={
@@ -93,16 +71,13 @@ export const Answer: Story = () => {
           name="Priya"
           score={
             <>
-              <strong className="font-display text-xl text-fg">2,560</strong>{" "}
-              {t("pts")}
+              <strong className="font-display text-xl text-fg">2,560</strong> {t("pts")}
             </>
           }
         />
       }
     >
-      <p className="text-fg-subtle">
-        {t("Tap the shape that matches the big screen.")}
-      </p>
+      <p className="text-fg-subtle">{t("Tap the shape that matches the big screen.")}</p>
       <AnswerButtonGroup
         aria-label={t("Answer options")}
         options={QUIZ_OPTIONS.map((option) => ({
@@ -199,11 +174,7 @@ export const Rate: Story = () => {
         </TrustNote>
       }
     >
-      <DrawingFrame
-        drawing={LIGHTHOUSE}
-        label={t("Drawing number 3")}
-        className="self-center"
-      />
+      <DrawingFrame drawing={LIGHTHOUSE} label={t("Drawing number 3")} className="self-center" />
       <Heading size="phone-sm" as="h2" className="mt-1">
         {t("How good is it?")}
       </Heading>

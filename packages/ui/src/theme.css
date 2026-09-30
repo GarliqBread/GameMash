@@ -163,6 +163,10 @@
   --shadow-tile-lime: 0 10px 0 #c4de4a;
   --shadow-tile-sky: 0 10px 0 #5cc8ee;
   --shadow-card-word: 0 14px 0 #f26b3a;
+  --shadow-drop-coral: 0 3px 0 #f26b3a;  /* small room-code tiles in the entry TV illustration */
+  --shadow-drop-violet: 0 3px 0 #a88ef8;
+  --shadow-drop-lime: 0 3px 0 #c4de4a;
+  --shadow-drop-sky: 0 3px 0 #5cc8ee;
 
   /* ── Workshop (neubrutalist host UI) ─────────────────────────────────
    * Everything gets a 3px ink outline and a HARD offset shadow (no blur).
@@ -179,6 +183,7 @@
   --shadow-brutal-xl: 8px 8px 0 #1a1726;   /* panels, correct answer */
   --radius-sticker: 6px;
   --radius-key: 10px;
+  --radius-bar: 3px;  /* answer bars in the phone mocks */
 
   /* ── Motion ─────────────────────────────────────────────────────────── */
   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);

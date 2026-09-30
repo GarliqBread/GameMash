@@ -1,4 +1,5 @@
 import type { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
+import { CreateSessionBodySchema } from "@gamemash/games/schemas";
 import { type ErrorCode, isRoomCode, normalizeRoomCode, PLAYER_NAME_MAX_LENGTH } from "@gamemash/shared";
 import {
   ApiErrorSchema,
@@ -57,9 +58,19 @@ export const sessionRoutes =
       "/api/sessions",
       {
         config: { rateLimit: { max: limits.sessionsPerMinute, timeWindow: MINUTE_MS, keyGenerator: byClient } },
-        schema: { response: { 201: CreateSessionResponseSchema } },
+        schema: {
+          body: CreateSessionBodySchema,
+          response: { 201: CreateSessionResponseSchema, 400: ApiErrorSchema },
+        },
+        preValidation: async (request) => {
+          request.body ??= {};
+        },
       },
-      async (_request, reply) => reply.code(201).send(await sessions.create()),
+      async (request, reply) => {
+        const result = await sessions.createNamed(request.body.name ?? "");
+        if (!result.ok) return reply.code(400).send({ code: result.error });
+        return reply.code(201).send(result.value);
+      },
     );
 
     app.get(

@@ -1,3 +1,4 @@
+import { SESSION_NAME_MAX_LENGTH } from "@gamemash/games/config";
 import type { CreateSessionResponse } from "@gamemash/shared";
 import { describe, expect, it } from "vitest";
 import { buildApp } from "../app.js";
@@ -23,6 +24,49 @@ describe("POST /api/sessions", () => {
     expect(body.roomCode).toMatch(/^[A-HJ-NP-Z]{4}$/);
     expect(body.sessionId).toMatch(/^[0-9a-f-]{36}$/);
     expect(body.hostToken).toBeTruthy();
+  });
+
+  it("starts the setup with the session name it was given", async () => {
+    const app = setup();
+
+    const created = (
+      await app.inject({ method: "POST", url: "/api/sessions", payload: { name: "  Friday team mash " } })
+    ).json<CreateSessionResponse>();
+    const loaded = await app.inject({
+      method: "GET",
+      url: `/api/sessions/${created.sessionId}/setup`,
+      headers: { authorization: `Bearer ${created.hostToken}` },
+    });
+
+    expect(loaded.json().setup).toEqual({ name: "Friday team mash", games: [] });
+  });
+
+  it("leaves the setup empty when the name is blank", async () => {
+    const app = setup();
+
+    const created = (
+      await app.inject({ method: "POST", url: "/api/sessions", payload: { name: "   " } })
+    ).json<CreateSessionResponse>();
+    const loaded = await app.inject({
+      method: "GET",
+      url: `/api/sessions/${created.sessionId}/setup`,
+      headers: { authorization: `Bearer ${created.hostToken}` },
+    });
+
+    expect(loaded.json().setup).toEqual({ name: "", games: [] });
+  });
+
+  it.each([
+    ["a name that is too long", { name: "x".repeat(SESSION_NAME_MAX_LENGTH + 1) }],
+    ["hidden characters", { name: "Friday\u200Bmash" }],
+    ["unknown fields", { name: "Friday", extra: true }],
+  ])("rejects %s", async (_label, payload) => {
+    const app = setup();
+
+    const response = await app.inject({ method: "POST", url: "/api/sessions", payload });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({ code: "bad_request" });
   });
 });
 
