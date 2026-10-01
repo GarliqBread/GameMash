@@ -3,7 +3,7 @@ name: gamemash
 services:
   redis:
     image: redis:8-alpine
-    command: ["redis-server", "--maxmemory", "512mb", "--maxmemory-policy", "noeviction", "--appendonly", "yes"]
+    command: ["redis-server", "--maxmemory", "2gb", "--maxmemory-policy", "noeviction", "--appendonly", "yes"]
     volumes:
       - redis-data:/data
     healthcheck:
