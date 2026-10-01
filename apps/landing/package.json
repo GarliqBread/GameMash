@@ -7,8 +7,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "typecheck": "astro check",
-    "test": "echo 'no landing tests'"
+    "typecheck": "astro check"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "catalog:",
@@ -24,7 +23,7 @@
     "@astrojs/sitemap": "^3.7.4",
     "@tailwindcss/vite": "catalog:",
     "tailwindcss": "catalog:",
-    "typescript": "^6.0.0",
+    "typescript": "catalog:astro-check",
     "vite": "catalog:"
   }
 }

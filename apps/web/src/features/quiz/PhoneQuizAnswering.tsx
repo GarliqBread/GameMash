@@ -4,10 +4,12 @@ import { useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { useErrorMessage } from "../../lib/errors";
 import { type LobbyStatus, submitInput } from "../../lib/lobby";
+import { useSecondsLabel } from "../game/useSecondsLabel";
 import { useSecondsLeft } from "../game/useSecondsLeft";
 import { useSocketAction } from "../game/useSocketAction";
 import { type PlayerIdentity, PlayFrame } from "../play/PlayFrame";
-import { PhoneQuizProgress, useAnswerOptions } from "./quiz-display";
+import { PhoneQuizProgress } from "./PhoneQuizProgress";
+import { useAnswerOptions } from "./useAnswerOptions";
 
 type AnsweringView = Extract<QuizPlayerView, { kind: "answering" }>;
 
@@ -25,6 +27,7 @@ export const PhoneQuizAnswering = ({ me, view, phaseId, phaseEndsAt, status }: P
   const answer = useSocketAction(submitInput);
   const toOptions = useAnswerOptions();
   const errorMessage = useErrorMessage();
+  const secondsLabel = useSecondsLabel();
   const seconds = useSecondsLeft(phaseEndsAt);
 
   const [picked, setPicked] = useState<QuizAnswerKey | null>(null);
@@ -43,7 +46,7 @@ export const PhoneQuizAnswering = ({ me, view, phaseId, phaseEndsAt, status }: P
       <PhoneQuizProgress progress={view} />
       <TimerPill
         seconds={seconds}
-        label={intl.formatMessage({ id: "quiz.secondsLeft" }, { seconds })}
+        label={secondsLabel(seconds)}
         tone={selected || isTimeUp || !view.isParticipant ? "idle" : "active"}
       />
     </>

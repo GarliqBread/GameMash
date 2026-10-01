@@ -25,20 +25,23 @@ import type { PlayerCredentials } from "../../lib/credentials";
 import { fetchPlayerDrawing } from "../../lib/drawings";
 import { useErrorMessage } from "../../lib/errors";
 import type { LobbyStatus } from "../../lib/lobby";
+import { playerDrawingKey } from "../../lib/query-keys";
+import { useSecondsLabel } from "../game/useSecondsLabel";
 import { useSecondsLeft } from "../game/useSecondsLeft";
 import { type PlayerIdentity, PlayFrame } from "../play/PlayFrame";
-import { PhoneDrawWord, useToolbarLabels } from "./draw-display";
+import { PhoneDrawWord } from "./PhoneDrawWord";
 import { useDrawingSync } from "./useDrawingSync";
+import { useToolbarLabels } from "./useToolbarLabels";
 
 type DrawingView = Extract<DrawItPlayerView, { kind: "draw" }>;
 
 const URGENT_SECONDS = 2;
+const PREVIEW_SIZE = 280;
 
 const isOverLimits = (drawing: Drawing) =>
   pointCount(drawing) > DRAW_IT_MAX_POINTS ||
   drawing.strokes.length > DRAW_IT_MAX_STROKES ||
   drawing.strokes.some((mark) => isFill(mark) && mark.rings.length > DRAW_IT_MAX_FILL_RINGS);
-const PREVIEW_SIZE = 280;
 
 export type PhoneDrawingProps = {
   credentials: PlayerCredentials;
@@ -53,13 +56,14 @@ export const PhoneDrawing = ({ credentials, me, view, phaseId, phaseEndsAt, stat
   const intl = useIntl();
   const errorMessage = useErrorMessage();
   const labels = useToolbarLabels();
+  const secondsLabel = useSecondsLabel();
   const seconds = useSecondsLeft(phaseEndsAt);
   const controller = useDrawing();
   const sync = useDrawingSync(credentials, phaseId);
   const [isRestored, setIsRestored] = useState(false);
 
   const saved = useQuery({
-    queryKey: ["drawing", credentials.sessionId, credentials.playerId, phaseId, OWN_DRAWING_ID],
+    queryKey: playerDrawingKey(credentials, phaseId, OWN_DRAWING_ID),
     queryFn: () => fetchPlayerDrawing(credentials, OWN_DRAWING_ID),
     enabled: view.isParticipant,
     staleTime: Number.POSITIVE_INFINITY,
@@ -96,7 +100,7 @@ export const PhoneDrawing = ({ credentials, me, view, phaseId, phaseEndsAt, stat
       <PhoneDrawWord progress={view} captionId="draw.drawCaption" />
       <TimerPill
         seconds={seconds}
-        label={intl.formatMessage({ id: "quiz.secondsLeft" }, { seconds })}
+        label={secondsLabel(seconds)}
         tone={isFinished || isTimeUp || !view.isParticipant ? "idle" : "active"}
       />
     </>

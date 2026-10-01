@@ -4,7 +4,7 @@ import type { S3Config } from "../config.js";
 const CONNECT_TIMEOUT_MS = 1000;
 const BUCKET_EXISTS = 409;
 
-export const testS3Config: S3Config = {
+const testS3Config: S3Config = {
   endpoint: process.env.TEST_S3_ENDPOINT ?? "http://localhost:9000",
   bucket: process.env.TEST_S3_BUCKET ?? "gamemash-test",
   accessKeyId: process.env.TEST_S3_ACCESS_KEY_ID ?? "minioadmin",

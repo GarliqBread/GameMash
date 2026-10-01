@@ -37,7 +37,7 @@ const isFinal = (status: LobbyStatus) => status === "ended" || status === "remov
 const setStatus = (status: LobbyStatus) =>
   useLobbyStore.setState((store) => (isFinal(store.status) ? store : { status }));
 
-export type PlayerLook = Partial<Pick<LobbyPlayer, "character" | "avatarVersion">>;
+type PlayerLook = Partial<Pick<LobbyPlayer, "character" | "avatarVersion">>;
 
 export const showPlayerLook = (playerId: string, look: PlayerLook) =>
   useLobbyStore.setState(({ state }) =>

@@ -1,11 +1,11 @@
-import type { ApiError } from "@gamemash/shared";
 import { Button, ConfirmDialog } from "@gamemash/ui";
 import { useState } from "react";
 import { FormattedMessage } from "react-intl";
-import { toApiError, useErrorMessage } from "../../lib/errors";
+import { useErrorMessage } from "../../lib/errors";
 import { endSession, type LobbyStatus, resetSession } from "../../lib/lobby";
-import { downloadSetupFile } from "../../lib/setup";
 import { useHostCredentials } from "../host/host-credentials";
+import { ReconnectingNote } from "../session/ReconnectingNote";
+import { useSetupExport } from "../setup/useSetupExport";
 import { useSocketAction } from "./useSocketAction";
 
 export type HostFinalActionsProps = {
@@ -17,24 +17,11 @@ export const HostFinalActions = ({ sessionName, status }: HostFinalActionsProps)
   const credentials = useHostCredentials();
   const reset = useSocketAction(resetSession);
   const end = useSocketAction(endSession);
-  const [isExporting, setIsExporting] = useState(false);
-  const [exportError, setExportError] = useState<ApiError | null>(null);
+  const setupExport = useSetupExport(credentials);
   const [isConfirmingEnd, setIsConfirmingEnd] = useState(false);
   const errorMessage = useErrorMessage();
-  const error = reset.error ?? end.error ?? exportError;
+  const error = reset.error ?? end.error ?? setupExport.error;
   const isBusy = reset.isPending || end.isPending || status !== "connected";
-
-  const exportGames = async () => {
-    setExportError(null);
-    setIsExporting(true);
-    try {
-      await downloadSetupFile(credentials, sessionName);
-    } catch (caught) {
-      setExportError(toApiError(caught));
-    } finally {
-      setIsExporting(false);
-    }
-  };
 
   return (
     <>
@@ -42,15 +29,19 @@ export const HostFinalActions = ({ sessionName, status }: HostFinalActionsProps)
         variant="secondary"
         size="stage-sm"
         className="shrink-0"
-        disabled={isExporting || end.isPending}
-        onClick={() => void exportGames()}
+        disabled={setupExport.isExporting || end.isPending}
+        onClick={() => void setupExport.exportSetup(sessionName)}
       >
-        <FormattedMessage id={isExporting ? "final.exporting" : "final.exportGames"} />
+        <FormattedMessage id={setupExport.isExporting ? "final.exporting" : "final.exportGames"} />
       </Button>
       <div className="flex min-w-0 items-center gap-6">
-        <p role={error ? "alert" : "status"} className="min-w-0 text-right text-stage-caption text-fg-subtle">
-          {error ? errorMessage(error) : status === "reconnecting" && <FormattedMessage id="connection.reconnecting" />}
-        </p>
+        {!error && status === "reconnecting" ? (
+          <ReconnectingNote status={status} className="min-w-0 text-right" />
+        ) : (
+          <p role={error ? "alert" : "status"} className="min-w-0 text-right text-stage-caption text-fg-subtle">
+            {error && errorMessage(error)}
+          </p>
+        )}
         <Button
           variant="ghost"
           size="stage-sm"

@@ -22,10 +22,10 @@ export const defaultDrawItConfig = (firstWordId: string): DrawItConfig => ({
   drawSeconds: 60,
 });
 
-export const isWordValid = (word: DrawItWord) =>
+const isWordValid = (word: DrawItWord) =>
   word.text.length <= DRAW_IT_WORD_MAX_LENGTH && !hasHiddenCharacters(word.text);
 
-export const isWordComplete = (word: DrawItWord) => word.text.trim().length > 0;
+const isWordComplete = (word: DrawItWord) => word.text.trim().length > 0;
 
 export const drawItConfigRules: GameConfigRules<DrawItConfig> = {
   isValid: (config) => hasUniqueIds(config.words) && config.words.every(isWordValid),

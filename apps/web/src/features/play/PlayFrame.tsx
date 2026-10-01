@@ -2,6 +2,7 @@ import { PhoneShell, PlayerScoreBar } from "@gamemash/ui";
 import type { ReactNode } from "react";
 import { FormattedMessage } from "react-intl";
 import type { LobbyStatus } from "../../lib/lobby";
+import { ReconnectingNote } from "../session/ReconnectingNote";
 
 export type PlayerIdentity = {
   playerId: string;
@@ -28,11 +29,7 @@ export const PlayFrame = ({ me, total, status, header, bottomAction, mainClassNa
     bottomAction={bottomAction}
     footer={
       <div className="flex flex-col gap-2">
-        {status === "reconnecting" && (
-          <p role="status" className="text-caption text-fg-subtle">
-            <FormattedMessage id="connection.reconnecting" />
-          </p>
-        )}
+        <ReconnectingNote status={status} variant="phone" />
         <PlayerScoreBar
           name={me.name}
           colorKey={me.playerId}

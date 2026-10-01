@@ -22,7 +22,7 @@ const DrawItSetupSchema = Type.Object(
   { additionalProperties: false },
 );
 
-export const GameSetupSchema = Type.Union([PopQuizSetupSchema, DrawItSetupSchema]);
+const GameSetupSchema = Type.Union([PopQuizSetupSchema, DrawItSetupSchema]);
 export type GameSetup = Static<typeof GameSetupSchema>;
 
 export const SessionSetupSchema = Type.Object(
@@ -40,7 +40,6 @@ export const CreateSessionBodySchema = Type.Object(
   },
   { additionalProperties: false },
 );
-export type CreateSessionBody = Static<typeof CreateSessionBodySchema>;
 
 export const HostSetupResponseSchema = Type.Object(
   {

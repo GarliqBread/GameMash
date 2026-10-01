@@ -1,5 +1,5 @@
 import type { QuizLeaderboard, QuizStageView } from "@gamemash/games/config";
-import type { LobbyPlayer } from "@gamemash/shared";
+import { type LobbyPlayer, MS_PER_SECOND } from "@gamemash/shared";
 import {
   BoltIcon,
   CorrectAnswerBanner,
@@ -17,12 +17,11 @@ import { FormattedMessage, useIntl } from "react-intl";
 import type { LobbyStatus } from "../../lib/lobby";
 import { avatarSrc } from "../../lib/players";
 import { ReconnectingNote } from "../session/ReconnectingNote";
-import { QuizStageHeader, useAnswerOptions } from "./quiz-display";
+import { QuizStageHeader } from "./QuizStageHeader";
+import { useAnswerOptions } from "./useAnswerOptions";
 import { usePreloadImages } from "./useQuestionImages";
 
 type RevealView = Extract<QuizStageView, { kind: "reveal" }>;
-
-const MS_PER_SECOND = 1000;
 
 const movementOf = (rank: number, previousRank: number | null): Movement | undefined => {
   if (previousRank === null) return undefined;
@@ -30,6 +29,12 @@ const movementOf = (rank: number, previousRank: number | null): Movement | undef
   return previousRank > rank
     ? { direction: "up", amount: previousRank - rank }
     : { direction: "down", amount: rank - previousRank };
+};
+
+const fastestOf = (view: RevealView, players: Map<string, LobbyPlayer>) => {
+  if (!view.fastest) return null;
+  const player = players.get(view.fastest.playerId);
+  return player ? { name: player.name, seconds: view.fastest.ms / MS_PER_SECOND } : null;
 };
 
 const toEntries = (sessionId: string, board: QuizLeaderboard, players: Map<string, LobbyPlayer>): LeaderboardEntry[] =>
@@ -60,7 +65,7 @@ export const StageQuizReveal = ({ sessionId, view, players, status, next }: Stag
   const toOptions = useAnswerOptions();
   const options = toOptions(view.answers);
   const correct = options.find((option) => option.shape === view.correct);
-  const fastest = view.fastest ? players.get(view.fastest.playerId) : undefined;
+  const fastest = fastestOf(view, players);
   const formatNumber = (value: number) => intl.formatNumber(value);
   usePreloadImages(view.nextImages);
 
@@ -83,20 +88,18 @@ export const StageQuizReveal = ({ sessionId, view, players, status, next }: Stag
         }
         footer={
           <>
-            {fastest && view.fastest ? (
+            {fastest && (
               <StageNote icon={<BoltIcon size={34} />}>
                 <FormattedMessage
                   id="quiz.fastest"
                   values={{
                     name: <strong className="text-fg">{fastest.name}</strong>,
-                    seconds: view.fastest.ms / MS_PER_SECOND,
+                    seconds: fastest.seconds,
                   }}
                 />
               </StageNote>
-            ) : (
-              <span />
             )}
-            <div className="flex shrink-0 items-center gap-6">
+            <div className="ml-auto flex shrink-0 items-center gap-6">
               <ReconnectingNote status={status} />
               {next}
             </div>

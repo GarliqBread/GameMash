@@ -17,6 +17,7 @@ import { FormattedMessage } from "react-intl";
 import type { PlayerCredentials } from "../../lib/credentials";
 import type { LobbyStatus } from "../../lib/lobby";
 import { avatarSrc } from "../../lib/players";
+import { ReconnectingNote } from "../session/ReconnectingNote";
 import { AvatarEditor } from "./AvatarEditor";
 import { usePhotoActions } from "./usePhotoActions";
 
@@ -111,11 +112,7 @@ export const WaitingScreen = ({ credentials, me, playerCount, status }: WaitingS
           <FormattedMessage id="waiting.playerCount" values={{ count: playerCount }} />
         </Pill>
       )}
-      {status === "reconnecting" && (
-        <p role="status" className="text-caption text-fg-subtle">
-          <FormattedMessage id="connection.reconnecting" />
-        </p>
-      )}
+      <ReconnectingNote status={status} variant="phone" />
     </PhoneShell>
   );
 };

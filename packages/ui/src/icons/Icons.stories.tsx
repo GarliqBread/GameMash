@@ -1,3 +1,4 @@
+import { SHAPE_LABELS } from "../../.ladle/screen-data";
 import { BothThemes, Row, WITH_WORKSHOP } from "../../.ladle/story-kit";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { ANSWER_SHAPES, ANSWERS } from "../lib/answers";
@@ -15,7 +16,6 @@ export const Logos: Story = () => (
         <Logo size="md" />
         <Logo size="lg" />
         <Logo size="md" hasOutline={false} />
-        <Logo size="lg" showWordmark={false} label="GameMash" />
       </>
     )}
   </BothThemes>
@@ -36,7 +36,7 @@ export const AnswerShapes: Story = () => (
               key={shape}
               className={`flex size-24 items-center justify-center rounded-tile ${ANSWERS[shape].bg} ${ANSWERS[shape].fg}`}
             >
-              <AnswerShape shape={shape} size={56} label={ANSWERS[shape].defaultLabel} />
+              <AnswerShape shape={shape} size={56} label={SHAPE_LABELS[shape]} />
             </span>
           ))}
         </Row>

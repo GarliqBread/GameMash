@@ -26,6 +26,7 @@ import { FormattedMessage, useIntl } from "react-intl";
 import type { LobbyStatus } from "../../lib/lobby";
 import { avatarSrc } from "../../lib/players";
 import { displayHost, joinUrl } from "../../lib/public-url";
+import { ReconnectingNote } from "../session/ReconnectingNote";
 import { lobbySlots } from "./lobby-slots";
 
 const knownGames = (lineup: LineupEntry[]) =>
@@ -99,9 +100,7 @@ export const StageLobby = ({
             </div>
             <div className="flex min-w-0 items-center gap-6">
               {status === "reconnecting" ? (
-                <p role="status" className="min-w-0 text-right text-stage-caption text-fg-subtle">
-                  <FormattedMessage id="connection.reconnecting" />
-                </p>
+                <ReconnectingNote status={status} className="min-w-0 text-right" />
               ) : (
                 <p
                   role={actionError ? "alert" : "status"}

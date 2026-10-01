@@ -10,12 +10,13 @@ import {
 import { ApiErrorSchema, BearerAuthHeadersSchema, SessionParamsSchema } from "@gamemash/shared/schemas";
 import { Type } from "typebox";
 import { createConcurrencyLimit } from "../limits/concurrency-limit.js";
-import { requireHost, sessionRateLimitKey } from "./auth.js";
+import { perSession } from "../limits/route-limits.js";
+import { BYTES_PER_MB } from "../units.js";
+import { requireHost } from "./auth.js";
 import { errorBody } from "./error-body.js";
 import type { SessionService } from "./service.js";
 
-const MINUTE_MS = 60_000;
-const SETUP_MAX_BYTES = 2 * 1024 * 1024;
+const SETUP_MAX_BYTES = 2 * BYTES_PER_MB;
 const READS_PER_MINUTE = 120;
 const SAVES_PER_SESSION_PER_MINUTE = 300;
 const REQUESTS_PER_ADDRESS_PER_MINUTE = 600;
@@ -40,10 +41,6 @@ const IMPORT_ERROR_STATUS: Partial<Record<ErrorCode, 400 | 401 | 409 | 413 | 503
   image_storage_full: 503,
 };
 
-const perSession = (max: number) => ({
-  rateLimit: { max, timeWindow: MINUTE_MS, keyGenerator: sessionRateLimitKey },
-});
-
 export const setupRoutes =
   (sessions: SessionService): FastifyPluginAsyncTypebox =>
   async (app) => {
@@ -59,7 +56,7 @@ export const setupRoutes =
     app.get(
       "/api/sessions/:sessionId/setup",
       {
-        config: { rateLimit: { max: READS_PER_MINUTE, timeWindow: MINUTE_MS, keyGenerator: sessionRateLimitKey } },
+        config: perSession(READS_PER_MINUTE),
         schema: {
           params: SessionParamsSchema,
           headers: BearerAuthHeadersSchema,
@@ -76,9 +73,7 @@ export const setupRoutes =
       "/api/sessions/:sessionId/setup",
       {
         bodyLimit: SETUP_MAX_BYTES,
-        config: {
-          rateLimit: { max: SAVES_PER_SESSION_PER_MINUTE, timeWindow: MINUTE_MS, keyGenerator: sessionRateLimitKey },
-        },
+        config: perSession(SAVES_PER_SESSION_PER_MINUTE),
         schema: {
           params: SessionParamsSchema,
           headers: BearerAuthHeadersSchema,
@@ -89,7 +84,7 @@ export const setupRoutes =
       async (request, reply) => {
         const result = await sessions.saveSetup(hostOf(request), request.body);
         if (result.ok) return reply.code(204).send(null);
-        return reply.code(SETUP_ERROR_STATUS[result.error] ?? 400).send({ code: result.error });
+        return reply.code(SETUP_ERROR_STATUS[result.error] ?? 400).send(errorBody(result.error));
       },
     );
 
@@ -101,7 +96,7 @@ export const setupRoutes =
       },
       async (request, reply) => {
         const slot = await transfers.run(() => sessions.exportSetup(hostOf(request)));
-        if (!slot.ok) return reply.code(429).send({ code: "rate_limited" });
+        if (!slot.ok) return reply.code(429).send(errorBody("rate_limited"));
         const result = slot.value;
         if (!result.ok) return reply.code(IMPORT_ERROR_STATUS[result.error] ?? 400).send(errorBody(result.error));
         return reply
@@ -134,10 +129,10 @@ export const setupRoutes =
         },
       },
       async (request, reply) => {
-        if (!Buffer.isBuffer(request.body)) return reply.code(415).send({ code: "unsupported_media_type" });
+        if (!Buffer.isBuffer(request.body)) return reply.code(415).send(errorBody("unsupported_media_type"));
         const body = request.body;
         const slot = await transfers.run(() => sessions.importSetup(hostOf(request), body));
-        if (!slot.ok) return reply.code(429).send({ code: "rate_limited" });
+        if (!slot.ok) return reply.code(429).send(errorBody("rate_limited"));
         const result = slot.value;
         if (result.ok) return result.value;
         return reply.code(IMPORT_ERROR_STATUS[result.error] ?? 400).send(errorBody(result.error));

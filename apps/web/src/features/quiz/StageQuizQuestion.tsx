@@ -7,18 +7,19 @@ import {
   RichText,
   StageLayout,
   StageViewport,
+  TIMER_WARNING_SECONDS,
   TimerRing,
 } from "@gamemash/ui";
 import { FormattedMessage, useIntl } from "react-intl";
 import type { LobbyStatus } from "../../lib/lobby";
+import { useSecondsLabel } from "../game/useSecondsLabel";
 import { useSecondsLeft } from "../game/useSecondsLeft";
 import { ReconnectingNote } from "../session/ReconnectingNote";
-import { QuizStageHeader, useAnswerOptions } from "./quiz-display";
+import { QuizStageHeader } from "./QuizStageHeader";
+import { useAnswerOptions } from "./useAnswerOptions";
 import { useQuestionImages } from "./useQuestionImages";
 
 type AskingView = Extract<QuizStageView, { kind: "question" | "answering" }>;
-
-const WARNING_SECONDS = 5;
 
 export type StageQuizQuestionProps = {
   view: AskingView;
@@ -32,7 +33,7 @@ export const StageQuizQuestion = ({ view, phaseEndsAt, status }: StageQuizQuesti
   const seconds = useSecondsLeft(phaseEndsAt);
   const images = useQuestionImages(view.images);
   const hasImages = view.images.length > 0;
-  const secondsLabel = (value: number) => intl.formatMessage({ id: "quiz.secondsLeft" }, { seconds: value });
+  const secondsLabel = useSecondsLabel();
 
   return (
     <StageViewport>
@@ -54,7 +55,7 @@ export const StageQuizQuestion = ({ view, phaseEndsAt, status }: StageQuizQuesti
                     seconds={seconds}
                     total={view.timeLimitSeconds}
                     label={secondsLabel(seconds)}
-                    warningLabel={secondsLabel(WARNING_SECONDS)}
+                    warningLabel={secondsLabel(TIMER_WARNING_SECONDS)}
                   />
                 </>
               )

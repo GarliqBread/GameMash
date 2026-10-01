@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useCopy } from "../../.ladle/pseudo";
+import { SHAPE_LABELS } from "../../.ladle/screen-data";
 import { Caption, StageFrame } from "../../.ladle/story-kit";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { TimerPill } from "../game/TimerPill";
@@ -16,7 +17,10 @@ export default { title: "Quiz" } satisfies StoryDefault;
 
 const useOptions = (labels: string[]): AnswerOption[] => {
   const t = useCopy();
-  return labels.map((label, index) => ({ shape: ANSWER_SHAPES[index] ?? "dome", label: t(label) }));
+  return labels.map((label, index) => {
+    const shape = ANSWER_SHAPES[index] ?? "dome";
+    return { shape, label: t(label), shapeLabel: SHAPE_LABELS[shape] };
+  });
 };
 
 export const StageGrids: Story = () => {
@@ -64,19 +68,25 @@ export const RevealSummary: Story = () => {
   return (
     <StageFrame width={1100}>
       <p className="text-stage-lg text-fg-muted">{t("Which planet has the most known moons?")}</p>
-      <CorrectAnswerBanner shape="triangle" label={t("Saturn")} caption={t("Correct answer")} />
+      <CorrectAnswerBanner
+        shape="triangle"
+        label={t("Saturn")}
+        shapeLabel={SHAPE_LABELS.triangle}
+        caption={t("Correct answer")}
+      />
       <ResultBars rows={rows} total={9} correct="triangle" correctLabel={t("correct")} />
       <Caption>Long label</Caption>
       <CorrectAnswerBanner
         shape="plus"
         label="Donaudampfschifffahrtsgesellschaft"
+        shapeLabel="Plus"
         caption="Richtige Antwort"
         lang="de"
       />
       <ResultBars
         rows={[
-          { shape: "squircle", label: "Donaudampfschifffahrtsgesellschaft", count: 12 },
-          { shape: "plus", label: "Ja", count: 30 },
+          { shape: "squircle", label: "Donaudampfschifffahrtsgesellschaft", shapeLabel: "Squircle", count: 12 },
+          { shape: "plus", label: "Ja", shapeLabel: "Plus", count: 30 },
         ]}
         total={42}
         correct="plus"

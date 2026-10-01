@@ -1,7 +1,7 @@
 import { type ComponentProps, useState } from "react";
 import { cn } from "../lib/cn.js";
 
-const WARNING_SECONDS = 5;
+export const TIMER_WARNING_SECONDS = 5;
 
 type TimerRingSize = 148 | 112;
 
@@ -34,7 +34,7 @@ export const TimerRing = ({ seconds, total, label, warningLabel, size = 148, cla
   const { radius, stroke, text } = GEOMETRY[size];
   const center = size / 2;
   const circumference = 2 * Math.PI * radius;
-  const isWarning = seconds > 0 && seconds <= WARNING_SECONDS;
+  const isWarning = seconds > 0 && seconds <= TIMER_WARNING_SECONDS;
   const isCountingDown = useIsCountingDown(seconds);
 
   return (

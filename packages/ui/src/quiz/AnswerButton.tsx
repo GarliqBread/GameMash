@@ -10,7 +10,7 @@ export type AnswerButtonProps = Omit<ComponentProps<typeof BaseButton>, "classNa
   shape: AnswerShapeName;
   label: string;
   state?: AnswerButtonState | undefined;
-  shapeLabel?: string | undefined;
+  shapeLabel: string;
   onAnswer: (shape: AnswerShapeName) => void;
   className?: string | undefined;
 };
@@ -19,7 +19,7 @@ export const AnswerButton = ({
   shape,
   label,
   state = "idle",
-  shapeLabel = ANSWERS[shape].defaultLabel,
+  shapeLabel,
   onAnswer,
   className,
   ...props

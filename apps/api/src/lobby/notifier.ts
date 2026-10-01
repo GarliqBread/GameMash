@@ -1,6 +1,6 @@
 type Listener = (sessionId: string) => void;
 
-export const createLobbyNotifier = () => {
+export const createNotifier = () => {
   const listeners = new Set<Listener>();
   return {
     subscribe: (listener: Listener) => {
@@ -15,4 +15,4 @@ export const createLobbyNotifier = () => {
   };
 };
 
-export type LobbyNotifier = ReturnType<typeof createLobbyNotifier>;
+export type Notifier = ReturnType<typeof createNotifier>;

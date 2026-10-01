@@ -14,6 +14,7 @@ services:
     restart: unless-stopped
 
   api:
+    image: ${IMAGE_PREFIX:-gamemash}-api:${IMAGE_TAG:-latest}
     build:
       context: ..
       target: api
@@ -34,13 +35,17 @@ services:
     restart: unless-stopped
 
   web:
+    image: ${IMAGE_PREFIX:-gamemash}-web:${IMAGE_TAG:-latest}
     build:
       context: ..
       target: web
       args:
         VITE_PUBLIC_URL: ${PUBLIC_URL:-}
+        PUBLIC_PLAY_URL: ${PUBLIC_URL:-https://play.gamemash.io}
     environment:
-      DOMAIN: ${DOMAIN:?Set DOMAIN in deploy/.env}
+      APP_DOMAIN: ${APP_DOMAIN:?Set APP_DOMAIN in .env}
+      LANDING_DOMAIN: ${LANDING_DOMAIN:?Set LANDING_DOMAIN in .env}
+      REDIRECT_DOMAINS: ${REDIRECT_DOMAINS:?Set REDIRECT_DOMAINS in .env}
     ports:
       - "80:80"
       - "443:443"

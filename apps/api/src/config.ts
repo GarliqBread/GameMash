@@ -1,3 +1,4 @@
+import { BYTES_PER_MB } from "./units.js";
 export type S3Config = {
   endpoint: string;
   bucket: string;
@@ -21,7 +22,6 @@ export type Config = {
 const DEFAULT_PORT = 3000;
 const DEFAULT_S3_REGION = "auto";
 const DEFAULT_IMAGES_MIN_FREE_MB = 1024;
-const BYTES_PER_MB = 1024 * 1024;
 const S3_VARIABLES = ["S3_ENDPOINT", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"] as const;
 
 const parsePort = (raw: string | undefined) => {

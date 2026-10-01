@@ -17,9 +17,11 @@ export type PlayerCredentials = {
 
 export type Credentials = HostCredentials | PlayerCredentials;
 
-export const hostAuthorization = (credentials: HostCredentials) => ({
-  authorization: `Bearer ${credentials.hostToken}`,
-});
+const bearer = (token: string) => ({ authorization: `Bearer ${token}` });
+
+export const hostAuthorization = ({ hostToken }: HostCredentials) => bearer(hostToken);
+
+export const playerAuthorization = ({ playerToken }: PlayerCredentials) => bearer(playerToken);
 
 const remembered = new Map<string, Credentials>();
 
@@ -39,19 +41,24 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
 const hasStrings = (value: Record<string, unknown>, keys: string[]) =>
   keys.every((key) => typeof value[key] === "string");
 
-const load = (role: Credentials["role"], sessionId: string, keys: string[]) => {
+const isCredentials = <T extends Credentials>(
+  value: unknown,
+  role: T["role"],
+  sessionId: string,
+  keys: (keyof T & string)[],
+): value is T => isRecord(value) && value.role === role && value.sessionId === sessionId && hasStrings(value, keys);
+
+const load = <T extends Credentials>(role: T["role"], sessionId: string, keys: (keyof T & string)[]) => {
   const key = storageKey(role, sessionId);
   const value = remembered.get(key) ?? readStored(key);
-  return isRecord(value) && value.role === role && value.sessionId === sessionId && hasStrings(value, keys)
-    ? value
-    : null;
+  return isCredentials<T>(value, role, sessionId, keys) ? value : null;
 };
 
 export const loadHostCredentials = (sessionId: string) =>
-  load("host", sessionId, ["hostToken", "roomCode"]) as HostCredentials | null;
+  load<HostCredentials>("host", sessionId, ["hostToken", "roomCode"]);
 
 export const loadPlayerCredentials = (sessionId: string) =>
-  load("player", sessionId, ["playerId", "playerToken", "name"]) as PlayerCredentials | null;
+  load<PlayerCredentials>("player", sessionId, ["playerId", "playerToken", "name"]);
 
 export const saveCredentials = (credentials: Credentials) => {
   const key = storageKey(credentials.role, credentials.sessionId);

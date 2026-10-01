@@ -1,15 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "../lib/cn.js";
+import { GAME_ACCENT_FILL, type GameAccent } from "../lib/game-accent.js";
 import { Sticker } from "../workshop/Sticker.js";
-
-export type GameAccent = "sun" | "brand-coral" | "brand-violet-light" | "brand-lime";
-
-export const GAME_ACCENT_FILL: Record<GameAccent, string> = {
-  sun: "bg-sun",
-  "brand-coral": "bg-brand-coral",
-  "brand-violet-light": "bg-brand-violet-light",
-  "brand-lime": "bg-brand-lime",
-};
 
 const gripStripe = (accent: GameAccent) =>
   `repeating-linear-gradient(90deg, var(--color-${accent}) 0 8px, var(--color-ink-950) 8px 11px)`;

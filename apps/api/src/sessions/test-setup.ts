@@ -1,6 +1,10 @@
-import { defaultPopQuizConfig, emptyQuestion, type SessionSetup } from "@gamemash/games/config";
+import { defaultPopQuizConfig, emptyQuestion, type GameSetup, type SessionSetup } from "@gamemash/games/config";
 
-export const readySetup = (): SessionSetup => ({
+type QuizGameSetup = Extract<GameSetup, { type: "pop-quiz" }>;
+
+type QuizSessionSetup = Omit<SessionSetup, "games"> & { games: QuizGameSetup[] };
+
+export const readySetup = (): QuizSessionSetup => ({
   name: "Friday team mash",
   games: [
     {

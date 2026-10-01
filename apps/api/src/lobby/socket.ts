@@ -1,7 +1,8 @@
 import type { Server as HttpServer, IncomingMessage } from "node:http";
 import {
   type ClientToServerEvents,
-  SESSION_MAX_AGE_SECONDS,
+  type ErrorCode,
+  MS_PER_MINUTE,
   type ServerToClientEvents,
   SOCKET_AUTH_ERROR,
   type SocketAck,
@@ -20,9 +21,11 @@ import { Value } from "typebox/value";
 import type { GameRunner } from "../game/runner.js";
 import { clientKey } from "../limits/client-key.js";
 import { createRateLimiter, type RateLimiter } from "../limits/rate-limiter.js";
+import { errorBody } from "../sessions/error-body.js";
+import { sessionDeadline } from "../sessions/expiry.js";
 import type { SessionService } from "../sessions/service.js";
-import type { LobbyNotifier } from "./notifier.js";
-import { createPresence, HOST_MEMBER } from "./presence.js";
+import type { Notifier } from "./notifier.js";
+import { createPresence, HOST_MEMBER, type Presence } from "./presence.js";
 
 type SocketData = {
   sessionId: string;
@@ -36,7 +39,7 @@ type LobbySocket = Socket<ClientToServerEvents, ServerToClientEvents, Record<str
 
 type ActionOptions = { role: SocketData["role"]; limiter: RateLimiter; failure: string };
 
-export type LobbyLimits = {
+type LobbyLimits = {
   handshakesPerAddressPerMinute: number;
   connectionsPerPlayer: number;
   connectionsPerHost: number;
@@ -44,7 +47,7 @@ export type LobbyLimits = {
   gameActionsPerSocketPerMinute: number;
 };
 
-export const DEFAULT_LOBBY_LIMITS: LobbyLimits = {
+const DEFAULT_LOBBY_LIMITS: LobbyLimits = {
   handshakesPerAddressPerMinute: 600,
   connectionsPerPlayer: 3,
   connectionsPerHost: 5,
@@ -52,10 +55,9 @@ export const DEFAULT_LOBBY_LIMITS: LobbyLimits = {
   gameActionsPerSocketPerMinute: 60,
 };
 
-const MINUTE_MS = 60_000;
 const MAX_MESSAGE_BYTES = 4 * 1024;
 const BROADCAST_DELAY_MS = 100;
-const DEFAULT_KEEP_ALIVE_MS = 5 * MINUTE_MS;
+const DEFAULT_KEEP_ALIVE_MS = 5 * MS_PER_MINUTE;
 
 const RATE_LIMITED = "rate_limited";
 const INTERNAL_ERROR = "internal_error";
@@ -65,10 +67,12 @@ const sessionRoom = (sessionId: string) => `session:${sessionId}`;
 const hostRoom = (sessionId: string) => `session:${sessionId}:host`;
 const playerRoom = (sessionId: string, playerId: string) => `session:${sessionId}:player:${playerId}`;
 
-const unauthorized: SocketAck = { ok: false, error: { code: "unauthorized" } };
-const rateLimited: SocketAck = { ok: false, error: { code: "rate_limited" } };
-const badRequest: SocketAck = { ok: false, error: { code: "bad_request" } };
-const internalError: SocketAck = { ok: false, error: { code: "internal_error" } };
+const rejected = (code: ErrorCode): SocketAck => ({ ok: false, error: errorBody(code) });
+
+const unauthorized = rejected("unauthorized");
+const rateLimited = rejected(RATE_LIMITED);
+const badRequest = rejected("bad_request");
+const internalError = rejected(INTERNAL_ERROR);
 const accepted: SocketAck = { ok: true };
 
 const replyTo = (ack: unknown) => (result: SocketAck) => {
@@ -90,8 +94,9 @@ const authenticate = async (sessions: SessionService, auth: unknown): Promise<So
 export type LobbyDeps = {
   log: FastifyBaseLogger;
   sessions: SessionService;
-  notifier: LobbyNotifier;
+  notifier: Notifier;
   game: GameRunner;
+  presence?: Presence | undefined;
   trustProxy?: string[] | undefined;
   limits?: Partial<LobbyLimits> | undefined;
   keepAliveMs?: number | undefined;
@@ -105,6 +110,7 @@ export const attachLobby = (
     sessions,
     notifier,
     game,
+    presence = createPresence(),
     trustProxy = [],
     limits,
     keepAliveMs = DEFAULT_KEEP_ALIVE_MS,
@@ -122,10 +128,9 @@ export const attachLobby = (
     ...limits,
   };
   const io: LobbyServer = new Server(httpServer, { serveClient: false, maxHttpBufferSize: MAX_MESSAGE_BYTES });
-  const presence = createPresence();
-  const handshakes = createRateLimiter({ max: handshakesPerAddressPerMinute, windowMs: MINUTE_MS });
-  const sessionActions = createRateLimiter({ max: sessionActionsPerSocketPerMinute, windowMs: MINUTE_MS });
-  const gameActions = createRateLimiter({ max: gameActionsPerSocketPerMinute, windowMs: MINUTE_MS });
+  const handshakes = createRateLimiter({ max: handshakesPerAddressPerMinute, windowMs: MS_PER_MINUTE });
+  const sessionActions = createRateLimiter({ max: sessionActionsPerSocketPerMinute, windowMs: MS_PER_MINUTE });
+  const gameActions = createRateLimiter({ max: gameActionsPerSocketPerMinute, windowMs: MS_PER_MINUTE });
   const trusted = proxyAddr.compile(trustProxy);
   const pendingBroadcasts = new Map<string, NodeJS.Timeout>();
   const pendingGameBroadcasts = new Map<string, NodeJS.Timeout>();
@@ -235,7 +240,7 @@ export const attachLobby = (
 
   const scheduleDeadline = (sessionId: string, createdAt: number) => {
     if (deadlines.has(sessionId)) return;
-    const remaining = Math.max(0, createdAt + SESSION_MAX_AGE_SECONDS * 1000 - now());
+    const remaining = Math.max(0, sessionDeadline(createdAt) - now());
     const timer = setTimeout(() => endSession(sessionId), remaining);
     timer.unref();
     deadlines.set(sessionId, timer);
@@ -314,12 +319,12 @@ export const attachLobby = (
 
   const startSession = async (sessionId: string): Promise<SocketAck> => {
     const result = await sessions.start(sessionId);
-    if (!result.ok) return { ok: false, error: { code: result.error } };
+    if (!result.ok) return rejected(result.error);
     return (await game.begin(sessionId, result.value)) ? accepted : internalError;
   };
 
   const resetSession = async (sessionId: string): Promise<SocketAck> => {
-    if (!(await game.reset(sessionId))) return { ok: false, error: { code: "game_not_finished" } };
+    if (!(await game.reset(sessionId))) return rejected("game_not_finished");
     scheduleBroadcast(sessionId);
     return accepted;
   };
@@ -332,7 +337,7 @@ export const attachLobby = (
 
   const kickPlayer = async (sessionId: string, playerId: string): Promise<SocketAck> => {
     const result = await sessions.kick(sessionId, playerId);
-    if (!result.ok) return { ok: false, error: { code: result.error } };
+    if (!result.ok) return rejected(result.error);
     const room = playerRoom(sessionId, playerId);
     io.to(room).emit("player:removed");
     io.in(room).disconnectSockets(true);
@@ -433,9 +438,5 @@ export const attachLobby = (
     await io.close();
   };
 
-  const connectedPlayers = (sessionId: string) => presence.connectedPlayers(sessionId);
-
-  return { io, close, connectedPlayers };
+  return { io, close };
 };
-
-export type Lobby = ReturnType<typeof attachLobby>;

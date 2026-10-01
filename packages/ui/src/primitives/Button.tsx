@@ -54,13 +54,11 @@ export type ButtonProps = Omit<ComponentProps<typeof BaseButton>, "className"> &
   VariantProps<typeof buttonVariants> & {
     className?: string | undefined;
     icon?: ReactNode;
-    iconEnd?: ReactNode;
   };
 
-export const Button = ({ variant, size, icon, iconEnd, className, children, ...props }: ButtonProps) => (
+export const Button = ({ variant, size, icon, className, children, ...props }: ButtonProps) => (
   <BaseButton className={cn(buttonVariants({ variant, size }), className)} {...props}>
     {icon}
     {children}
-    {iconEnd}
   </BaseButton>
 );

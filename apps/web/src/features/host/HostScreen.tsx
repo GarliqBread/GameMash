@@ -8,7 +8,7 @@ import { FormattedMessage, useIntl } from "react-intl";
 import { saveCredentials } from "../../lib/credentials";
 import { toApiError, useErrorMessage } from "../../lib/errors";
 import { createSession } from "../../lib/sessions";
-import { DESKTOP_QUERY, useMediaQuery } from "../../lib/use-media-query";
+import { DESKTOP_QUERY, useMediaQuery } from "../../lib/useMediaQuery";
 import { HostDesktop } from "./HostDesktop";
 import { HostPhone } from "./HostPhone";
 import { HOST_FORM_ID } from "./host-layout";

@@ -1,4 +1,3 @@
-import type { DrawItProgress } from "@gamemash/games/config";
 import { StageHeader } from "@gamemash/ui";
 import type { ReactNode } from "react";
 import { FormattedMessage } from "react-intl";
@@ -17,9 +16,3 @@ export const DrawStageHeader = ({ progress, right, className }: DrawStageHeaderP
     right={right}
   />
 );
-
-export const roundValues = (progress: DrawItProgress) => ({
-  current: progress.roundIndex + 1,
-  total: progress.roundCount,
-  word: progress.word,
-});

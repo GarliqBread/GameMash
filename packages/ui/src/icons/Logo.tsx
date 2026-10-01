@@ -20,23 +20,13 @@ const SIZES: Record<LogoSize, { mark: string; gap: string; shape: number; wordma
 
 export type LogoProps = ComponentProps<"span"> & {
   size?: LogoSize | undefined;
-  showWordmark?: boolean | undefined;
   hasOutline?: boolean | undefined;
-  label?: string | undefined;
 };
 
-export const Logo = ({
-  size = "sm",
-  showWordmark = true,
-  hasOutline = true,
-  label,
-  className,
-  ...props
-}: LogoProps) => {
+export const Logo = ({ size = "sm", hasOutline = true, className, ...props }: LogoProps) => {
   const sizing = SIZES[size];
-  const imageProps = !showWordmark && label ? { role: "img", "aria-label": label } : {};
   return (
-    <span className={cn("inline-flex items-center", sizing.gap, className)} {...imageProps} {...props}>
+    <span className={cn("inline-flex items-center", sizing.gap, className)} {...props}>
       <span className={cn("grid shrink-0 grid-cols-2", sizing.mark)} aria-hidden="true">
         {ANSWER_SHAPES.map((shape) => (
           <AnswerShape
@@ -50,9 +40,7 @@ export const Logo = ({
           />
         ))}
       </span>
-      {showWordmark && (
-        <span className={cn("font-display font-extrabold tracking-display-tight", sizing.wordmark)}>GameMash</span>
-      )}
+      <span className={cn("font-display font-extrabold tracking-display-tight", sizing.wordmark)}>GameMash</span>
     </span>
   );
 };

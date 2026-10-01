@@ -1,14 +1,12 @@
 import type { DrawingUpload } from "@gamemash/games/schemas";
 import type { Drawing } from "@gamemash/ui";
 import { ApiRequestError, fetchJson } from "./api";
-import { type HostCredentials, hostAuthorization, type PlayerCredentials } from "./credentials";
+import { type HostCredentials, hostAuthorization, type PlayerCredentials, playerAuthorization } from "./credentials";
 
 const NOT_FOUND = 404;
 
 const playerUrl = ({ sessionId, playerId }: PlayerCredentials, path: string) =>
   `/api/sessions/${sessionId}/players/${playerId}/game/${path}`;
-
-const playerAuthorization = ({ playerToken }: PlayerCredentials) => ({ authorization: `Bearer ${playerToken}` });
 
 const orNull = async (request: Promise<Drawing>) => {
   try {

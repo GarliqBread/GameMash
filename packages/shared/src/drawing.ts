@@ -58,7 +58,7 @@ const INVISIBLE_COLORS = new Set<StrokeColor>([ERASER, "white"]);
 
 export const isFill = (mark: Mark): mark is Fill => "kind" in mark && mark.kind === FILL;
 
-export const markPointCount = (mark: Mark) =>
+const markPointCount = (mark: Mark) =>
   isFill(mark) ? mark.rings.reduce((sum, ring) => sum + ring.length, 0) : mark.points.length;
 
 export const pointCount = (drawing: Drawing) => drawing.strokes.reduce((sum, mark) => sum + markPointCount(mark), 0);

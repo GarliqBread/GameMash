@@ -7,5 +7,4 @@ dist
 coverage
 .images
 .DS_Store
-AGENTS.md
 .astro

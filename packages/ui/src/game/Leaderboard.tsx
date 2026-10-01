@@ -40,13 +40,13 @@ const MovementIndicator = ({ movement, labels }: { movement: Movement; labels: M
   );
 };
 
-export type LeaderboardRowProps = Omit<ComponentProps<"li">, "children"> & {
+type LeaderboardRowProps = Omit<ComponentProps<"li">, "children"> & {
   entry: LeaderboardEntry;
   formatNumber: (value: number) => string;
   movementLabels: MovementLabels;
 };
 
-export const LeaderboardRow = ({ entry, formatNumber, movementLabels, className, ...props }: LeaderboardRowProps) => {
+const LeaderboardRow = ({ entry, formatNumber, movementLabels, className, ...props }: LeaderboardRowProps) => {
   const isLeader = entry.rank === 1;
   return (
     <li

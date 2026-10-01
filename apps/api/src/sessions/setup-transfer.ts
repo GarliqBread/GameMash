@@ -24,20 +24,18 @@ import {
 } from "@gamemash/shared";
 import { strFromU8, strToU8, type UnzipFileInfo, unzipSync, type Zippable, zipSync } from "fflate";
 import { Value } from "typebox/value";
-import type { StoredImage } from "../media/image-store.js";
+import { contentTypeForExtension, IMAGE_EXTENSIONS, IMAGE_PATH_ID, type StoredImage } from "../media/image-store.js";
+import { BYTES_PER_MB } from "../units.js";
 import { fail, type Result } from "./result.js";
 import type { SessionRecord } from "./store.js";
 
-const SETUP_ENTRY_MAX_BYTES = 2 * 1024 * 1024;
+const SETUP_ENTRY_MAX_BYTES = 2 * BYTES_PER_MB;
 const STORED = 0;
 const ITEM_ID_BYTES = 9;
 const UPLOAD_BATCH_SIZE = 4;
-const IMAGE_ENTRY = /^images\/([A-Za-z0-9_-]{1,64})\.(webp|jpg)$/;
+const IMAGE_ENTRY = new RegExp(`^images/(${IMAGE_PATH_ID})\\.(${Object.values(IMAGE_EXTENSIONS).join("|")})$`);
 
-const EXTENSIONS: Record<QuestionImageContentType, string> = { "image/webp": "webp", "image/jpeg": "jpg" };
-const CONTENT_TYPES: Record<string, QuestionImageContentType> = { webp: "image/webp", jpg: "image/jpeg" };
-
-export type UploadOptions = { checkRoom: boolean };
+type UploadOptions = { checkRoom: boolean };
 
 export type SetupTransferDeps = {
   imagesEnabled: boolean;
@@ -68,14 +66,15 @@ const newItemId = () => randomBytes(ITEM_ID_BYTES).toString("base64url");
 
 const asBuffer = (bytes: Uint8Array) => Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 
-const imageEntryName = (imageId: string, image: StoredImage) => `images/${imageId}.${EXTENSIONS[image.contentType]}`;
+const imageEntryName = (imageId: string, image: StoredImage) =>
+  `images/${imageId}.${IMAGE_EXTENSIONS[image.contentType]}`;
 
 const isStoredWithin = (entry: UnzipFileInfo, maxBytes: number) =>
   entry.compression === STORED && entry.size <= maxBytes;
 
 const toImage = (name: string, bytes: Uint8Array): [string, StoredImage] | null => {
   const [, imageId, extension] = IMAGE_ENTRY.exec(name) ?? [];
-  const contentType = extension ? CONTENT_TYPES[extension] : undefined;
+  const contentType = extension ? contentTypeForExtension(extension) : undefined;
   return imageId && contentType ? [imageId, { bytes: asBuffer(bytes), contentType }] : null;
 };
 

@@ -1,9 +1,16 @@
 import type { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { DRAW_IT_UPLOAD_MAX_BYTES, type UploadViewer } from "@gamemash/games/config";
-import { ApiErrorSchema, BearerAuthHeadersSchema } from "@gamemash/shared/schemas";
-import type { FastifyReply } from "fastify";
+import {
+  ApiErrorSchema,
+  BearerAuthHeadersSchema,
+  PlayerParamsSchema,
+  SessionParamsSchema,
+} from "@gamemash/shared/schemas";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import { Type } from "typebox";
+import { perMinute, routeParam } from "../limits/route-limits.js";
 import { requireHost, requirePlayer } from "../sessions/auth.js";
+import { errorBody } from "../sessions/error-body.js";
 import type { SessionService } from "../sessions/service.js";
 import type { UploadResult } from "./runner.js";
 
@@ -19,7 +26,6 @@ export type GameUploads = {
   connectedPlayers: (sessionId: string) => Set<string>;
 };
 
-const MINUTE_MS = 60_000;
 const UPLOAD_MAX_BYTES = DRAW_IT_UPLOAD_MAX_BYTES;
 const UPLOADS_PER_PLAYER_PER_MINUTE = 150;
 const READS_PER_VIEWER_PER_MINUTE = 600;
@@ -27,21 +33,9 @@ const REQUESTS_PER_ADDRESS_PER_MINUTE = 6000;
 
 const UploadIdSchema = Type.String({ minLength: 1, maxLength: 32, pattern: "^[A-Za-z0-9_-]+$" });
 
-const PlayerUploadParamsSchema = Type.Object({
-  sessionId: Type.String({ format: "uuid" }),
-  playerId: Type.String({ format: "uuid" }),
-});
+const PlayerReadParamsSchema = Type.Object({ ...PlayerParamsSchema.properties, uploadId: UploadIdSchema });
 
-const PlayerReadParamsSchema = Type.Object({
-  sessionId: Type.String({ format: "uuid" }),
-  playerId: Type.String({ format: "uuid" }),
-  uploadId: UploadIdSchema,
-});
-
-const HostReadParamsSchema = Type.Object({
-  sessionId: Type.String({ format: "uuid" }),
-  uploadId: UploadIdSchema,
-});
+const HostReadParamsSchema = Type.Object({ ...SessionParamsSchema.properties, uploadId: UploadIdSchema });
 
 const UploadBodySchema = Type.Object(
   { phaseId: Type.Integer({ minimum: 1 }), upload: Type.Unknown() },
@@ -57,16 +51,12 @@ const errorResponses = {
   429: ApiErrorSchema,
 };
 
-const perRoute = (max: number, key: (params: Record<string, string>) => string) => ({
-  rateLimit: {
-    max,
-    timeWindow: MINUTE_MS,
-    keyGenerator: (request: { params: unknown }) => key(request.params as Record<string, string>),
-  },
-});
+const byPlayer = (request: FastifyRequest) => `${routeParam(request, "sessionId")}:${routeParam(request, "playerId")}`;
+
+const byHost = (request: FastifyRequest) => `${routeParam(request, "sessionId")}:host`;
 
 const sendUpload = (reply: FastifyReply, payload: string | null) => {
-  if (payload === null) return reply.code(404).send({ code: "not_found" });
+  if (payload === null) return reply.code(404).send(errorBody("not_found"));
   return reply
     .header("content-type", "application/json; charset=utf-8")
     .header("cache-control", "no-store")
@@ -83,9 +73,9 @@ const playerUploadRoutes =
       "/api/sessions/:sessionId/players/:playerId/game/upload",
       {
         bodyLimit: UPLOAD_MAX_BYTES,
-        config: perRoute(UPLOADS_PER_PLAYER_PER_MINUTE, (params) => `${params.sessionId}:${params.playerId}`),
+        config: perMinute(UPLOADS_PER_PLAYER_PER_MINUTE, byPlayer),
         schema: {
-          params: PlayerUploadParamsSchema,
+          params: PlayerParamsSchema,
           headers: BearerAuthHeadersSchema,
           body: UploadBodySchema,
           response: { 204: Type.Null(), ...errorResponses },
@@ -101,15 +91,15 @@ const playerUploadRoutes =
           uploads.connectedPlayers(session.id),
         );
         if (result === "accepted") return reply.code(204).send(null);
-        if (result === "invalid") return reply.code(400).send({ code: "bad_request" });
-        return reply.code(409).send({ code: "input_closed" });
+        if (result === "invalid") return reply.code(400).send(errorBody("bad_request"));
+        return reply.code(409).send(errorBody("input_closed"));
       },
     );
 
     app.get(
       "/api/sessions/:sessionId/players/:playerId/game/uploads/:uploadId",
       {
-        config: perRoute(READS_PER_VIEWER_PER_MINUTE, (params) => `${params.sessionId}:${params.playerId}`),
+        config: perMinute(READS_PER_VIEWER_PER_MINUTE, byPlayer),
         schema: { params: PlayerReadParamsSchema, headers: BearerAuthHeadersSchema },
       },
       async (request, reply) => {
@@ -128,7 +118,7 @@ const hostUploadRoutes =
     app.get(
       "/api/sessions/:sessionId/game/uploads/:uploadId",
       {
-        config: perRoute(READS_PER_VIEWER_PER_MINUTE, (params) => `${params.sessionId}:host`),
+        config: perMinute(READS_PER_VIEWER_PER_MINUTE, byHost),
         schema: { params: HostReadParamsSchema, headers: BearerAuthHeadersSchema },
       },
       async (request, reply) => {

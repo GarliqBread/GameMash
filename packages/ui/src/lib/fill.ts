@@ -12,7 +12,7 @@ import { contours } from "d3-contour";
 import simplify from "simplify-js";
 import { type ColorOf, paintMarks } from "./paint.js";
 
-export const FILL_GRID = 512;
+const FILL_GRID = 512;
 const EDGE_THRESHOLD = 0.1;
 const SIMPLIFY_CELLS = 0.4;
 const MIN_RING_AREA_CELLS = 2;

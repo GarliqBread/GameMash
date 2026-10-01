@@ -16,7 +16,7 @@ export type PlayerRecord = {
   character: Character;
 };
 
-export type AvatarMeta = {
+type AvatarMeta = {
   type: AvatarContentType;
   version: number;
 };
@@ -38,7 +38,7 @@ export type GameRecord = {
 
 export type AddImageResult = "added" | "limit_reached" | "storage_full" | "setup_locked" | "session_not_found";
 
-export type ImageLimits = {
+type ImageLimits = {
   maxPerSession: number;
   maxActive: number;
   expiresAt: number;
@@ -57,11 +57,11 @@ export type SubmitInputResult = "accepted" | "duplicate" | "closed";
 
 export type SaveUploadResult = "saved" | "closed";
 
-export type CreateSessionResult = "created" | "room_code_taken";
+type CreateSessionResult = "created" | "room_code_taken";
 
 export type AddPlayerResult = "added" | "name_taken" | "session_full" | "session_not_found";
 
-export type AddPlayerOptions = {
+type AddPlayerOptions = {
   nameKey: string;
   maxPlayers: number;
   expiresAt: number;

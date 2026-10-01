@@ -7,10 +7,12 @@ import type { PlayerCredentials } from "../../lib/credentials";
 import { fetchPlayerDrawing } from "../../lib/drawings";
 import { useErrorMessage } from "../../lib/errors";
 import { type LobbyStatus, submitInput } from "../../lib/lobby";
+import { playerDrawingKey } from "../../lib/query-keys";
+import { useSecondsLabel } from "../game/useSecondsLabel";
 import { useSecondsLeft } from "../game/useSecondsLeft";
 import { useSocketAction } from "../game/useSocketAction";
 import { type PlayerIdentity, PlayFrame } from "../play/PlayFrame";
-import { PhoneDrawWord } from "./draw-display";
+import { PhoneDrawWord } from "./PhoneDrawWord";
 
 type RatingView = Extract<DrawItPlayerView, { kind: "rate" }>;
 
@@ -35,6 +37,7 @@ const firstUnrated = (ids: string[], ratings: Record<string, number>) =>
 export const PhoneRating = ({ credentials, me, view, phaseId, phaseEndsAt, status }: PhoneRatingProps) => {
   const intl = useIntl();
   const errorMessage = useErrorMessage();
+  const secondsLabel = useSecondsLabel();
   const seconds = useSecondsLeft(phaseEndsAt);
   const rate = useSocketAction(submitInput);
   const [ratings, setRatings] = useState<Record<string, number>>(view.mine);
@@ -43,7 +46,7 @@ export const PhoneRating = ({ credentials, me, view, phaseId, phaseEndsAt, statu
 
   const drawings = useQueries({
     queries: view.toRate.map((drawingId) => ({
-      queryKey: ["drawing", credentials.sessionId, credentials.playerId, phaseId, drawingId],
+      queryKey: playerDrawingKey(credentials, phaseId, drawingId),
       queryFn: () => fetchPlayerDrawing(credentials, drawingId),
       staleTime: Number.POSITIVE_INFINITY,
     })),
@@ -62,7 +65,7 @@ export const PhoneRating = ({ credentials, me, view, phaseId, phaseEndsAt, statu
       <PhoneDrawWord progress={view} captionId="draw.rateCaption" />
       <TimerPill
         seconds={seconds}
-        label={intl.formatMessage({ id: "quiz.secondsLeft" }, { seconds })}
+        label={secondsLabel(seconds)}
         tone={isAllRated || isTimeUp || !view.isParticipant ? "idle" : "active"}
       />
     </>

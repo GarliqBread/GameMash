@@ -3,12 +3,12 @@ import { CharacterSchema, SessionStatusSchema } from "@gamemash/shared/schemas";
 import { RESP_TYPES } from "redis";
 import { Type } from "typebox";
 import { Value } from "typebox/value";
+import { parseJson } from "../json.js";
 import type { RedisClient } from "../redis.js";
 import type {
   AddImageResult,
   AddPlayerResult,
   AvatarChangeResult,
-  AvatarMeta,
   GameRecord,
   PlayerRecord,
   RemovePlayerResult,
@@ -30,20 +30,48 @@ const PlayerRecordSchema = Type.Object({
   character: CharacterSchema,
 });
 
-const ADD_PLAYER_RESULTS: AddPlayerResult[] = ["added", "name_taken", "session_full", "session_not_found"];
-const REMOVE_PLAYER_RESULTS: RemovePlayerResult[] = ["removed", "locked", "player_not_found", "session_not_found"];
-const AVATAR_CHANGE_RESULTS: AvatarChangeResult[] = ["saved", "locked", "player_not_found", "session_not_found"];
-const SAVE_SETUP_RESULTS: SaveSetupResult[] = ["changed", "unchanged", "setup_locked", "session_not_found"];
-const ADD_IMAGE_RESULTS: AddImageResult[] = [
+const resultOf =
+  <T extends string>(name: string, known: T[]) =>
+  (value: unknown): T => {
+    const result = known.find((entry) => entry === value);
+    if (result === undefined) throw new Error(`unexpected ${name} result: ${String(value)}`);
+    return result;
+  };
+
+const toAddPlayerResult = resultOf<AddPlayerResult>("add player", [
+  "added",
+  "name_taken",
+  "session_full",
+  "session_not_found",
+]);
+const toRemovePlayerResult = resultOf<RemovePlayerResult>("remove player", [
+  "removed",
+  "locked",
+  "player_not_found",
+  "session_not_found",
+]);
+const toAvatarChangeResult = resultOf<AvatarChangeResult>("avatar change", [
+  "saved",
+  "locked",
+  "player_not_found",
+  "session_not_found",
+]);
+const toSaveSetupResult = resultOf<SaveSetupResult>("save setup", [
+  "changed",
+  "unchanged",
+  "setup_locked",
+  "session_not_found",
+]);
+const toAddImageResult = resultOf<AddImageResult>("add image", [
   "added",
   "limit_reached",
   "storage_full",
   "setup_locked",
   "session_not_found",
-];
-const SAVE_GAME_RESULTS: SaveGameResult[] = ["saved", "conflict", "session_not_found"];
-const SUBMIT_INPUT_RESULTS: SubmitInputResult[] = ["accepted", "duplicate", "closed"];
-const SAVE_UPLOAD_RESULTS: SaveUploadResult[] = ["saved", "closed"];
+]);
+const toSaveGameResult = resultOf<SaveGameResult>("save game", ["saved", "conflict", "session_not_found"]);
+const toSubmitInputResult = resultOf<SubmitInputResult>("submit input", ["accepted", "duplicate", "closed"]);
+const toSaveUploadResult = resultOf<SaveUploadResult>("save upload", ["saved", "closed"]);
 
 const AvatarMetaSchema = Type.Object({
   type: Type.Enum(AVATAR_CONTENT_TYPES),
@@ -83,60 +111,14 @@ const fromHash = (hash: Record<string, string>): SessionRecord | null => {
   return { id, roomCode, status, hostTokenHash, createdAt: Number(createdAt) };
 };
 
-const parsePlayer = (json: string | null | undefined): PlayerRecord | null => {
-  if (!json) return null;
-  try {
-    const value: unknown = JSON.parse(json);
-    return Value.Check(PlayerRecordSchema, value) ? value : null;
-  } catch {
-    return null;
-  }
-};
+const parsePlayer = (json: string | null | undefined) => parseJson(PlayerRecordSchema, json);
 
-const parseAvatarMeta = (json: string | null | undefined): AvatarMeta | null => {
-  if (!json) return null;
-  try {
-    const value: unknown = JSON.parse(json);
-    return Value.Check(AvatarMetaSchema, value) ? value : null;
-  } catch {
-    return null;
-  }
-};
-
-const toRemovePlayerResult = (value: unknown): RemovePlayerResult => {
-  const result = REMOVE_PLAYER_RESULTS.find((known) => known === value);
-  if (!result) throw new Error(`unexpected remove player result: ${String(value)}`);
-  return result;
-};
-
-const toAvatarChangeResult = (value: unknown): AvatarChangeResult => {
-  const result = AVATAR_CHANGE_RESULTS.find((known) => known === value);
-  if (!result) throw new Error(`unexpected avatar change result: ${String(value)}`);
-  return result;
-};
-
-const isSaveSetupResult = (value: unknown): value is SaveSetupResult =>
-  SAVE_SETUP_RESULTS.some((result) => result === value);
-
-const isAddImageResult = (value: unknown): value is AddImageResult =>
-  ADD_IMAGE_RESULTS.some((result) => result === value);
-
-const isSaveGameResult = (value: unknown): value is SaveGameResult =>
-  SAVE_GAME_RESULTS.some((result) => result === value);
-
-const isSaveUploadResult = (value: unknown): value is SaveUploadResult =>
-  SAVE_UPLOAD_RESULTS.some((result) => result === value);
-
-const isSubmitInputResult = (value: unknown): value is SubmitInputResult =>
-  SUBMIT_INPUT_RESULTS.some((result) => result === value);
+const parseAvatarMeta = (json: string | null | undefined) => parseJson(AvatarMetaSchema, json);
 
 const toGameRecord = ({ version, state }: Record<string, string>): GameRecord | null => {
   const parsed = Number(version);
   return state !== undefined && Number.isInteger(parsed) && parsed > 0 ? { version: parsed, state } : null;
 };
-
-const isAddPlayerResult = (value: unknown): value is AddPlayerResult =>
-  ADD_PLAYER_RESULTS.some((result) => result === value);
 
 export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PREFIX): SessionStore => {
   const key = keys(prefix);
@@ -181,8 +163,7 @@ export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PRE
         [key.session(sessionId), key.players(sessionId), key.names(sessionId)],
         [player.id, JSON.stringify(player), nameKey, String(maxPlayers), String(expiresAt)],
       );
-      if (!isAddPlayerResult(result)) throw new Error(`unexpected add player result: ${String(result)}`);
-      return result;
+      return toAddPlayerResult(result);
     },
     findPlayer: async (sessionId, playerId) => parsePlayer(await redis.hGet(key.players(sessionId), playerId)),
     listPlayers: async (sessionId) => {
@@ -245,8 +226,7 @@ export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PRE
         [key.session(sessionId), key.setup(sessionId)],
         [setup, summary, String(expiresAt)],
       );
-      if (!isSaveSetupResult(result)) throw new Error(`unexpected save setup result: ${String(result)}`);
-      return result;
+      return toSaveSetupResult(result);
     },
     addImage: async (sessionId, imageId, { maxPerSession, maxActive, expiresAt, leaseUntil, uploadedAt }) => {
       const result = await redis.addImage(
@@ -261,8 +241,7 @@ export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PRE
           String(uploadedAt),
         ],
       );
-      if (!isAddImageResult(result)) throw new Error(`unexpected add image result: ${String(result)}`);
-      return result;
+      return toAddImageResult(result);
     },
     removeImages: async (sessionId, imageIds) => {
       if (imageIds.length === 0) return;
@@ -303,16 +282,14 @@ export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PRE
           clearUploads ? "1" : "0",
         ],
       );
-      if (!isSaveGameResult(result)) throw new Error(`unexpected save game result: ${String(result)}`);
-      return result;
+      return toSaveGameResult(result);
     },
     submitInput: async (sessionId, version, playerId, input, expiresAt, replace) => {
       const result = await redis.submitInput(
         [key.session(sessionId), key.game(sessionId), key.inputs(sessionId)],
         [String(version), playerId, input, String(expiresAt), replace ? "1" : "0"],
       );
-      if (!isSubmitInputResult(result)) throw new Error(`unexpected submit input result: ${String(result)}`);
-      return result;
+      return toSubmitInputResult(result);
     },
     resetGame: async (sessionId, version) =>
       (await redis.resetGame(
@@ -325,8 +302,7 @@ export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PRE
         [key.session(sessionId), key.game(sessionId), key.uploads(sessionId)],
         [String(version), playerId, payload, String(expiresAt)],
       );
-      if (!isSaveUploadResult(result)) throw new Error(`unexpected save upload result: ${String(result)}`);
-      return result;
+      return toSaveUploadResult(result);
     },
     getUpload: async (sessionId, playerId) => (await redis.hGet(key.uploads(sessionId), playerId)) ?? null,
     touch: async (session, expiresAt) => {

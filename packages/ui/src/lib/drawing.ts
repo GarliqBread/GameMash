@@ -24,7 +24,6 @@ export {
   type Drawing,
   type DrawPoint,
   type Fill,
-  type FillPoint,
   isFill,
   type Mark,
   pointCount,

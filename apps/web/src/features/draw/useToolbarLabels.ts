@@ -1,6 +1,5 @@
-import type { DrawItProgress } from "@gamemash/games/config";
 import type { DrawingToolbarLabels } from "@gamemash/ui";
-import { FormattedMessage, useIntl } from "react-intl";
+import { useIntl } from "react-intl";
 
 export const useToolbarLabels = (): DrawingToolbarLabels => {
   const intl = useIntl();
@@ -29,12 +28,3 @@ export const useToolbarLabels = (): DrawingToolbarLabels => {
     clear: format("draw.clear"),
   };
 };
-
-export const PhoneDrawWord = ({ progress, captionId }: { progress: DrawItProgress; captionId: string }) => (
-  <div className="flex min-w-0 flex-col">
-    <span className="text-caption text-fg-subtle">
-      <FormattedMessage id={captionId} values={{ current: progress.roundIndex + 1, total: progress.roundCount }} />
-    </span>
-    <span className="truncate font-display text-3xl/tight font-extrabold">{progress.word}</span>
-  </div>
-);

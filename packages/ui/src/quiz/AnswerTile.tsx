@@ -9,7 +9,7 @@ export type AnswerTileProps = Omit<ComponentProps<"div">, "children"> & {
   shape: AnswerShapeName;
   label: string;
   state?: AnswerTileState | undefined;
-  shapeLabel?: string | undefined;
+  shapeLabel: string;
   stateLabel?: string | undefined;
   layout?: "row" | "stack" | undefined;
   density?: "regular" | "compact" | undefined;
@@ -19,7 +19,7 @@ export const AnswerTile = ({
   shape,
   label,
   state = "idle",
-  shapeLabel = ANSWERS[shape].defaultLabel,
+  shapeLabel,
   stateLabel,
   layout = "row",
   density = "regular",

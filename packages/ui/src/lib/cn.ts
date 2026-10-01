@@ -35,8 +35,6 @@ const twMerge = extendTailwindMerge({
       ],
       radius: ["control", "field", "button", "card", "tile", "panel", "sticker", "key", "bar"],
       shadow: [
-        "press-sun",
-        "press-sm",
         "card-stage",
         "knob",
         "primary",

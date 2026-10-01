@@ -12,7 +12,7 @@ import { describe, expect, it } from "vitest";
 import { buildApp } from "../app.js";
 import type { ImageStore } from "../media/image-store.js";
 import { createMemoryImageStore, type MemoryImageStore } from "../media/memory-image-store.js";
-import type { RedisHealth } from "../redis.js";
+import { healthyRedis } from "../test-app.js";
 import { createMemorySessionStore } from "./memory-store.js";
 import { createSessionService } from "./service.js";
 import { createSetupTransfer } from "./setup-transfer.js";
@@ -20,7 +20,6 @@ import type { SessionRecord } from "./store.js";
 import { readySetup } from "./test-setup.js";
 
 const fixture = (name: string) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url));
-const redis = { ping: async () => "PONG", isReady: true } as unknown as RedisHealth;
 
 type Options = { withImages?: boolean; maxActiveImages?: number; beforePut?: (count: number) => Promise<void> };
 
@@ -37,7 +36,7 @@ const setup = async ({ withImages = true, maxActiveImages, beforePut }: Options 
     },
   };
   const sessions = createSessionService({ store, images: withImages ? watched : undefined, maxActiveImages });
-  const app = buildApp({ redis, sessions, rateLimit: false });
+  const app = buildApp({ redis: healthyRedis, sessions, rateLimit: false });
 
   const createHost = async () => {
     const session = (await app.inject({ method: "POST", url: "/api/sessions" })).json<CreateSessionResponse>();

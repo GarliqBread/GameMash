@@ -80,7 +80,7 @@ export const deleteQuestion = (config: PopQuizConfig, questionId: string): PopQu
   questions: config.questions.filter((question) => question.id !== questionId),
 });
 
-export type TrueFalseLabels = { true: string; false: string };
+type TrueFalseLabels = { true: string; false: string };
 
 export const changeQuestionKind = (
   question: QuizQuestion,

@@ -11,7 +11,8 @@ import { FormattedMessage, useIntl } from "react-intl";
 import type { LobbyStatus } from "../../lib/lobby";
 import { useSecondsLeft } from "../game/useSecondsLeft";
 import { ReconnectingNote } from "../session/ReconnectingNote";
-import { DrawStageHeader, roundValues } from "./stage-display";
+import { DrawStageHeader } from "./DrawStageHeader";
+import { roundValues } from "./round-values";
 import { useHostDrawings } from "./useHostDrawings";
 
 type ResultsView = Extract<DrawItStageView, { kind: "results" }>;
@@ -30,7 +31,10 @@ export type StageDrawResultsProps = {
   status: LobbyStatus;
 };
 
-const isPodiumRank = (rank: number): rank is 1 | 2 | 3 => rank >= 1 && rank <= CARD_COUNT;
+type PodiumEntry = DrawItResultEntry & { rank: 1 | 2 | 3 };
+
+const isCard = (entry: DrawItResultEntry, position: number): entry is PodiumEntry =>
+  position < CARD_COUNT && entry.rank >= 1 && entry.rank <= CARD_COUNT;
 
 export const StageDrawResults = ({
   roundKey,
@@ -48,8 +52,8 @@ export const StageDrawResults = ({
     roundKey,
     shown.map((entry) => entry.drawingId),
   );
-  const cards = shown.filter((entry, position) => position < CARD_COUNT && isPodiumRank(entry.rank));
-  const chips = shown.filter((entry) => !cards.includes(entry));
+  const cards = shown.filter(isCard);
+  const chips = shown.filter((entry, position) => !isCard(entry, position));
 
   const nameOf = (entry: DrawItResultEntry) =>
     players.get(entry.playerId)?.name ?? intl.formatMessage({ id: "draw.unknownPlayer" });
@@ -107,7 +111,7 @@ export const StageDrawResults = ({
             {cards.map((entry) => (
               <DrawingResultCard
                 key={entry.drawingId}
-                rank={isPodiumRank(entry.rank) ? entry.rank : 3}
+                rank={entry.rank}
                 name={nameOf(entry)}
                 drawing={drawingOf(entry)}
                 drawingLabel={labelOf(entry)}

@@ -7,8 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b",
-    "test": "echo 'no web tests'"
+    "typecheck": "tsc -b"
   },
   "dependencies": {
     "@dicebear/core": "catalog:",

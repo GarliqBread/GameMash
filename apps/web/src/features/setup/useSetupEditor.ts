@@ -1,7 +1,7 @@
 import type { SessionSetup } from "@gamemash/games/config";
 import type { ApiError } from "@gamemash/shared";
 import type { AutosaveStatus } from "@gamemash/ui";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import type { HostCredentials } from "../../lib/credentials";
 import { toApiError } from "../../lib/errors";
 import { saveSetup } from "../../lib/setup";
@@ -67,8 +67,7 @@ export const useSetupEditor = (credentials: HostCredentials, initialSetup: Sessi
     setStatus("saved");
   };
 
-  const flushRef = useRef(flush);
-  flushRef.current = flush;
+  const flushLatest = useEffectEvent(() => void flush());
 
   useEffect(() => {
     const hasUnsavedChanges = () => pending.current !== null || isSaving.current;
@@ -76,14 +75,14 @@ export const useSetupEditor = (credentials: HostCredentials, initialSetup: Sessi
       if (hasUnsavedChanges()) event.preventDefault();
     };
     const saveWhenHidden = () => {
-      if (document.visibilityState === "hidden" && hasUnsavedChanges()) void flushRef.current();
+      if (document.visibilityState === "hidden" && hasUnsavedChanges()) flushLatest();
     };
     window.addEventListener("beforeunload", warnBeforeLeaving);
     document.addEventListener("visibilitychange", saveWhenHidden);
     return () => {
       window.removeEventListener("beforeunload", warnBeforeLeaving);
       document.removeEventListener("visibilitychange", saveWhenHidden);
-      void flushRef.current();
+      flushLatest();
     };
   }, []);
 

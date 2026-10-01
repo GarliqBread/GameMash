@@ -1,7 +1,7 @@
 import { useCopy } from "../../.ladle/pseudo";
 import { BothThemes, Row, WITH_WORKSHOP } from "../../.ladle/story-kit";
 import type { Story, StoryDefault } from "../../.ladle/types";
-import { MonitorIcon, PlayIcon, PlusIcon } from "../icons/icons";
+import { MonitorIcon, PlusIcon } from "../icons/icons";
 import { Button } from "./Button";
 
 export default { title: "Primitives / Button" } satisfies StoryDefault;
@@ -24,9 +24,7 @@ export const Variants: Story = () => {
           </Row>
           <Row label="Sizes">
             <Button size="sm">{t("Add an image (optional)")}</Button>
-            <Button size="md" iconEnd={<PlayIcon size={18} className="text-sun" />}>
-              {t("Start session")}
-            </Button>
+            <Button size="md">{t("Start session")}</Button>
             <Button size="lg" className="w-full">
               {t("I'm done")}
             </Button>

@@ -15,13 +15,14 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "typecheck": "tsc -b",
+    "typecheck": "tsc -b && tsc -p tsconfig.test.json",
     "test": "vitest run"
   },
   "dependencies": {
     "typebox": "catalog:"
   },
   "devDependencies": {
-    "@dicebear/styles": "catalog:"
+    "@dicebear/styles": "catalog:",
+    "vitest": "catalog:"
   }
 }

@@ -8,11 +8,18 @@ import { PLAYER_NAMES } from "./story-kit";
 export const ROOM_CODE = "KWPX";
 export const JOIN_URL = "gamemash.app";
 
+export const SHAPE_LABELS: Record<AnswerShapeName, string> = {
+  squircle: "Squircle",
+  triangle: "Triangle",
+  plus: "Plus",
+  dome: "Dome",
+};
+
 export const QUIZ_OPTIONS: AnswerOption[] = [
-  { shape: "squircle", label: "Jupiter" },
-  { shape: "triangle", label: "Saturn" },
-  { shape: "plus", label: "Uranus" },
-  { shape: "dome", label: "Neptune" },
+  { shape: "squircle", label: "Jupiter", shapeLabel: SHAPE_LABELS.squircle },
+  { shape: "triangle", label: "Saturn", shapeLabel: SHAPE_LABELS.triangle },
+  { shape: "plus", label: "Uranus", shapeLabel: SHAPE_LABELS.plus },
+  { shape: "dome", label: "Neptune", shapeLabel: SHAPE_LABELS.dome },
 ];
 
 export const QUIZ_COUNTS: Record<AnswerShapeName, number> = { squircle: 3, triangle: 5, plus: 0, dome: 1 };

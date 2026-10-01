@@ -21,3 +21,111 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  images-check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [api, web]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          target: ${{ matrix.target }}
+          push: false
+          cache-from: type=gha,scope=${{ matrix.target }}
+
+  images:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      PUBLIC_URL: ${{ vars.PUBLIC_URL || 'https://play.gamemash.io' }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: image
+        run: echo "prefix=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          target: api
+          push: true
+          tags: |
+            ${{ steps.image.outputs.prefix }}-api:${{ github.sha }}
+            ${{ steps.image.outputs.prefix }}-api:latest
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          target: web
+          push: true
+          build-args: |
+            VITE_PUBLIC_URL=${{ env.PUBLIC_URL }}
+            PUBLIC_PLAY_URL=${{ env.PUBLIC_URL }}
+          tags: |
+            ${{ steps.image.outputs.prefix }}-web:${{ github.sha }}
+            ${{ steps.image.outputs.prefix }}-web:latest
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+  deploy:
+    needs: images
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: read
+    env:
+      TARGET: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
+      APP_URL: ${{ vars.PUBLIC_URL || 'https://play.gamemash.io' }}
+      LANDING_URL: ${{ vars.LANDING_URL || 'https://gamemash.io' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: deploy/compose.yml
+          sparse-checkout-cone-mode: false
+      - name: Set up SSH
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Copy compose file
+        run: scp deploy/compose.yml "$TARGET:/opt/gamemash/compose.yml"
+      - name: Pick the image
+        run: echo "IMAGE_PREFIX=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+      - name: Pull and restart
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$REGISTRY_TOKEN" | ssh "$TARGET" "docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
+          ssh "$TARGET" "cd /opt/gamemash \
+            && sed -i '/^IMAGE_PREFIX=/d; /^IMAGE_TAG=/d' .env \
+            && printf 'IMAGE_PREFIX=%s\nIMAGE_TAG=%s\n' '${{ env.IMAGE_PREFIX }}' '${{ github.sha }}' >> .env \
+            && docker compose pull api web \
+            && docker compose up -d --no-build --remove-orphans \
+            ; status=\$?; docker logout ghcr.io; exit \$status"
+          ssh "$TARGET" "docker image prune -af --filter until=168h"
+      - name: Check the sites respond
+        run: |
+          curl -fsS --retry 10 --retry-delay 3 --retry-all-errors "$APP_URL/api/health"
+          curl -fsS --retry 10 --retry-delay 3 --retry-all-errors -o /dev/null "$LANDING_URL/"

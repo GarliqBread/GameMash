@@ -1,7 +1,7 @@
 import { CharacterSchema } from "@gamemash/shared/schemas";
 import { Value } from "typebox/value";
 import { describe, expect, it, vi } from "vitest";
-import { createLobbyNotifier } from "../lobby/notifier.js";
+import { createNotifier } from "../lobby/notifier.js";
 import { createMemorySessionStore } from "./memory-store.js";
 import { hashSecret } from "./secrets.js";
 import { createSessionService } from "./service.js";
@@ -9,7 +9,7 @@ import { readySetup } from "./test-setup.js";
 
 const setup = (maxPlayers?: number) => {
   const store = createMemorySessionStore();
-  const notifier = createLobbyNotifier();
+  const notifier = createNotifier();
   const service = createSessionService({ store, notifier, maxPlayers });
   return { store, notifier, service };
 };

@@ -7,11 +7,11 @@ import {
 } from "@gamemash/shared";
 import { ApiErrorSchema, BearerAuthHeadersSchema, SessionParamsSchema } from "@gamemash/shared/schemas";
 import { Type } from "typebox";
-import { requireHost, sessionRateLimitKey } from "./auth.js";
+import { perSession } from "../limits/route-limits.js";
+import { requireHost } from "./auth.js";
 import { errorBody } from "./error-body.js";
 import type { SessionService } from "./service.js";
 
-const MINUTE_MS = 60_000;
 const UPLOADS_PER_SESSION_PER_MINUTE = 60;
 const LISTS_PER_SESSION_PER_MINUTE = 120;
 const REQUESTS_PER_ADDRESS_PER_MINUTE = 300;
@@ -55,9 +55,7 @@ export const imageRoutes =
       "/api/sessions/:sessionId/images",
       {
         bodyLimit: QUESTION_IMAGE_MAX_BYTES,
-        config: {
-          rateLimit: { max: UPLOADS_PER_SESSION_PER_MINUTE, timeWindow: MINUTE_MS, keyGenerator: sessionRateLimitKey },
-        },
+        config: perSession(UPLOADS_PER_SESSION_PER_MINUTE),
         schema: {
           params: SessionParamsSchema,
           headers: BearerAuthHeadersSchema,
@@ -67,7 +65,7 @@ export const imageRoutes =
       async (request, reply) => {
         const contentType: QuestionImageContentType | undefined = toContentType(request.headers["content-type"]);
         if (!Buffer.isBuffer(request.body) || !contentType) {
-          return reply.code(415).send({ code: "unsupported_media_type" });
+          return reply.code(415).send(errorBody("unsupported_media_type"));
         }
         const result = await sessions.uploadImage(hostOf(request), request.body, contentType);
         if (result.ok) return { imageId: result.value.id, url: result.value.url };
@@ -78,9 +76,7 @@ export const imageRoutes =
     app.get(
       "/api/sessions/:sessionId/images",
       {
-        config: {
-          rateLimit: { max: LISTS_PER_SESSION_PER_MINUTE, timeWindow: MINUTE_MS, keyGenerator: sessionRateLimitKey },
-        },
+        config: perSession(LISTS_PER_SESSION_PER_MINUTE),
         schema: {
           params: SessionParamsSchema,
           headers: BearerAuthHeadersSchema,

@@ -10,7 +10,6 @@ import { CheckIcon, CopyIcon, ImageIcon, PencilIcon, TrashIcon } from "../icons/
 import { ANSWER_SHAPES } from "../lib/answers";
 import { Switch } from "../primitives/Switch";
 import { AutosaveIndicator, type AutosaveStatus } from "./AutosaveIndicator";
-import { CoinToggleGroup } from "./CoinToggleGroup";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { KeyButton } from "./KeyButton";
 import { SectionTab } from "./SectionTab";
@@ -92,28 +91,6 @@ export const Switches: Story = () => {
         <Switch aria-label="Off" checked={second} onCheckedChange={setSecond} onLabel={t("On")} offLabel={t("Off")} />
         <Switch aria-label="Aan" defaultChecked onLabel="Aan" offLabel="Uit" />
         <Switch aria-label="Eingeschaltet" defaultChecked onLabel="Eingeschaltet" offLabel="Ausgeschaltet" />
-      </Row>
-    </Bench>
-  );
-};
-
-export const Coins: Story = () => {
-  const [points, setPoints] = useState("1000");
-  return (
-    <Bench>
-      <Row label="CoinToggleGroup">
-        <CoinToggleGroup
-          aria-label="Points for a right answer"
-          value={points}
-          onValueChange={setPoints}
-          options={["500", "1000", "2000"].map((value) => ({ value, label: value }))}
-        />
-        <CoinToggleGroup
-          aria-label="Punkte"
-          value="1.000"
-          onValueChange={() => {}}
-          options={["500", "1.000", "2.000"].map((value) => ({ value, label: value }))}
-        />
       </Row>
     </Bench>
   );

@@ -11,10 +11,13 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "typecheck": "tsc -b",
+    "typecheck": "tsc -b && tsc -p tsconfig.test.json",
     "test": "vitest run"
   },
   "dependencies": {
     "@gamemash/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "catalog:"
   }
 }

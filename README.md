@@ -2,7 +2,7 @@
 
 Team games for company get-togethers: one shared big screen, players use their phones as controllers.
 
-Product decisions, progress and open questions live in [docs/spec.md](docs/spec.md).
+Product decisions, progress and open questions live in [docs/spec.md](docs/spec.md). To contribute, start with [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Development
 
@@ -15,16 +15,16 @@ cp apps/api/.env.example apps/api/.env      # first time only
 pnpm dev                                    # build packages, then watch everything
 ```
 
-The landing page runs on http://localhost:4321 and the web app on http://localhost:5173 and proxies `/api` and `/socket.io` to the API on port 3000. Stop the services with `docker compose down` (add `-v` to also wipe stored images).
+The web app runs on http://localhost:5173 and proxies `/api` and `/socket.io` to the API on port 3000. The landing page runs on http://localhost:4321. Stop the services with `docker compose down`. Question images are stored in `apps/api/.images`; delete that folder to wipe them.
 
-| URL                      | Screen                                       |
-| ------------------------ | -------------------------------------------- |
-| `/host`                  | Create a session (big screen)                |
-| `/host/:sessionId/setup` | Workshop: name the session, build the lineup |
-| `/host/:sessionId`       | Big-screen lobby with room code and QR code  |
-| `/` and `/join/:code`    | Join from a phone (name + optional photo)    |
+| URL                      | Screen                                         |
+| ------------------------ | ---------------------------------------------- |
+| `/host`                  | Create a session (big screen)                  |
+| `/host/:sessionId/setup` | Workshop: name the session, build the lineup   |
+| `/host/:sessionId`       | Big-screen lobby with room code and QR code    |
+| `/` and `/join/:code`    | Join from a phone (name + optional photo)      |
 | `/join?code=`            | Redirects to `/join/:code` (landing page form) |
-| `/play/:sessionId`       | Phone waiting screen                         |
+| `/play/:sessionId`       | Phone waiting screen                           |
 
 ### Testing on a real phone
 
@@ -54,22 +54,43 @@ Question images are stored on disk under `IMAGES_DIR` and served by the API at `
 
 Uploads pause (`image_storage_full`) once `IMAGES_MAX_ACTIVE` images are held across all sessions or the disk drops below `IMAGES_MIN_FREE_MB`, so abuse can fill a limit but never the disk or a bill.
 
+`apps/web/.env`:
+
+| Variable          | Default                 | Purpose                                         |
+| ----------------- | ----------------------- | ----------------------------------------------- |
+| `VITE_PUBLIC_URL` | empty                   | Address shown in the lobby and its QR code      |
+| `API_URL`         | `http://localhost:3000` | Where the dev server proxies `/api` and sockets |
+
+`apps/landing/.env`:
+
+| Variable          | Default                    | Purpose                                                  |
+| ----------------- | -------------------------- | -------------------------------------------------------- |
+| `PUBLIC_PLAY_URL` | `https://play.gamemash.io` | The app's address, used by "Host a session" and join box |
+
+Set `PUBLIC_PLAY_URL=http://localhost:5173` (as in `apps/landing/.env.example`) to try those links locally.
+
+To try the S3 image store in development, point the API at the MinIO container that `pnpm services` starts: `S3_ENDPOINT=http://localhost:9000`, `S3_BUCKET=gamemash-dev`, `S3_ACCESS_KEY_ID=minioadmin` and `S3_SECRET_ACCESS_KEY=minioadmin`.
+
 Tests that need Redis use `TEST_REDIS_URL` (default `redis://localhost:6380`). The S3 image store tests use `TEST_S3_ENDPOINT` (default `http://localhost:9000`), `TEST_S3_BUCKET` (default `gamemash-test`, created on the fly), `TEST_S3_ACCESS_KEY_ID` and `TEST_S3_SECRET_ACCESS_KEY` (default `minioadmin`). Without Redis or MinIO those tests are skipped locally; in CI they fail. `pnpm services` starts both.
 
-## Deploy
+## Self-hosting
 
-Production runs on one Linux server with Docker: Redis, the API and Caddy (HTTPS and the web app), defined in `deploy/compose.yml`. We use an OVHcloud VPS-2 with Ubuntu 24.04.
+GameMash runs on one Linux server with Docker, defined in [`deploy/compose.yml`](deploy/compose.yml): Redis, the API and Caddy, which handles HTTPS. Caddy serves the app on `APP_DOMAIN`, the landing page on `LANDING_DOMAIN`, and redirects every domain in `REDIRECT_DOMAINS` to the landing page.
 
-1. Point a domain (A and AAAA records) at the server.
+1. Point your domains (A and AAAA records) at the server.
 2. On the server, allow only SSH, HTTP and HTTPS through the firewall (`ufw allow OpenSSH && ufw allow 80,443/tcp && ufw allow 443/udp && ufw enable`), and log in with an SSH key only.
 3. Install Docker: `curl -fsSL https://get.docker.com | sh`.
-4. Clone the repository, then `cp deploy/.env.example deploy/.env` and set `DOMAIN` and `PUBLIC_URL` (for example `play.example.com` and `https://play.example.com`).
-5. Start it: `docker compose -f deploy/compose.yml --env-file deploy/.env up -d --build`. Caddy fetches the HTTPS certificate on the first request.
+4. Clone the repository, then `cp deploy/.env.example deploy/.env` and set the domains and `PUBLIC_URL` (the app's address, for example `https://play.example.com`).
+5. Start it: `docker compose -f deploy/compose.yml --env-file deploy/.env up -d --build`. Caddy fetches the HTTPS certificates on the first request.
 6. To update: `git pull`, then run the same command again.
 
-The Caddyfile's Content-Security-Policy only allows images from the site itself; if you switch to an S3 bucket, add its origin to `img-src`.
+If you don't want the landing page, remove its two site blocks (`{$LANDING_DOMAIN}` and `{$REDIRECT_DOMAINS}`) from `deploy/Caddyfile` and the two variables from `deploy/compose.yml`.
+
+The app's Content-Security-Policy in `deploy/Caddyfile` only allows images from the site itself; if you switch to an S3 bucket, add its origin to `img-src`. The landing page's policy is generated by Astro at build time.
 
 Question images sit in the `images` volume, Redis data (sessions only, all with expiries) in `redis-data`. No backups are needed: nothing outlives a session.
+
+How gamemash.io itself is deployed is described in [docs/deploying.md](docs/deploying.md).
 
 ## Commands
 
@@ -88,7 +109,12 @@ Question images sit in the `images` volume, Redis data (sessions only, all with 
 
 - `apps/api` – Fastify + Socket.io + Redis, question images on disk (or an S3-compatible bucket)
 - `apps/web` – React, TanStack Router/Query, Zustand, Tailwind, Base UI, react-intl
+- `apps/landing` – the static landing page for gamemash.io (Astro)
 - `packages/shared` – types, constants and helpers shared by API and web; TypeBox schemas under `@gamemash/shared/schemas`
 - `packages/games` – game definitions (title, colour, icon) and game config; helpers under `@gamemash/games/config`, schemas under `@gamemash/games/schemas`
 - `packages/messages` – ICU message catalogs
 - `packages/ui` – design system: tokens, Base UI primitives, layouts
+
+## Licence
+
+GameMash is free software under the [GNU Affero General Public License v3.0](LICENSE). If you run a modified version as a service for others, you have to offer them its source code.

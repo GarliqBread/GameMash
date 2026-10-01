@@ -3,16 +3,15 @@ import { buildApp } from "./app.js";
 import type { RedisHealth } from "./redis.js";
 import { createMemorySessionStore } from "./sessions/memory-store.js";
 import { createSessionService } from "./sessions/service.js";
+import { healthyRedis } from "./test-app.js";
 
-const fakeRedis = (ping: () => Promise<string>, isReady = true) => ({ ping, isReady }) as unknown as RedisHealth;
-
-const healthyRedis = () => fakeRedis(async () => "PONG");
+const fakeRedis = (ping: () => Promise<string>, isReady = true): RedisHealth => ({ ping, isReady });
 
 const sessions = () => createSessionService({ store: createMemorySessionStore() });
 
 describe("GET /api/health", () => {
   it("reports redis up when ping succeeds", async () => {
-    const app = buildApp({ redis: healthyRedis(), sessions: sessions() });
+    const app = buildApp({ redis: healthyRedis, sessions: sessions() });
 
     const response = await app.inject({ method: "GET", url: "/api/health" });
 
@@ -52,7 +51,7 @@ describe("GET /api/health", () => {
 
 describe("error responses", () => {
   it("returns a not_found code for unknown routes", async () => {
-    const app = buildApp({ redis: healthyRedis(), sessions: sessions() });
+    const app = buildApp({ redis: healthyRedis, sessions: sessions() });
 
     const response = await app.inject({ method: "GET", url: "/api/nope" });
 
@@ -61,7 +60,7 @@ describe("error responses", () => {
   });
 
   it("keeps the status and returns bad_request for malformed bodies", async () => {
-    const app = buildApp({ redis: healthyRedis(), sessions: sessions() });
+    const app = buildApp({ redis: healthyRedis, sessions: sessions() });
     app.post("/api/echo", async (request) => request.body);
 
     const response = await app.inject({
@@ -76,7 +75,7 @@ describe("error responses", () => {
   });
 
   it("returns bad_request for schema validation failures", async () => {
-    const app = buildApp({ redis: healthyRedis(), sessions: sessions() });
+    const app = buildApp({ redis: healthyRedis, sessions: sessions() });
     app.post(
       "/api/echo",
       { schema: { body: { type: "object", required: ["name"], properties: { name: { type: "string" } } } } },
@@ -90,7 +89,7 @@ describe("error responses", () => {
   });
 
   it("returns bad_request for malformed URLs", async () => {
-    const app = buildApp({ redis: healthyRedis(), sessions: sessions() });
+    const app = buildApp({ redis: healthyRedis, sessions: sessions() });
 
     const response = await app.inject({ method: "GET", url: "/api/%E0%A4%A" });
 
@@ -99,7 +98,7 @@ describe("error responses", () => {
   });
 
   it("returns internal_error for unexpected failures", async () => {
-    const app = buildApp({ redis: healthyRedis(), sessions: sessions() });
+    const app = buildApp({ redis: healthyRedis, sessions: sessions() });
     app.get("/api/boom", async () => {
       throw new Error("boom");
     });
