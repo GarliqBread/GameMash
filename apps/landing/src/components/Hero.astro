@@ -1,0 +1,60 @@
+---
+import { cta, HOST_URL, hero } from "../content";
+import Button from "./Button.astro";
+import HeroArt from "./HeroArt.astro";
+import JoinForm from "./JoinForm.astro";
+import PlayIcon from "./PlayIcon.astro";
+import Sticker from "./Sticker.astro";
+---
+
+<section
+  aria-labelledby="hero-title"
+  class="page-x grid gap-10 pt-5 pb-12 sm:pt-14 sm:pb-20 xl:grid-cols-[610px_minmax(0,1fr)] xl:items-center xl:gap-14 xl:pt-20 xl:pb-24"
+>
+  <div class="flex flex-col gap-5 sm:gap-7">
+    <JoinForm id="phone-join" layout="card" class="mb-5 sm:hidden" />
+    <Sticker class="-rotate-2 self-start bg-brand-sky">{hero.badge}</Sticker>
+    <h1
+      id="hero-title"
+      class="max-w-[14ch] font-display text-display-xl font-extrabold tracking-display-tightest text-balance xl:max-w-none"
+    >
+      {hero.titleStart}{" "}<span
+        class="mt-1.5 inline-block -rotate-2 rounded-control border-3 border-ink-950 bg-sun px-2.5 pb-1 shadow-brutal sm:mt-2 sm:px-3.5 sm:pb-1.5 sm:shadow-brutal-lg"
+        >{hero.titleHighlight}</span
+      >
+    </h1>
+    <p class="max-w-[520px] text-lg/normal text-ink-700 sm:text-xl/normal">{hero.lead}</p>
+    <Button href={HOST_URL} variant="ink" size="lg" class="sm:hidden">
+      <PlayIcon />
+      {cta.host}
+    </Button>
+    <div
+      class="hidden overflow-hidden rounded-card border-3 border-ink-950 bg-paper-white shadow-brutal-xl sm:flex"
+    >
+      <div class="flex flex-1 flex-col gap-3 px-6 py-5.5">
+        <span class="font-pixel text-label font-bold tracking-pixel">{hero.hostLabel}</span>
+        <Button href={HOST_URL} size="lg">{cta.host}</Button>
+      </div>
+      <div class="w-0.75 bg-ink-950"></div>
+      <JoinForm id="hero-join" layout="inline" class="flex-1 bg-cream px-6 py-5.5" />
+    </div>
+    <p class="flex items-center gap-2.5 text-body font-bold">
+      <svg
+        viewBox="0 0 24 24"
+        class="size-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <rect x="3" y="4" width="18" height="12" rx="2"></rect>
+        <path d="M8 20 H16"></path>
+        <path d="M12 16 V20"></path>
+      </svg>
+      {hero.remote}
+    </p>
+  </div>
+  <HeroArt />
+</section>

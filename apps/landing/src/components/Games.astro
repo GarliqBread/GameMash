@@ -1,0 +1,131 @@
+---
+import { games, quiz, REPO_URL, SHAPE_BG } from "../content";
+import Button from "./Button.astro";
+import Chip from "./Chip.astro";
+import CoffeeDoodle from "./CoffeeDoodle.astro";
+import Shape from "./Shape.astro";
+import Sticker from "./Sticker.astro";
+
+const ratings = Array.from({ length: 10 }, (_, index) => index + 1);
+const gamesUrl = `${REPO_URL}/tree/main/packages/games`;
+---
+
+<section
+  id="games"
+  aria-labelledby="games-title"
+  class="page-x flex flex-col gap-5 pt-6 pb-14 sm:gap-12 lg:pt-10 lg:pb-30"
+>
+  <div class="flex items-center gap-5">
+    <h2 id="games-title" class="font-display text-display font-extrabold tracking-display-tightest">
+      {games.title}
+    </h2>
+    <Sticker class="rotate-3 bg-paper-white max-sm:hidden">{games.more}</Sticker>
+  </div>
+
+  <div class="grid gap-5 sm:gap-8 lg:grid-cols-12">
+    <article
+      class="flex flex-col gap-3.5 rounded-card border-3 border-ink-950 bg-paper-white p-5.5 shadow-brutal-lg sm:gap-5.5 sm:rounded-tile sm:p-10 sm:shadow-brutal-2xl lg:col-span-7"
+    >
+      <div class="flex items-center gap-4">
+        <span
+          class="hidden size-16 shrink-0 items-center justify-center rounded-field border-3 border-ink-950 bg-brand-coral sm:flex"
+        >
+          <Shape shape="squircle" class="size-8.5" />
+        </span>
+        <h3 class="font-display text-headline font-extrabold tracking-display-tight">{games.quiz.title}</h3>
+      </div>
+      <p class="max-w-[560px] text-body/normal text-ink-700 sm:text-xl/normal">{games.quiz.text}</p>
+      <div aria-hidden="true" class="grid grid-cols-2 gap-2 sm:mt-1.5 sm:gap-3.5">
+        {
+          quiz.answers.map((answer) => (
+            <div
+              class:list={[
+                "flex h-12.5 items-center gap-2 rounded-key border-2 border-ink-950 px-2.5 text-sm font-bold text-ink-950 sm:h-19 sm:gap-3.5 sm:rounded-field sm:border-3 sm:px-5 sm:text-xl sm:shadow-brutal",
+                SHAPE_BG[answer.color],
+              ]}
+            >
+              <Shape shape={answer.shape} class="size-4.5 sm:size-7.5" />
+              {answer.label}
+            </div>
+          ))
+        }
+      </div>
+      <ul class="flex flex-wrap gap-2">
+        {
+          games.quiz.chips.map((chip) => (
+            <li>
+              <Chip class="bg-cream">{chip}</Chip>
+            </li>
+          ))
+        }
+      </ul>
+    </article>
+
+    <article
+      class="flex rotate-1 flex-col gap-3.5 rounded-card border-3 border-ink-950 bg-brand-lime p-5.5 shadow-brutal-lg sm:gap-5.5 sm:rounded-tile sm:p-10 sm:shadow-brutal-2xl lg:col-span-5"
+    >
+      <div class="flex items-center gap-4">
+        <span
+          class="hidden size-16 shrink-0 items-center justify-center rounded-field border-3 border-ink-950 bg-paper-white sm:flex"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            class="size-8"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M4 20 L5 15 L16 4 L20 8 L9 19 Z"></path>
+            <path d="M13.5 6.5 L17.5 10.5"></path>
+          </svg>
+        </span>
+        <h3 class="font-display text-headline font-extrabold tracking-display-tight">{games.draw.title}</h3>
+      </div>
+      <p class="text-body/normal sm:text-xl/normal">{games.draw.text}</p>
+      <div
+        aria-hidden="true"
+        class="relative flex h-37.5 grow items-center justify-center rounded-field border-3 border-ink-950 bg-paper-white sm:h-auto sm:min-h-62.5 sm:rounded-button"
+      >
+        <span
+          class="absolute top-3 left-3.5 hidden rounded-sticker bg-ink-950 px-2 py-0.5 font-pixel text-xs font-bold tracking-pixel text-cream sm:block"
+        >
+          {games.draw.word}
+        </span>
+        <CoffeeDoodle class="h-34 w-42.5 sm:h-48 sm:w-60" />
+      </div>
+      <div aria-hidden="true" class="hidden grid-cols-10 gap-1.25 sm:grid">
+        {
+          ratings.map((rating) => (
+            <span
+              class:list={[
+                "flex h-9.5 items-center justify-center rounded-key border-2 border-ink-950 font-display text-body font-extrabold",
+                rating === games.draw.picked ? "bg-sun" : "bg-paper-white",
+              ]}
+            >
+              {rating}
+            </span>
+          ))
+        }
+      </div>
+    </article>
+
+    <article
+      class="flex flex-col items-start gap-5 rounded-card border-3 border-dashed border-ink-950 bg-paper-white/60 p-5.5 sm:gap-9 lg:flex-row lg:items-center sm:rounded-tile sm:px-10 sm:py-8 lg:col-span-12"
+    >
+      <span
+        class="flex size-16 shrink-0 -rotate-6 items-center justify-center rounded-card border-3 border-ink-950 bg-brand-sky shadow-brutal sm:size-21"
+        aria-hidden="true"
+      >
+        <Shape shape="plus" class="size-9 sm:size-11" />
+      </span>
+      <div class="flex grow flex-col gap-1.5">
+        <h3 class="font-display text-title font-extrabold tracking-display-tight sm:text-3xl">{games.yours.title}</h3>
+        <p class="max-w-[720px] text-body/normal text-ink-700 sm:text-lg/normal">{games.yours.text}</p>
+      </div>
+      <Button href={gamesUrl} variant="white" size="sm" class="sm:h-13.5">{games.yours.link}</Button>
+    </article>
+  </div>
+</section>

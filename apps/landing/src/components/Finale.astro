@@ -1,0 +1,50 @@
+---
+import { cta, finale, HOST_URL, PLAY_HOST, PLAY_URL } from "../content";
+import Button from "./Button.astro";
+import PlayIcon from "./PlayIcon.astro";
+import Shape from "./Shape.astro";
+---
+
+<section aria-labelledby="finale-title" class="page-x pb-12 lg:pb-28">
+  <div
+    class="relative flex flex-col gap-5 overflow-hidden rounded-tile border-3 border-ink-950 bg-sun px-5.5 py-8 shadow-brutal-lg sm:gap-7 sm:rounded-panel sm:p-16 sm:py-18 sm:shadow-brutal-3xl"
+  >
+    <div aria-hidden="true">
+      <Shape
+        shape="squircle"
+        class="absolute -top-10 right-62.5 hidden size-47.5 rotate-14 stroke-ink-950 stroke-1 text-brand-coral xl:block"
+      />
+      <Shape
+        shape="triangle"
+        class="absolute -top-5 -right-6 size-27.5 -rotate-10 stroke-ink-950 stroke-1 text-answer-triangle sm:top-7.5 sm:right-10 sm:size-42.5"
+      />
+      <Shape
+        shape="dome"
+        class="absolute right-47.5 -bottom-11 hidden size-40 rotate-8 stroke-ink-950 stroke-1 text-brand-sky xl:block"
+      />
+      <Shape
+        shape="plus"
+        class="absolute -right-2.5 bottom-7.5 hidden size-30 rotate-20 stroke-ink-950 stroke-1 text-brand-lime xl:block"
+      />
+    </div>
+    <h2
+      id="finale-title"
+      class="relative max-w-[820px] font-display text-display-lg font-extrabold tracking-display-tightest text-balance max-sm:pr-12"
+    >
+      {finale.title}
+    </h2>
+    <div class="relative flex flex-col gap-4.5 sm:flex-row sm:items-center">
+      <Button href={HOST_URL} variant="ink" size="xl" shadow="shadow-brutal-white">
+        <PlayIcon class="size-5.5" />
+        {cta.host}
+      </Button>
+      <span class="hidden text-lg font-bold whitespace-nowrap sm:inline">
+        {finale.joinAt}{" "}<a
+          href={PLAY_URL}
+          class="focus-ring rounded-sticker border-2 border-ink-950 bg-paper-white px-2 py-0.5 font-pixel text-base tracking-pixel text-ink-950 no-underline hover:bg-cream"
+          >{PLAY_HOST}</a
+        >
+      </span>
+    </div>
+  </div>
+</section>

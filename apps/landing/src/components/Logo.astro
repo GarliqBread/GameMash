@@ -1,0 +1,25 @@
+---
+import { ANSWERS } from "@gamemash/ui/answers";
+
+type Props = {
+  class?: string;
+  onDark?: boolean;
+};
+
+const { class: className, onDark = false } = Astro.props;
+
+const marks = [
+  { path: ANSWERS.squircle.path, x: 0, y: 0, color: "text-brand-coral" },
+  { path: ANSWERS.triangle.path, x: 28, y: 0, color: onDark ? "text-answer-triangle" : "text-brand-violet" },
+  { path: ANSWERS.plus.path, x: 0, y: 28, color: "text-brand-lime" },
+  { path: ANSWERS.dome.path, x: 28, y: 28, color: "text-brand-sky" },
+];
+---
+
+<svg viewBox="0 0 52 52" class:list={["shrink-0", className]} aria-hidden="true" focusable="false">
+  {
+    marks.map((mark) => (
+      <path d={mark.path} transform={`translate(${mark.x} ${mark.y})`} fill="currentColor" class={mark.color} />
+    ))
+  }
+</svg>

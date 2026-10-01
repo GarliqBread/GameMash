@@ -1,0 +1,26 @@
+---
+import Band from "../components/Band.astro";
+import Faq from "../components/Faq.astro";
+import Finale from "../components/Finale.astro";
+import Footer from "../components/Footer.astro";
+import Games from "../components/Games.astro";
+import Header from "../components/Header.astro";
+import Hero from "../components/Hero.astro";
+import HowItWorks from "../components/HowItWorks.astro";
+import OpenSource from "../components/OpenSource.astro";
+import Privacy from "../components/Privacy.astro";
+import Base from "../layouts/Base.astro";
+---
+
+<Base>
+  <Header slot="header" />
+  <Hero />
+  <Band />
+  <HowItWorks />
+  <Games />
+  <Privacy />
+  <OpenSource />
+  <Faq />
+  <Finale />
+  <Footer slot="footer" />
+</Base>

@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HostIndexRouteImport } from './routes/host.index'
 import { Route as HostSessionIdRouteImport } from './routes/host.$sessionId'
+import { Route as JoinIndexRouteImport } from './routes/join.index'
 import { Route as JoinCodeRouteImport } from './routes/join.$code'
 import { Route as PlaySessionIdRouteImport } from './routes/play.$sessionId'
 import { Route as HostSessionIdIndexRouteImport } from './routes/host.$sessionId.index'
@@ -30,6 +31,11 @@ const HostIndexRoute = HostIndexRouteImport.update({
 const HostSessionIdRoute = HostSessionIdRouteImport.update({
   id: '/host/$sessionId',
   path: '/host/$sessionId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JoinIndexRoute = JoinIndexRouteImport.update({
+  id: '/join/',
+  path: '/join/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JoinCodeRoute = JoinCodeRouteImport.update({
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/join/$code': typeof JoinCodeRoute
   '/play/$sessionId': typeof PlaySessionIdRoute
   '/host/': typeof HostIndexRoute
+  '/join/': typeof JoinIndexRoute
   '/host/$sessionId/setup': typeof HostSessionIdSetupRoute
   '/host/$sessionId/': typeof HostSessionIdIndexRoute
 }
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/join/$code': typeof JoinCodeRoute
   '/play/$sessionId': typeof PlaySessionIdRoute
   '/host': typeof HostIndexRoute
+  '/join': typeof JoinIndexRoute
   '/host/$sessionId/setup': typeof HostSessionIdSetupRoute
   '/host/$sessionId': typeof HostSessionIdIndexRoute
 }
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   '/join/$code': typeof JoinCodeRoute
   '/play/$sessionId': typeof PlaySessionIdRoute
   '/host/': typeof HostIndexRoute
+  '/join/': typeof JoinIndexRoute
   '/host/$sessionId/setup': typeof HostSessionIdSetupRoute
   '/host/$sessionId/': typeof HostSessionIdIndexRoute
 }
@@ -88,6 +97,7 @@ export interface FileRouteTypes {
     | '/join/$code'
     | '/play/$sessionId'
     | '/host/'
+    | '/join/'
     | '/host/$sessionId/setup'
     | '/host/$sessionId/'
   fileRoutesByTo: FileRoutesByTo
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/join/$code'
     | '/play/$sessionId'
     | '/host'
+    | '/join'
     | '/host/$sessionId/setup'
     | '/host/$sessionId'
   id:
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/join/$code'
     | '/play/$sessionId'
     | '/host/'
+    | '/join/'
     | '/host/$sessionId/setup'
     | '/host/$sessionId/'
   fileRoutesById: FileRoutesById
@@ -115,6 +127,7 @@ export interface RootRouteChildren {
   JoinCodeRoute: typeof JoinCodeRoute
   PlaySessionIdRoute: typeof PlaySessionIdRoute
   HostIndexRoute: typeof HostIndexRoute
+  JoinIndexRoute: typeof JoinIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -138,6 +151,13 @@ declare module '@tanstack/react-router' {
       path: '/host/$sessionId'
       fullPath: '/host/$sessionId'
       preLoaderRoute: typeof HostSessionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/join/': {
+      id: '/join/'
+      path: '/join'
+      fullPath: '/join/'
+      preLoaderRoute: typeof JoinIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/join/$code': {
@@ -191,6 +211,7 @@ const rootRouteChildren: RootRouteChildren = {
   JoinCodeRoute: JoinCodeRoute,
   PlaySessionIdRoute: PlaySessionIdRoute,
   HostIndexRoute: HostIndexRoute,
+  JoinIndexRoute: JoinIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,0 +1,100 @@
+---
+import { quiz, SHAPE_BG, stage } from "../content";
+import Shape from "./Shape.astro";
+---
+
+<div aria-hidden="true" class="@container w-full max-w-[662px] justify-self-center xl:max-w-none">
+  <div class="relative h-160 [--px:calc(100cqw/662)] [--spacing:calc(var(--px)*4)]">
+    <div
+      class="absolute top-6 right-6 bottom-10 left-0 rounded-panel border-3 border-ink-950 bg-brand-violet bg-[radial-gradient(color-mix(in_srgb,var(--color-cream)_18%,transparent)_2px,transparent_2.2px)] [background-size:calc(var(--px)*22)_calc(var(--px)*22)] shadow-brutal-3xl max-sm:rounded-tile max-sm:shadow-brutal-lg"
+    >
+    </div>
+
+    <div
+      class="absolute top-17.5 left-1/2 -ml-68 flex h-82.5 w-130 flex-col gap-4 rounded-[calc(var(--px)*22)] border-[calc(var(--px)*6)] border-ink-950 bg-ink-950 p-5.5 shadow-brutal-xl shadow-ink-950/40"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <span
+          class="font-display text-[calc(var(--px)*27)] leading-[1.1] font-extrabold tracking-display text-cream"
+        >
+          {quiz.question}
+        </span>
+        <span
+          class="flex size-14 shrink-0 items-center justify-center rounded-full border-[calc(var(--px)*4)] border-sun font-display text-[calc(var(--px)*26)] font-extrabold text-sun"
+        >
+          {quiz.timer}
+        </span>
+      </div>
+      <div class="grid grow grid-cols-2 gap-2.5">
+        {
+          quiz.answers.map((answer) => (
+            <div
+              class:list={[
+                "flex items-center gap-2.5 rounded-[calc(var(--px)*12)] px-3.5 text-[calc(var(--px)*19)] font-bold text-ink-950",
+                SHAPE_BG[answer.color],
+              ]}
+            >
+              <Shape shape={answer.shape} class="size-6" />
+              {answer.label}
+            </div>
+          ))
+        }
+      </div>
+    </div>
+    <div class="absolute top-100 left-1/2 -ml-8.5 h-7.5 w-11 bg-ink-950"></div>
+    <div class="absolute top-107 left-1/2 -ml-33 h-3.5 w-55 rounded-full bg-ink-950"></div>
+
+    <div
+      class="absolute top-87.5 left-8.5 flex h-65.5 w-37.5 -rotate-9 flex-col gap-2 rounded-[calc(var(--px)*26)] border-[calc(var(--px)*4)] border-ink-950 bg-paper-white px-3 py-4 shadow-brutal-lg max-sm:shadow-brutal"
+    >
+      <span class="text-center font-pixel text-[calc(var(--px)*10)] tracking-pixel">{stage.tapAnswer}</span>
+      {
+        quiz.answers.map((answer) => (
+          <span
+            class:list={[
+              "flex grow items-center justify-center rounded-[calc(var(--px)*10)] border-2 border-ink-950 text-ink-950",
+              SHAPE_BG[answer.color],
+            ]}
+          >
+            <Shape shape={answer.shape} class="size-6" />
+          </span>
+        ))
+      }
+    </div>
+
+    <div
+      class="absolute top-101 left-1/2 -ml-14.5 hidden h-54 w-31 rotate-3 flex-col gap-1.75 rounded-[calc(var(--px)*24)] border-[calc(var(--px)*4)] border-ink-950 bg-paper-white px-2.5 py-3.5 shadow-brutal-lg sm:flex"
+    >
+      <span class="text-center font-pixel text-[calc(var(--px)*9)] tracking-pixel">{stage.lockedIn}</span>
+      <span
+        class="flex grow items-center justify-center rounded-[calc(var(--px)*10)] border-2 border-ink-950 bg-answer-triangle text-ink-950"
+      >
+        <Shape shape="triangle" class="size-11" />
+      </span>
+      <span class="text-center font-pixel text-[calc(var(--px)*9)] tracking-pixel text-ink-500">
+        {stage.waiting}
+      </span>
+    </div>
+
+    <div
+      class="absolute top-82.5 right-11 flex h-65.5 w-37.5 rotate-8 flex-col items-center justify-center gap-1.5 rounded-[calc(var(--px)*26)] border-[calc(var(--px)*4)] border-ink-950 bg-brand-lime px-3 py-4 text-ink-950 shadow-brutal-lg max-sm:shadow-brutal"
+    >
+      <span class="font-pixel text-[calc(var(--px)*11)] tracking-pixel">{stage.correct}</span>
+      <span class="font-display text-[calc(var(--px)*46)] leading-none font-extrabold tracking-display-tight">
+        {stage.points}
+      </span>
+      <span class="text-[calc(var(--px)*14)] font-bold">{stage.rank}</span>
+    </div>
+
+    <span
+      class="absolute top-10 left-5.5 hidden -rotate-6 rounded-sticker border-2 border-ink-950 bg-brand-coral px-2.5 py-1 font-pixel text-label font-bold tracking-pixel shadow-brutal-sm sm:block"
+    >
+      {stage.bigScreen}
+    </span>
+    <span
+      class="absolute top-67.5 right-2 hidden rotate-5 rounded-sticker border-2 border-ink-950 bg-paper-white px-2.5 py-1 font-pixel text-label font-bold tracking-pixel shadow-brutal-sm sm:block"
+    >
+      {stage.yourPhone}
+    </span>
+  </div>
+</div>

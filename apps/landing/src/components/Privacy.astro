@@ -1,0 +1,60 @@
+---
+import { privacy, SHAPE_BG, scale } from "../content";
+---
+
+<section
+  id="privacy"
+  aria-labelledby="privacy-title"
+  class="page-x grid gap-8 pt-6 pb-14 sm:gap-8 xl:grid-cols-12 lg:pt-10 lg:pb-32"
+>
+  <div
+    class="flex flex-col gap-6 rounded-card border-3 border-ink-950 bg-brand-sky p-6 shadow-brutal-lg sm:rounded-tile sm:p-12 sm:shadow-brutal-2xl md:flex-row md:items-center md:gap-10 xl:col-span-7"
+  >
+    <div class="flex flex-1 flex-col gap-3.5 sm:gap-4.5">
+      <h2
+        id="privacy-title"
+        class="font-display text-display-sm font-extrabold tracking-display-tightest text-balance"
+      >
+        {privacy.title}
+      </h2>
+      <p class="text-body/normal sm:text-lg/normal">{privacy.text}</p>
+    </div>
+    <div
+      class="flex -rotate-[1.5deg] flex-col gap-2 border-3 border-ink-950 bg-paper-white p-4 shadow-brutal-lg sm:gap-2.5 sm:px-5 sm:pt-5.5 sm:pb-6.5 md:w-72.5 md:shrink-0 md:rotate-[2.5deg]"
+    >
+      <span class="hidden text-center font-pixel text-sm font-bold tracking-pixel sm:block">{privacy.receiptTitle}</span>
+      <span class="hidden border-t-2 border-dashed border-ink-950 sm:block"></span>
+      <dl class="flex flex-col gap-2 sm:gap-2.5">
+        {
+          privacy.receipt.map((line) => (
+            <div class="flex justify-between gap-2 font-pixel text-xs tracking-pixel">
+              <dt>{line.key}</dt>
+              <dd class="font-bold">{line.value}</dd>
+            </div>
+          ))
+        }
+      </dl>
+      <span class="hidden border-t-2 border-dashed border-ink-950 sm:block"></span>
+      <span class="bg-ink-950 p-1.5 text-center font-pixel text-xs font-bold tracking-pixel text-cream sm:text-label">
+        {privacy.wiped}
+      </span>
+    </div>
+  </div>
+
+  <div
+    class="flex flex-col gap-4.5 rounded-card border-3 border-ink-950 bg-ink-950 p-6 text-cream shadow-brutal-violet sm:rounded-tile sm:p-12 sm:shadow-brutal-violet-2xl xl:col-span-5 xl:-rotate-1"
+  >
+    <h2 class="font-display text-display-sm font-extrabold tracking-display-tightest text-balance">{scale.title}</h2>
+    <p class="text-body/normal text-ink-200 sm:text-lg/normal">{scale.text}</p>
+    <div aria-hidden="true" class="flex grow items-end gap-4.5 pt-3">
+      {
+        scale.bars.map((bar) => (
+          <div class="flex flex-1 flex-col items-center gap-2.5">
+            <div class:list={["w-full rounded-control border-3 border-cream", bar.height, SHAPE_BG[bar.color]]} />
+            <span class="font-display text-title font-extrabold">{bar.label}</span>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
