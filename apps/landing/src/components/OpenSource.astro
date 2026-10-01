@@ -1,0 +1,60 @@
+---
+import { cta, openSource, REPO_URL, SELF_HOSTING_URL } from "../content";
+import Button from "./Button.astro";
+import Chip from "./Chip.astro";
+import Sticker from "./Sticker.astro";
+---
+
+<section
+  id="oss"
+  aria-labelledby="oss-title"
+  class="page-x flex flex-col gap-10 pb-14 xl:flex-row xl:items-center xl:gap-16 lg:pb-32"
+>
+  <div class="flex flex-col gap-4 sm:gap-5.5 xl:basis-[560px] xl:shrink-0">
+    <Sticker class="-rotate-2 self-start bg-answer-triangle">{openSource.badge}</Sticker>
+    <h2
+      id="oss-title"
+      class="font-display text-display font-extrabold tracking-display-tightest text-balance"
+    >
+      {openSource.title}
+    </h2>
+    <p class="text-body/normal text-ink-700 sm:text-xl/normal">{openSource.text}</p>
+    <ul class="flex flex-wrap gap-2">
+      {
+        openSource.stack.map((item) => (
+          <li>
+            <Chip class="bg-paper-white">{item}</Chip>
+          </li>
+        ))
+      }
+    </ul>
+    <div class="mt-2 flex flex-col gap-4 sm:flex-row sm:items-center">
+      <Button href={REPO_URL} variant="ink">{cta.viewOnGithub}</Button>
+      <a
+        href={SELF_HOSTING_URL}
+        class="focus-ring self-start rounded-sticker text-lg font-bold text-ink-950 underline decoration-2 underline-offset-4 hover:decoration-4 sm:self-auto"
+      >
+        {cta.selfHosting}
+      </a>
+    </div>
+  </div>
+  <div
+    class="min-w-0 flex-1 overflow-hidden rounded-card border-3 border-ink-950 bg-ink-950 shadow-brutal-lg sm:shadow-brutal-sun-2xl"
+  >
+    <div aria-hidden="true" class="flex h-11 items-center gap-2 border-b-3 border-ink-700 px-4.5">
+      <span class="size-3.5 rounded-full bg-brand-coral"></span>
+      <span class="size-3.5 rounded-full bg-sun"></span>
+      <span class="size-3.5 rounded-full bg-brand-lime"></span>
+    </div>
+    <pre
+      class="px-5 pt-6 pb-7 font-pixel text-xs leading-loose tracking-pixel break-all whitespace-pre-wrap text-cream sm:px-8 sm:pt-7.5 sm:pb-9 sm:text-body sm:leading-loose"><code>{
+        openSource.terminal.map((line) =>
+          line.kind === "command" ? (
+            <span class="block"><span class="text-brand-lime">$ </span>{line.text}</span>
+          ) : (
+            <span class="block text-brand-sky">{line.text}</span>
+          ),
+        )
+      }</code></pre>
+  </div>
+</section>

@@ -1,0 +1,102 @@
+---
+import { how, quiz, SHAPE_BG, type StepId } from "../content";
+import Shape from "./Shape.astro";
+
+type Props = {
+  step: StepId;
+};
+
+const { step } = Astro.props;
+
+const codeDrops = ["shadow-drop-coral", "shadow-drop-violet", "shadow-drop-lime", "shadow-drop-sky"];
+const lobbyDots = ["bg-brand-coral", "bg-answer-triangle", "bg-brand-lime", "bg-brand-sky", "bg-sun", "bg-paper-white"];
+const doodles = [
+  "M10 36 C10 20 38 20 38 36 Z M16 36 V40 M32 36 V40 M30 22 C34 14 40 16 38 22",
+  "M12 12 H36 V38 H12 Z M18 20 H30 M20 28 C20 34 28 34 28 28 Z",
+  "M8 30 C14 14 22 38 28 22 C32 12 40 24 40 30 M24 10 V16",
+];
+const podium = [
+  { place: 2, bar: "h-17.5 bg-answer-triangle" },
+  { place: 1, bar: "h-27.5 bg-sun" },
+  { place: 3, bar: "h-12.5 bg-brand-sky" },
+];
+---
+
+<div aria-hidden="true" class="m-3.5 h-40 rounded-control bg-ink-950">
+  {
+    step === "lobby" && (
+      <div class="flex h-full flex-col items-center justify-center gap-3">
+        <div class="flex gap-1.5">
+          {[...how.code].map((letter, index) => (
+            <span
+              class:list={[
+                "flex h-11 w-9 items-center justify-center rounded-key bg-cream font-display text-title-lg font-extrabold text-ink-950",
+                codeDrops[index % codeDrops.length],
+              ]}
+            >
+              {letter}
+            </span>
+          ))}
+        </div>
+        <div class="flex gap-1">
+          {lobbyDots.map((dot) => (
+            <span class:list={["size-4.5 rounded-full border-2 border-cream", dot]} />
+          ))}
+        </div>
+      </div>
+    )
+  }
+  {
+    step === "quiz" && (
+      <div class="flex h-full flex-col gap-2.5 p-3.5">
+        <span class="h-3 w-4/5 rounded-full bg-cream" />
+        <span class="h-3 w-1/2 rounded-full bg-cream" />
+        <div class="grid grow grid-cols-2 gap-1.5">
+          {quiz.answers.map((answer) => (
+            <span class:list={["flex items-center rounded-sticker pl-1.5 text-ink-950", SHAPE_BG[answer.color]]}>
+              <Shape shape={answer.shape} class="size-3.5" />
+            </span>
+          ))}
+        </div>
+      </div>
+    )
+  }
+  {
+    step === "draw" && (
+      <div class="grid h-full grid-cols-3 gap-2 p-3">
+        {doodles.map((doodle) => (
+          <span class="flex items-center justify-center rounded-key bg-cream">
+            <svg
+              viewBox="0 0 48 48"
+              aria-hidden="true"
+              class="size-11"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d={doodle} />
+            </svg>
+          </span>
+        ))}
+      </div>
+    )
+  }
+  {
+    step === "podium" && (
+      <div class="flex h-full items-end justify-center gap-2 px-5.5 pt-4">
+        {podium.map((spot) => (
+          <span
+            class:list={[
+              "flex w-13 justify-center rounded-t-key pt-1.5 font-display text-xl font-extrabold text-ink-950",
+              spot.bar,
+            ]}
+          >
+            {spot.place}
+          </span>
+        ))}
+      </div>
+    )
+  }
+</div>

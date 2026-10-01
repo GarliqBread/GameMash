@@ -1,0 +1,11 @@
+---
+type Props = {
+  class?: string;
+};
+
+const { class: className } = Astro.props;
+---
+
+<svg viewBox="0 0 24 24" class:list={["size-4.5 shrink-0", className]} aria-hidden="true" focusable="false">
+  <path d="M7 4 L19 12 L7 20 Z" fill="currentColor"></path>
+</svg>

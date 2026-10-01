@@ -1,0 +1,28 @@
+---
+import { band, SHAPE_TEXT } from "../content";
+import Shape from "./Shape.astro";
+---
+
+<div class="overflow-x-clip py-3">
+  <ul
+    class="-mx-10 flex h-14.5 -rotate-[1.5deg] items-center justify-center gap-3 bg-ink-950 sm:h-19 sm:-rotate-[1.2deg] sm:gap-7"
+  >
+    {
+      band.map((item, index) => (
+        <li class:list={["flex items-center gap-3 sm:gap-7", index >= 3 && "max-lg:hidden"]}>
+          <span class="font-pixel text-label font-bold tracking-pixel whitespace-nowrap text-cream sm:text-xl">
+            {item.short ? (
+              <>
+                <span class="sm:hidden">{item.short}</span>
+                <span class="max-sm:hidden">{item.text}</span>
+              </>
+            ) : (
+              item.text
+            )}
+          </span>
+          <Shape shape={item.shape} class:list={["size-4 sm:size-5.5", SHAPE_TEXT[item.color]]} />
+        </li>
+      ))
+    }
+  </ul>
+</div>

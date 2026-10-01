@@ -1,0 +1,130 @@
+---
+import { cta, HOST_URL, nav, REPO_URL } from "../content";
+import Button from "./Button.astro";
+import Logo from "./Logo.astro";
+import PlayIcon from "./PlayIcon.astro";
+---
+
+<header class="border-b-3 border-ink-950 bg-paper-white">
+  <div class="page-x flex h-17 items-center gap-3 lg:h-22 lg:gap-11">
+    <a href="/" class="focus-ring flex items-center gap-2.5 rounded-sticker text-ink-950 no-underline lg:gap-3">
+      <Logo class="size-8 lg:size-10" />
+      <span class="font-display text-2xl font-extrabold tracking-display-tight lg:text-3xl">GameMash</span>
+    </a>
+    <nav aria-label="Main" class="hidden xl:block">
+      <ul class="flex gap-7 text-body font-bold">
+        {
+          nav.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                class="focus-ring rounded-sticker text-ink-950 no-underline decoration-3 underline-offset-6 hover:underline"
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <div class="ml-auto flex items-center gap-4">
+      <Button href={REPO_URL} variant="white" size="sm" class="max-xl:hidden">
+        <svg
+          viewBox="0 0 24 24"
+          class="size-5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M8 7 L3 12 L8 17"></path>
+          <path d="M16 7 L21 12 L16 17"></path>
+          <path d="M14 4 L10 20"></path>
+        </svg>
+        {cta.github}
+      </Button>
+      <Button href={HOST_URL} class="max-sm:hidden">
+        <PlayIcon />
+        {cta.host}
+      </Button>
+      <button
+        type="button"
+        popovertarget="menu"
+        aria-label={cta.menuOpen}
+        class="focus-ring flex size-11.5 items-center justify-center rounded-control border-3 border-ink-950 bg-paper-white shadow-brutal-sm transition-[translate,box-shadow] duration-150 active:translate-x-0.75 active:translate-y-0.75 active:shadow-none xl:hidden"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          class="size-5.5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.6"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <path d="M4 7 H20 M4 12 H20 M4 17 H20"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <div
+    id="menu"
+    popover
+    class="inset-x-4 top-20 m-0 w-auto rounded-card border-3 border-ink-950 bg-paper-white p-5 text-ink-950 shadow-brutal-lg backdrop:bg-ink-950/40"
+  >
+    <div class="flex items-center justify-between gap-4">
+      <span class="font-pixel text-label font-bold tracking-pixel">{cta.menu}</span>
+      <button
+        type="button"
+        popovertarget="menu"
+        popovertargetaction="hide"
+        aria-label={cta.menuClose}
+        class="focus-ring flex size-10 items-center justify-center rounded-key border-3 border-ink-950 bg-paper-white"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          class="size-5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.6"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <path d="M6 6 L18 18 M18 6 L6 18"></path>
+        </svg>
+      </button>
+    </div>
+    <nav aria-label="Main" class="mt-4">
+      <ul class="flex flex-col">
+        {
+          nav.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                class="focus-ring block rounded-sticker py-2.5 font-display text-title font-extrabold tracking-display text-ink-950 no-underline"
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <div class="mt-5 flex flex-col gap-3">
+      <Button href={HOST_URL} class="w-full">
+        <PlayIcon />
+        {cta.host}
+      </Button>
+      <Button href={REPO_URL} variant="white" size="sm" class="w-full">{cta.github}</Button>
+    </div>
+  </div>
+</header>
+
+<script>
+  const menu = document.getElementById("menu");
+  menu?.addEventListener("click", (event) => {
+    if (event.target instanceof Element && event.target.closest("a")) menu.hidePopover();
+  });
+</script>

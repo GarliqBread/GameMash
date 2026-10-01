@@ -1,0 +1,22 @@
+---
+import { faq } from "../content";
+---
+
+<section aria-labelledby="faq-title" class="page-x flex flex-col gap-6 pb-14 sm:gap-8 xl:flex-row xl:gap-16 lg:pb-32">
+  <h2
+    id="faq-title"
+    class="font-display text-display font-extrabold tracking-display-tightest text-balance xl:basis-80 xl:shrink-0"
+  >
+    {faq.title}
+  </h2>
+  <dl class="grid grow gap-4 sm:gap-6 md:grid-cols-2">
+    {
+      faq.items.map((item) => (
+        <div class="flex flex-col gap-2.5 rounded-card border-3 border-ink-950 bg-paper-white px-5.5 py-5 shadow-brutal-md sm:px-7 sm:py-6.5">
+          <dt class="font-display text-title-sm font-extrabold tracking-display">{item.question}</dt>
+          <dd class="text-body/normal text-ink-700">{item.answer}</dd>
+        </div>
+      ))
+    }
+  </dl>
+</section>

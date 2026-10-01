@@ -1,0 +1,30 @@
+{
+  "name": "@gamemash/landing",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "typecheck": "astro check",
+    "test": "echo 'no landing tests'"
+  },
+  "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "catalog:",
+    "@fontsource/atkinson-hyperlegible": "catalog:",
+    "@fontsource/silkscreen": "catalog:",
+    "@gamemash/games": "workspace:*",
+    "@gamemash/shared": "workspace:*",
+    "@gamemash/ui": "workspace:*",
+    "astro": "^7.3.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@astrojs/sitemap": "^3.7.4",
+    "@tailwindcss/vite": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "^6.0.0",
+    "vite": "catalog:"
+  }
+}

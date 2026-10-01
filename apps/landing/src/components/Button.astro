@@ -1,0 +1,48 @@
+---
+import type { HTMLAttributes } from "astro/types";
+
+type Variant = "sun" | "ink" | "white";
+type Size = "sm" | "md" | "lg" | "xl";
+
+type Props = Omit<HTMLAttributes<"a">, "href"> & {
+  href: string;
+  variant?: Variant;
+  size?: Size;
+  shadow?: string;
+};
+
+const { href, variant = "sun", size = "md", shadow, class: className, ...attrs } = Astro.props;
+
+const variants: Record<Variant, string> = {
+  sun: "bg-sun text-ink-950 hover:bg-sun-hover",
+  ink: "bg-ink-950 text-cream hover:bg-ink-900",
+  white: "bg-paper-white text-ink-950 hover:bg-sand-100",
+};
+
+const defaultShadows: Record<Variant, string> = {
+  sun: "shadow-brutal-md",
+  ink: "shadow-brutal-violet",
+  white: "shadow-brutal",
+};
+
+const sizes: Record<Size, string> = {
+  sm: "h-12.5 gap-2.5 px-5 font-sans text-body font-bold",
+  md: "h-14 gap-2.5 px-6 font-display text-xl font-extrabold",
+  lg: "h-15 gap-2.5 px-6 font-display text-title-sm font-extrabold",
+  xl: "h-15 gap-3 px-7 font-display text-xl font-extrabold sm:h-16.5 sm:text-2xl",
+};
+---
+
+<a
+  href={href}
+  {...attrs}
+  class:list={[
+    "focus-ring inline-flex shrink-0 items-center justify-center rounded-control border-3 border-ink-950 whitespace-nowrap no-underline transition-[translate,box-shadow,background-color] duration-150 active:translate-x-1 active:translate-y-1 active:shadow-none",
+    variants[variant],
+    shadow ?? defaultShadows[variant],
+    sizes[size],
+    className,
+  ]}
+>
+  <slot />
+</a>

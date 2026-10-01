@@ -15,7 +15,7 @@ cp apps/api/.env.example apps/api/.env      # first time only
 pnpm dev                                    # build packages, then watch everything
 ```
 
-The web app runs on http://localhost:5173 and proxies `/api` and `/socket.io` to the API on port 3000. Stop the services with `docker compose down` (add `-v` to also wipe stored images).
+The landing page runs on http://localhost:4321 and the web app on http://localhost:5173 and proxies `/api` and `/socket.io` to the API on port 3000. Stop the services with `docker compose down` (add `-v` to also wipe stored images).
 
 | URL                      | Screen                                       |
 | ------------------------ | -------------------------------------------- |
@@ -23,6 +23,7 @@ The web app runs on http://localhost:5173 and proxies `/api` and `/socket.io` to
 | `/host/:sessionId/setup` | Workshop: name the session, build the lineup |
 | `/host/:sessionId`       | Big-screen lobby with room code and QR code  |
 | `/` and `/join/:code`    | Join from a phone (name + optional photo)    |
+| `/join?code=`            | Redirects to `/join/:code` (landing page form) |
 | `/play/:sessionId`       | Phone waiting screen                         |
 
 ### Testing on a real phone

@@ -1,0 +1,30 @@
+---
+import { footer } from "../content";
+import Logo from "./Logo.astro";
+---
+
+<footer class="bg-ink-950 text-cream">
+  <div class="page-x flex flex-col gap-4 py-7 lg:flex-row lg:items-start lg:gap-10 lg:py-10">
+    <div class="flex items-center gap-3">
+      <Logo onDark class="size-8" />
+      <span class="font-display text-title-sm font-extrabold tracking-display-tight sm:text-2xl">GameMash</span>
+    </div>
+    <p class="grow text-body text-ink-300 lg:pt-1">{footer.tagline}</p>
+    <nav aria-label="Footer" class="lg:pt-1">
+      <ul class="flex flex-wrap gap-x-5.5 gap-y-2 text-body font-bold lg:gap-7">
+        {
+          footer.links.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                class="focus-ring rounded-sticker text-cream no-underline decoration-2 underline-offset-4 hover:underline [--color-focus:var(--color-sun)]"
+              >
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </div>
+</footer>

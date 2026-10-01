@@ -1,0 +1,14 @@
+---
+import { ANSWERS, type AnswerShapeName } from "@gamemash/ui/answers";
+
+type Props = {
+  shape: AnswerShapeName;
+  class?: string;
+};
+
+const { shape, class: className } = Astro.props;
+---
+
+<svg viewBox="0 0 24 24" class:list={["shrink-0", className]} aria-hidden="true" focusable="false">
+  <path d={ANSWERS[shape].path} fill="currentColor"></path>
+</svg>

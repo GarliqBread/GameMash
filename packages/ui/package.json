@@ -11,6 +11,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./answers": {
+      "types": "./dist/lib/answers.d.ts",
+      "default": "./dist/lib/answers.js"
+    },
     "./theme.css": "./src/theme.css",
     "./fonts.css": "./src/fonts.css"
   },
@@ -26,9 +30,9 @@
     "@dnd-kit/dom": "^0.5.0",
     "@dnd-kit/helpers": "^0.5.0",
     "@dnd-kit/react": "^0.5.0",
-    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
-    "@fontsource/atkinson-hyperlegible": "^5.3.0",
-    "@fontsource/silkscreen": "^5.3.0",
+    "@fontsource-variable/bricolage-grotesque": "catalog:",
+    "@fontsource/atkinson-hyperlegible": "catalog:",
+    "@fontsource/silkscreen": "catalog:",
     "@gamemash/shared": "workspace:*",
     "@tiptap/core": "^3.31.3",
     "@tiptap/extension-bold": "^3.31.3",

@@ -1,0 +1,79 @@
+---
+import { CODE_LENGTH, CODE_PATTERN, hero, JOIN_URL } from "../content";
+
+type Props = {
+  id: string;
+  layout: "card" | "inline";
+  class?: string;
+};
+
+const { id, layout, class: className } = Astro.props;
+const isCard = layout === "card";
+const inputId = `${id}-code`;
+---
+
+<form
+  action={JOIN_URL}
+  method="get"
+  class:list={[
+    "flex flex-col gap-2.5",
+    isCard && "rounded-button border-3 border-ink-950 bg-paper-white p-4 shadow-brutal-md",
+    className,
+  ]}
+>
+  <label for={inputId} class="font-pixel text-xs font-bold tracking-pixel sm:text-label">
+    {isCard ? hero.joinLabelPhone : hero.joinLabel}
+  </label>
+  <div class="flex gap-2.5">
+    <input
+      id={inputId}
+      name="code"
+      type="text"
+      required
+      minlength={CODE_LENGTH}
+      maxlength={CODE_LENGTH}
+      pattern={CODE_PATTERN}
+      placeholder={hero.codePlaceholder}
+      title={hero.codeHint}
+      autocomplete="off"
+      autocapitalize="characters"
+      autocorrect="off"
+      spellcheck="false"
+      enterkeyhint="go"
+      class:list={[
+        "focus-ring h-14.5 w-0 min-w-0 grow rounded-control border-3 border-ink-950 px-3.5 font-display text-title-lg font-extrabold tracking-[0.22em] text-ink-950 uppercase placeholder:text-ink-400 sm:h-15 sm:text-3xl",
+        isCard ? "bg-cream" : "bg-paper-white",
+      ]}
+    />
+    {
+      isCard ? (
+        <button
+          type="submit"
+          class="focus-ring h-14.5 shrink-0 rounded-control border-3 border-ink-950 bg-sun px-4.5 font-display text-xl font-extrabold text-ink-950 shadow-brutal-sm transition-[translate,box-shadow] duration-150 active:translate-x-0.75 active:translate-y-0.75 active:shadow-none"
+        >
+          {hero.joinButton}
+        </button>
+      ) : (
+        <button
+          type="submit"
+          aria-label={hero.joinButtonLabel}
+          class="focus-ring flex size-15 shrink-0 items-center justify-center rounded-control border-3 border-ink-950 bg-ink-950 text-cream shadow-brutal-violet transition-[translate,box-shadow,background-color] hover:bg-ink-900 duration-150 active:translate-x-1 active:translate-y-1 active:shadow-none"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            class="size-6.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M4 12 H19"></path>
+            <path d="M13 6 L19 12 L13 18"></path>
+          </svg>
+        </button>
+      )
+    }
+  </div>
+</form>

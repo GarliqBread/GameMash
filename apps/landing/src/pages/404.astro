@@ -1,0 +1,25 @@
+---
+import Button from "../components/Button.astro";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import PlayIcon from "../components/PlayIcon.astro";
+import Sticker from "../components/Sticker.astro";
+import { notFound } from "../content";
+import Base from "../layouts/Base.astro";
+---
+
+<Base title={notFound.title} noindex>
+  <Header slot="header" />
+  <section class="page-x flex flex-col items-start gap-6 py-20 sm:py-32">
+    <Sticker class="-rotate-2 bg-brand-coral">404</Sticker>
+    <h1 class="max-w-[16ch] font-display text-display-lg font-extrabold tracking-display-tightest text-balance">
+      {notFound.heading}
+    </h1>
+    <p class="max-w-[520px] text-lg/normal text-ink-700">{notFound.text}</p>
+    <Button href="/" variant="ink">
+      <PlayIcon />
+      {notFound.back}
+    </Button>
+  </section>
+  <Footer slot="footer" />
+</Base>

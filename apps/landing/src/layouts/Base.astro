@@ -1,0 +1,73 @@
+---
+import { Font } from "astro:assets";
+import { cta, PLAY_URL, REPO_URL, site } from "../content";
+import "../styles/global.css";
+
+type Props = {
+  title?: string;
+  description?: string;
+  noindex?: boolean;
+};
+
+const { title = site.title, description = site.description, noindex = false } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL("/og.png", Astro.site);
+
+const structuredData = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "GameMash",
+  url: Astro.site?.href,
+  description,
+  applicationCategory: "GameApplication",
+  operatingSystem: "Any",
+  browserRequirements: "Requires a modern web browser",
+  isAccessibleForFree: true,
+  offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+  sameAs: [REPO_URL],
+  potentialAction: { "@type": "PlayAction", target: PLAY_URL },
+});
+---
+
+<!doctype html>
+<html lang="en" data-theme="workshop">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
+    <meta name="theme-color" content="#fbf6ec" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="GameMash" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="GameMash: a quiz question on the TV, answers on everyone's phone" />
+    <meta property="og:locale" content="en_GB" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <Font cssVariable="--font-bricolage" preload />
+    <Font cssVariable="--font-atkinson" preload={[{ weight: 400 }]} />
+    <Font cssVariable="--font-silkscreen" />
+    <script is:inline type="application/ld+json" set:html={structuredData} />
+  </head>
+  <body class="bg-graph-paper font-sans text-ink-950 antialiased">
+    <a
+      href="#main"
+      class="focus-ring sr-only rounded-control border-3 border-ink-950 bg-sun px-4 py-2 font-bold text-ink-950 focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50"
+    >
+      {cta.skip}
+    </a>
+    <slot name="header" />
+    <main id="main" tabindex="-1" class="overflow-x-clip outline-none">
+      <slot />
+    </main>
+    <slot name="footer" />
+  </body>
+</html>

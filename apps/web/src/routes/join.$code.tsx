@@ -1,13 +1,10 @@
-import { normalizeRoomCode, ROOM_CODE_LENGTH } from "@gamemash/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import { JoinScreen } from "../features/join/JoinScreen";
+import { toRoomCodeInput } from "../features/join/room-code";
 
 const JoinWithCodePage = () => {
   const { code } = Route.useParams();
-  const initialCode = normalizeRoomCode(code)
-    .replace(/[^A-Z]/g, "")
-    .slice(0, ROOM_CODE_LENGTH);
-  return <JoinScreen initialCode={initialCode} />;
+  return <JoinScreen initialCode={toRoomCodeInput(code)} />;
 };
 
 export const Route = createFileRoute("/join/$code")({

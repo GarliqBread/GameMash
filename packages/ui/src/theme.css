@@ -144,6 +144,19 @@
   --tracking-pixel: 0.04em; /* Silkscreen labels need a little air */
   --tracking-display: -0.02em;       /* display headings and wordmark */
   --tracking-display-tight: -0.03em; /* the largest display headings */
+  --tracking-display-tightest: -0.045em; /* landing page hero and section headings */
+
+  /* Landing page display sizes: fluid between the 390px phone and the 1440px desktop design */
+  --text-headline: clamp(1.875rem, 1.457rem + 1.71vw, 3rem);
+  --text-headline--line-height: 1;
+  --text-display-sm: clamp(2.125rem, 1.707rem + 1.71vw, 3.25rem);
+  --text-display-sm--line-height: 1;
+  --text-display: clamp(2.375rem, 1.771rem + 2.48vw, 4rem);
+  --text-display--line-height: 0.98;
+  --text-display-lg: clamp(2.625rem, 1.65rem + 4vw, 5.25rem);
+  --text-display-lg--line-height: 0.95;
+  --text-display-xl: clamp(3.125rem, 2.243rem + 3.62vw, 5.5rem);
+  --text-display-xl--line-height: 0.94;
 
   /* ── Radius (consolidated from the canvas) ───────────────────────────── */
   --radius-control: 12px; /* desktop inputs & buttons, question chips */
@@ -181,6 +194,12 @@
   --shadow-brutal-md: 5px 5px 0 #1a1726;   /* inputs, answer tiles */
   --shadow-brutal-lg: 7px 7px 0 #1a1726;   /* selected cartridge */
   --shadow-brutal-xl: 8px 8px 0 #1a1726;   /* panels, correct answer */
+  --shadow-brutal-2xl: 10px 10px 0 #1a1726; /* landing page feature cards */
+  --shadow-brutal-3xl: 12px 12px 0 #1a1726; /* landing page hero art and final call to action */
+  --shadow-brutal-violet: 5px 5px 0 #6b4fd8;      /* ink buttons */
+  --shadow-brutal-violet-2xl: 10px 10px 0 #6b4fd8; /* ink cards */
+  --shadow-brutal-sun-2xl: 10px 10px 0 #f5c542;    /* the terminal card */
+  --shadow-brutal-white: 5px 5px 0 #ffffff;        /* ink buttons on sun */
   --radius-sticker: 6px;
   --radius-key: 10px;
   --radius-bar: 3px;  /* answer bars in the phone mocks */

@@ -1,0 +1,36 @@
+@import "tailwindcss";
+@import "@gamemash/ui/theme.css";
+
+@theme inline {
+  --font-display: var(--font-bricolage);
+  --font-sans: var(--font-atkinson);
+  --font-pixel: var(--font-silkscreen);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 1.5rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+@utility page-x {
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+  padding-inline: 1rem;
+
+  @variant sm {
+    padding-inline: 2rem;
+  }
+
+  @variant xl {
+    padding-inline: 3.5rem;
+  }
+}

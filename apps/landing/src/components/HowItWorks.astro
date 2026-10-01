@@ -1,0 +1,51 @@
+---
+import { how, SHAPE_BG } from "../content";
+import StepScreen from "./StepScreen.astro";
+
+const tilts = ["lg:-rotate-1", "lg:rotate-1 lg:mt-7", "lg:-rotate-[0.5deg]", "lg:rotate-[1.2deg] lg:mt-7"];
+---
+
+<section id="how" aria-labelledby="how-title" class="page-x flex flex-col gap-8 pt-18 pb-14 sm:gap-14 lg:pt-32 lg:pb-28">
+  <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between lg:gap-16">
+    <h2
+      id="how-title"
+      class="max-w-[720px] font-display text-display font-extrabold tracking-display-tightest text-balance"
+    >
+      {how.title}
+    </h2>
+    <p class="max-w-[460px] text-body/normal text-ink-700 sm:text-xl/normal lg:mb-1.5">{how.lead}</p>
+  </div>
+  <ol class="grid gap-3.5 sm:grid-cols-2 sm:gap-9 lg:grid-cols-4">
+    {
+      how.steps.map((step, index) => (
+        <li class:list={["flex flex-col gap-4", tilts[index]]}>
+          <div class="hidden overflow-hidden rounded-card border-3 border-ink-950 bg-paper-white shadow-brutal-lg sm:block">
+            <div
+              class:list={[
+                "flex h-10 items-center border-b-3 border-ink-950 px-3.5 font-pixel text-label font-bold tracking-pixel",
+                SHAPE_BG[step.color],
+              ]}
+            >
+              {String(index + 1).padStart(2, "0")} · {step.label}
+            </div>
+            <StepScreen step={step.id} />
+          </div>
+          <div class="flex items-start gap-3.5 rounded-field border-3 border-ink-950 bg-paper-white p-3.5 shadow-brutal sm:contents">
+            <span
+              class:list={[
+                "flex size-11 shrink-0 items-center justify-center rounded-control border-3 border-ink-950 font-display text-xl font-extrabold sm:hidden",
+                SHAPE_BG[step.color],
+              ]}
+              aria-hidden="true"
+            >
+              {index + 1}
+            </span>
+            <p class="text-caption/normal text-ink-700 sm:px-1 sm:text-body/normal sm:text-ink-950">
+              <strong class="block text-body text-ink-950 sm:inline">{step.title}</strong>{" "}{step.text}
+            </p>
+          </div>
+        </li>
+      ))
+    }
+  </ol>
+</section>
