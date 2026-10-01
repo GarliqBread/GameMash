@@ -55,10 +55,7 @@ export const PhoneDraw: Story = () => {
   const labels = useToolbarLabels();
   const controller = useDrawing();
   return (
-    <div
-      data-theme="stage"
-      className="flex flex-wrap items-start gap-10 bg-bg p-8"
-    >
+    <div data-theme="stage" className="flex flex-wrap items-start gap-10 bg-bg p-8">
       <PhoneFrame>
         <PhoneShell
           theme="stage"
@@ -67,9 +64,7 @@ export const PhoneDraw: Story = () => {
             <>
               <div className="flex min-w-0 flex-col">
                 <span className="text-caption text-fg-subtle">{t("Draw")}</span>
-                <span className="truncate font-display text-3xl/tight font-extrabold">
-                  {t("Lighthouse")}
-                </span>
+                <span className="truncate font-display text-3xl/tight font-extrabold">{t("Lighthouse")}</span>
               </div>
               <TimerPill seconds={42} label={t("42 seconds left")} />
             </>
@@ -93,27 +88,12 @@ export const PhoneDraw: Story = () => {
       </PhoneFrame>
       <div className="flex flex-col gap-4">
         <Caption>Vector round trip into DrawingFrame</Caption>
-        <DrawingFrame
-          drawing={controller.drawing}
-          label="Drawing preview"
-          size={420}
-        />
+        <DrawingFrame drawing={controller.drawing} label="Drawing preview" size={420} />
         <div className="flex gap-4">
-          <DrawingFrame
-            drawing={controller.drawing}
-            label="Drawing preview"
-            size={128}
-          />
-          <DrawingFrame
-            drawing={controller.drawing}
-            label="Drawing preview"
-            size={64}
-          />
+          <DrawingFrame drawing={controller.drawing} label="Drawing preview" size={128} />
+          <DrawingFrame drawing={controller.drawing} label="Drawing preview" size={64} />
         </div>
-        <span
-          data-testid="stroke-count"
-          className="text-caption text-fg-subtle"
-        >
+        <span data-testid="stroke-count" className="text-caption text-fg-subtle">
           {controller.drawing.strokes.length} strokes
         </span>
       </div>

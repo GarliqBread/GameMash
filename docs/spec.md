@@ -1,11 +1,13 @@
 # GameMash
 
-A web app where companies host fun team game sessions. Will be open sourced later.
+A web app where companies host fun team game sessions. Open source under the AGPL-3.0; the hosted version runs at [gamemash.io](https://gamemash.io).
+
+This file records what has been decided, what is done and what is still open. It is the reference for contributors and coding agents.
 
 ## How we work
-- Build step by step together. Propose a plan before writing code, and keep changes small and reviewable.
-- Don't fill gaps with assumptions. If a spec is missing, ask me.
-- Items under "Open questions" are NOT decided. Don't implement them without discussing first.
+- Build step by step. Propose a plan before writing code, and keep changes small and reviewable.
+- Don't fill gaps with assumptions. If the spec doesn't cover something, ask in an issue or pull request.
+- Items under "Open questions" are NOT decided. Discuss them before implementing anything.
 
 ## Decided
 - **Jackbox model:** one shared big screen (meeting-room TV or screen share); players use their phones as controllers.
@@ -42,11 +44,11 @@ A web app where companies host fun team game sessions. Will be open sourced late
 - **After the final scores:** the big screen shows three host actions under the podium. "Play again" (only once the last game is over) sends everyone back to the lobby with the same players and lineup; scores start from 0 on the next Start, and the host can edit games, remove players or let new ones join first. Back in the lobby players can change their avatar again. Answers and drawings from the finished run are deleted; phase ids keep counting up across runs, so a late answer or drawing from the old run is refused. "Export games" downloads the lineup as a `.gamemash` file (same as the workshop). "End session" asks for confirmation, then deletes the session straight away (players, scores, images and room code, so the code stops working) and every screen shows that the session ended. Phones have no actions here. Start, Play again and End session are host-only and share one rate limit per connection.
 - **Adding a game:** "Insert game" in the workshop opens a picker with every game type.
 - **Deferred for now:** "Preview on big screen" in the workshop.
-- **Landing page:** a static marketing page at `gamemash.io` (`apps/landing`, Astro) for search and fast loading; the app moves to `play.gamemash.io`. Built from the Claude Design landing files (desktop 1440 px, phone 390 px), English only for now, no client JavaScript except closing the phone menu after a link is tapped. It uses the `@gamemash/ui` tokens, self-hosted fonts and limits from `@gamemash/shared` (max players, idle expiry, room code alphabet), so its copy stays true to the product. The join box is a plain `GET` form to `play.gamemash.io/join?code=`, which the web app redirects to `/join/$code`. "Host a session" links to `play.gamemash.io/host`.
+- **Landing page:** a static marketing page at `gamemash.io` (`apps/landing`, Astro) for search and fast loading; the app moves to `play.gamemash.io`. Designed at desktop 1440 px and phone 390 px, English only for now, no client JavaScript except closing the phone menu after a link is tapped. It uses the `@gamemash/ui` tokens, self-hosted fonts and limits from `@gamemash/shared` (max players, idle expiry, room code alphabet), so its copy stays true to the product. The join box is a plain `GET` form to `play.gamemash.io/join?code=`, which the web app redirects to `/join/$code`. "Host a session" links to `play.gamemash.io/host`.
 
 ## Stack
 - **API:** Fastify + Redis; question images on disk
-- **Hosting:** one OVHcloud VPS-2 (EU) running Redis, the API and Caddy with Docker Compose. Fixed monthly price, unlimited traffic, so abuse can't run up a bill.
+- **Hosting:** one OVHcloud VPS-2 (EU) running Redis, the API and Caddy with Docker Compose. Fixed monthly price, unlimited traffic, so abuse can't run up a bill. Domains are registered at Namecheap. Images are built in GitHub Actions and pulled from ghcr.io, so the VPS never builds.
 - **Realtime:** Socket.io (Colyseus considered and not chosen: the games are phase-based, not tick-based, and per-player hidden state is simpler with plain emits. Revisit if we add real-time action games.)
 - **Landing page:** Astro, static output, Tailwind v4, Astro fonts and CSP
 - **Web:** React
@@ -72,11 +74,12 @@ A web app where companies host fun team game sessions. Will be open sourced late
 - **Draw it done:** setup per game type with a game picker, the Draw it workshop editor (words, time to draw), rules (draw → rate → results), drawing upload, and the big-screen and phone screens. Phones save the drawing while drawing and get it back after a reload.
 - **Export/import done:** `.gamemash` files from the workshop header.
 - **Final scores done:** Play again, Export games and End session on the big-screen podium.
-- **Landing page done:** `apps/landing` builds and passes checks; deploying it on `gamemash.io` (Caddy site, Docker stage) and moving the app to `play.gamemash.io` is still to do.
+- **Landing page done:** `apps/landing`, served by the same Caddy as the app (`gamemash.io` for the landing page, `play.gamemash.io` for the app, other domains redirect).
+- **Deploys:** every push to `main` that passes CI builds the images, pushes them to ghcr.io and deploys them to the VPS over SSH (see `docs/deploying.md`). The VPS itself still has to be set up.
 - **Next:** to be decided (see open questions).
 
 ## Open questions
-- Landing page: which licence goes on the "licensed" badge (it reads `[LICENSE]` until the repo is public), and does the site need an imprint page?
+- Does the landing page need an imprint page?
 - Is the Croodles credit in the avatar editor footer enough, or should it also go on an about page?
 - Scoring across games: raw points, or normalized so each game counts equally?
 - How long final scores stay visible after the last game when the host does nothing (today: until the session expires)

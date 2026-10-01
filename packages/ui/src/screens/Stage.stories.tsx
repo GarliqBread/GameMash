@@ -48,8 +48,7 @@ import { ResultBars } from "../quiz/ResultBars";
 
 export default { title: "Screens / Big screen" } satisfies StoryDefault;
 
-const formatScore = (value: number) =>
-  new Intl.NumberFormat("en").format(value);
+const formatScore = (value: number) => new Intl.NumberFormat("en").format(value);
 const formatAverage = (value: number) =>
   new Intl.NumberFormat("en", {
     minimumFractionDigits: 1,
@@ -66,31 +65,17 @@ export const Lobby: Story = () => {
         header={
           <>
             <Logo size="lg" />
-            <span className="truncate font-display text-stage-lg font-semibold text-fg-subtle">
-              Friday team mash
-            </span>
-            <TrustNote size="stage">
-              {t("Nothing is saved after the game")}
-            </TrustNote>
+            <span className="truncate font-display text-stage-lg font-semibold text-fg-subtle">Friday team mash</span>
+            <TrustNote size="stage">{t("Nothing is saved after the game")}</TrustNote>
           </>
         }
         footer={
           <>
             <div className="flex min-w-0 items-center gap-5">
-              <span className="shrink-0 text-stage-body text-fg-subtle">
-                {t("Today's games")}
-              </span>
+              <span className="shrink-0 text-stage-body text-fg-subtle">{t("Today's games")}</span>
               <ul className="flex min-w-0 gap-5">
-                <GameChip
-                  position={1}
-                  title={t("Pop quiz")}
-                  meta={t("10 questions")}
-                />
-                <GameChip
-                  position={2}
-                  title={t("Draw it")}
-                  meta={t("5 rounds")}
-                />
+                <GameChip position={1} title={t("Pop quiz")} meta={t("10 questions")} />
+                <GameChip position={2} title={t("Draw it")} meta={t("5 rounds")} />
               </ul>
             </div>
             <div className="flex min-w-0 items-center gap-6">
@@ -106,30 +91,19 @@ export const Lobby: Story = () => {
           <JoinSteps
             steps={[
               <>
-                {t("Go to")}{" "}
-                <strong className="text-stage-xl text-fg">{JOIN_URL}</strong>
+                {t("Go to")} <strong className="text-stage-xl text-fg">{JOIN_URL}</strong>
               </>,
               t("Enter the room code"),
             ]}
             qr={
-              <QrCode
-                value={`https://${JOIN_URL}/join/${ROOM_CODE}`}
-                label={t(`QR code to join room ${ROOM_CODE}`)}
-              />
+              <QrCode value={`https://${JOIN_URL}/join/${ROOM_CODE}`} label={t(`QR code to join room ${ROOM_CODE}`)} />
             }
             qrCaption={t("Or scan with your phone camera")}
           >
-            <RoomCodeDisplay
-              code={ROOM_CODE}
-              label={t(`Room code ${spellOut(ROOM_CODE)}`)}
-            />
+            <RoomCodeDisplay code={ROOM_CODE} label={t(`Room code ${spellOut(ROOM_CODE)}`)} />
           </JoinSteps>
         </section>
-        <StagePanel
-          title={t("Players")}
-          aside={<Pill variant="accent">{t("9 joined")}</Pill>}
-          className="flex-1"
-        >
+        <StagePanel title={t("Players")} aside={<Pill variant="accent">{t("9 joined")}</Pill>} className="flex-1">
           <PlayerGrid columns={3}>
             {PLAYER_NAMES.map((name) => (
               <PlayerChip key={name} state="joined" name={name} />
@@ -146,13 +120,7 @@ export const Lobby: Story = () => {
 
 const QuizHeader = ({ right }: { right: React.ReactNode }) => {
   const t = useCopy();
-  return (
-    <StageHeader
-      game={t("Pop quiz")}
-      progress={t("Question 4 of 10")}
-      right={right}
-    />
-  );
+  return <StageHeader game={t("Pop quiz")} progress={t("Question 4 of 10")} right={right} />;
 };
 
 export const QuizQuestion: Story = () => {
@@ -166,12 +134,7 @@ export const QuizQuestion: Story = () => {
             right={
               <>
                 <CountStat value={7} total={9} caption={t("answered")} />
-                <TimerRing
-                  seconds={14}
-                  total={20}
-                  label={t("14 seconds left")}
-                  warningLabel={t("5 seconds left")}
-                />
+                <TimerRing seconds={14} total={20} label={t("14 seconds left")} warningLabel={t("5 seconds left")} />
               </>
             }
           />
@@ -205,22 +168,14 @@ export const QuizQuestionWithImages: Story = () => {
             right={
               <>
                 <CountStat value={7} total={9} caption={t("answered")} />
-                <TimerRing
-                  seconds={14}
-                  total={20}
-                  label={t("14 seconds left")}
-                  warningLabel={t("5 seconds left")}
-                />
+                <TimerRing seconds={14} total={20} label={t("14 seconds left")} warningLabel={t("5 seconds left")} />
               </>
             }
           />
         }
       >
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-8">
-          <Heading
-            size="stage-sub"
-            className="max-w-[1500px] text-center font-medium"
-          >
+          <Heading size="stage-sub" className="max-w-[1500px] text-center font-medium">
             <RichText
               runs={[
                 { text: t("Which of these planets has the ") },
@@ -253,24 +208,15 @@ export const QuizReveal: Story = () => {
       <StageLayout
         mainClassName="flex-row gap-14"
         header={
-          <QuizHeader
-            right={
-              <span className="text-stage-body text-fg-subtle">
-                {t("5 of 9 got it right")}
-              </span>
-            }
-          />
+          <QuizHeader right={<span className="text-stage-body text-fg-subtle">{t("5 of 9 got it right")}</span>} />
         }
         footer={
           <>
             <StageNote icon={<BoltIcon size={34} />}>
-              {t("Fastest right answer:")}{" "}
-              <strong className="text-fg">Priya</strong>, 2.1 s
+              {t("Fastest right answer:")} <strong className="text-fg">Priya</strong>, 2.1 s
             </StageNote>
             <div className="flex shrink-0 items-center gap-6">
-              <span className="text-stage-caption text-fg-subtle">
-                {t("Next question in 8 s")}
-              </span>
+              <span className="text-stage-caption text-fg-subtle">{t("Next question in 8 s")}</span>
               <Button variant="secondary" size="stage-sm">
                 {t("Next now")}
               </Button>
@@ -279,14 +225,8 @@ export const QuizReveal: Story = () => {
         }
       >
         <section className="flex min-w-0 flex-1 flex-col gap-7">
-          <p className="text-stage-lg text-fg-muted">
-            {t("Which planet has the most known moons?")}
-          </p>
-          <CorrectAnswerBanner
-            shape="triangle"
-            label={t("Saturn")}
-            caption={t("Correct answer")}
-          />
+          <p className="text-stage-lg text-fg-muted">{t("Which planet has the most known moons?")}</p>
+          <CorrectAnswerBanner shape="triangle" label={t("Saturn")} caption={t("Correct answer")} />
           <ResultBars
             className="mt-2"
             total={9}
@@ -329,20 +269,13 @@ export const FinalPodium: Story = () => {
         header={
           <>
             <Logo size="lg" />
-            <span className="text-stage-body text-fg-subtle">
-              {t("Pop quiz + Draw it - 9 players")}
-            </span>
+            <span className="text-stage-body text-fg-subtle">{t("Pop quiz + Draw it - 9 players")}</span>
           </>
         }
         footer={
           <>
-            <StageNote
-              icon={<ShieldCheckIcon size={30} />}
-              className="text-stage-caption"
-            >
-              {t(
-                "When the host ends the session, all names, photos and answers are deleted.",
-              )}
+            <StageNote icon={<ShieldCheckIcon size={30} />} className="text-stage-caption">
+              {t("When the host ends the session, all names, photos and answers are deleted.")}
             </StageNote>
             <div className="flex shrink-0 gap-4">
               <Button variant="secondary" size="stage-sm">
@@ -364,23 +297,13 @@ export const FinalPodium: Story = () => {
           rankLabel={(rank) => t(`Place ${rank}`)}
           aria-label={t("Top three")}
         />
-        <RankChipList
-          players={FINAL_SCORES.slice(3)}
-          formatNumber={formatScore}
-          aria-label={t("Other players")}
-        />
+        <RankChipList players={FINAL_SCORES.slice(3)} formatNumber={formatScore} aria-label={t("Other players")} />
       </StageLayout>
     </StageViewport>
   );
 };
 
-const DrawHeader = ({
-  progress,
-  right,
-}: {
-  progress: string;
-  right: React.ReactNode;
-}) => {
+const DrawHeader = ({ progress, right }: { progress: string; right: React.ReactNode }) => {
   const t = useCopy();
   return <StageHeader game={t("Draw it")} progress={progress} right={right} />;
 };
@@ -395,46 +318,30 @@ export const DrawPrompt: Story = () => {
           <DrawHeader
             progress={t("Round 2 of 5")}
             right={
-              <TimerRing
-                seconds={42}
-                total={60}
-                label={t("42 seconds left")}
-                warningLabel={t("5 seconds left")}
-              />
+              <TimerRing seconds={42} total={60} label={t("42 seconds left")} warningLabel={t("5 seconds left")} />
             }
           />
         }
         footer={
           <div className="flex w-full flex-col gap-[18px]">
-            <CountStat
-              layout="inline"
-              size="md"
-              value={t("6 of 9")}
-              caption={t("finished drawing")}
-            />
+            <CountStat layout="inline" size="md" value={t("6 of 9")} caption={t("finished drawing")} />
             <PlayerGrid columns={9} className="gap-x-3.5">
               {PLAYER_NAMES.map((name) => (
                 <PlayerChip
                   key={name}
                   state={FINISHED_DRAWING.has(name) ? "done" : "drawing"}
                   name={name}
-                  statusLabel={
-                    FINISHED_DRAWING.has(name) ? t("Done") : t("Still drawing")
-                  }
+                  statusLabel={FINISHED_DRAWING.has(name) ? t("Done") : t("Still drawing")}
                 />
               ))}
             </PlayerGrid>
           </div>
         }
       >
-        <span className="text-stage-xl text-fg-muted">
-          {t("Everyone draw")}
-        </span>
+        <span className="text-stage-xl text-fg-muted">{t("Everyone draw")}</span>
         <WordCard as="h1">{t("Lighthouse")}</WordCard>
         <span className="mt-3 text-stage-body text-fg-subtle">
-          {t(
-            "Draw on your phone. Nobody sees whose drawing is whose until the votes are in.",
-          )}
+          {t("Draw on your phone. Nobody sees whose drawing is whose until the votes are in.")}
         </span>
       </StageLayout>
     </StageViewport>
@@ -453,9 +360,7 @@ export const DrawVote: Story = () => {
             progress={t("Voting - “Lighthouse”")}
             right={
               <>
-                <span className="text-stage-body font-bold">
-                  {t("Drawing 3 of 9")}
-                </span>
+                <span className="text-stage-body font-bold">{t("Drawing 3 of 9")}</span>
                 <ProgressDots total={9} current={3} />
               </>
             }
@@ -471,17 +376,11 @@ export const DrawVote: Story = () => {
         <section className="flex min-w-0 flex-1 flex-col justify-center gap-10">
           <div className="flex flex-col">
             <span className="text-stage-lg text-fg-subtle">{t("Drawing")}</span>
-            <span className="font-display text-stage-word/[0.9] font-extrabold tracking-[-0.04em]">
-              #3
-            </span>
+            <span className="font-display text-stage-word/[0.9] font-extrabold tracking-[-0.04em]">#3</span>
           </div>
-          <Heading size="stage-sub">
-            {t("Rate it on your phone, 1 to 10")}
-          </Heading>
+          <Heading size="stage-sub">{t("Rate it on your phone, 1 to 10")}</Heading>
           <RatingScalePreview />
-          <StageNote icon={<EyeOffIcon size={34} />}>
-            {t("Names stay hidden until every drawing is rated")}
-          </StageNote>
+          <StageNote icon={<EyeOffIcon size={34} />}>{t("Names stay hidden until every drawing is rated")}</StageNote>
           <div className="mt-3 flex items-center gap-7">
             <TimerRing
               size={112}
@@ -514,11 +413,7 @@ export const DrawResults: Story = () => {
         header={
           <DrawHeader
             progress={t("Round 2 results")}
-            right={
-              <span className="text-stage-body text-fg-subtle">
-                {t("9 drawings - 72 ratings")}
-              </span>
-            }
+            right={<span className="text-stage-body text-fg-subtle">{t("9 drawings - 72 ratings")}</span>}
           />
         }
         footer={
@@ -527,9 +422,7 @@ export const DrawResults: Story = () => {
               {t("Points = average rating × 100, added to your session total")}
             </span>
             <div className="flex shrink-0 items-center gap-6">
-              <span className="text-stage-caption text-fg-subtle">
-                {t("Next round in 8 s")}
-              </span>
+              <span className="text-stage-caption text-fg-subtle">{t("Next round in 8 s")}</span>
               <Button variant="secondary" size="stage-sm">
                 {t("Next now")}
               </Button>
