@@ -7,11 +7,11 @@ export type AvatarSize = 36 | 60 | 80 | 112 | 140;
 export type AvatarRing = "gold" | "silver" | "bronze";
 
 const SIZE_CLASSES: Record<AvatarSize, string> = {
-  36: "size-9 text-base/[1]",
-  60: "size-[60px] text-3xl/[1]",
-  80: "size-20 text-4xl/[1]",
-  112: "size-28 text-5xl/[1]",
-  140: "size-[140px] text-6xl/[1]",
+  36: "size-9 text-control/[1]",
+  60: "size-[60px] text-heading/[1]",
+  80: "size-20 text-heading-lg/[1]",
+  112: "size-28 text-monogram",
+  140: "size-[140px] text-monogram-lg",
 };
 
 const RING_CLASSES: Record<AvatarRing, string> = {

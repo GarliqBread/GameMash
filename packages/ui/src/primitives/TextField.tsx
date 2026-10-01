@@ -13,8 +13,8 @@ const textFieldControlVariants = cva(
   {
     variants: {
       size: {
-        phone: "h-[60px] rounded-field px-4 text-xl",
-        host: "h-12 rounded-control px-3.5 text-lg",
+        phone: "h-[60px] rounded-field px-4 text-lead",
+        host: "h-12 rounded-control px-3.5 text-control-lg",
       },
     },
     defaultVariants: {

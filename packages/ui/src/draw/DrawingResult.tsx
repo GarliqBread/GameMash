@@ -19,6 +19,7 @@ export type DrawingResultCardProps = Omit<ComponentProps<"li">, "children"> & {
   average: ReactNode;
   outOf: ReactNode;
   points: ReactNode;
+  isUnrated?: boolean | undefined;
 };
 
 export const DrawingResultCard = ({
@@ -29,6 +30,7 @@ export const DrawingResultCard = ({
   average,
   outOf,
   points,
+  isUnrated = false,
   className,
   ...props
 }: DrawingResultCardProps) => (
@@ -51,10 +53,14 @@ export const DrawingResultCard = ({
         {rank}
       </span>
       <span className="truncate text-stage-lg/tight font-bold">{name}</span>
-      <span className="flex items-baseline gap-1.5">
-        <span className="font-display text-stage-2xl/[1] font-extrabold tabular-nums">{average}</span>
-        <span className="text-stage-caption text-fg-subtle">{outOf}</span>
-      </span>
+      {isUnrated ? (
+        <span className="text-stage-body/tight font-bold text-balance text-fg-subtle">{average}</span>
+      ) : (
+        <span className="flex items-baseline gap-1.5">
+          <span className="font-display text-stage-2xl/[1] font-extrabold tabular-nums">{average}</span>
+          <span className="text-stage-caption text-fg-subtle">{outOf}</span>
+        </span>
+      )}
       <span className="self-start rounded-full bg-sun px-4 py-1.5 font-display text-stage-caption font-extrabold text-ink-950">
         {points}
       </span>
@@ -68,6 +74,7 @@ export type DrawingResultChipProps = Omit<ComponentProps<"li">, "children"> & {
   drawing: Drawing;
   drawingLabel: string;
   average: ReactNode;
+  isUnrated?: boolean | undefined;
 };
 
 export const DrawingResultChip = ({
@@ -76,6 +83,7 @@ export const DrawingResultChip = ({
   drawing,
   drawingLabel,
   average,
+  isUnrated = false,
   className,
   ...props
 }: DrawingResultChipProps) => (
@@ -87,7 +95,11 @@ export const DrawingResultChip = ({
     <div className="flex min-w-0 flex-col gap-1">
       <span className="text-stage-caption text-fg-subtle">{rank}</span>
       <span className="truncate text-stage-caption font-bold">{name}</span>
-      <span className="font-display text-stage-body font-extrabold tabular-nums">{average}</span>
+      {isUnrated ? (
+        <span className="text-stage-caption/tight font-bold text-balance text-fg-subtle">{average}</span>
+      ) : (
+        <span className="font-display text-stage-body font-extrabold tabular-nums">{average}</span>
+      )}
     </div>
   </li>
 );

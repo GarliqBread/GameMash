@@ -1,5 +1,5 @@
 import { useCopy } from "../../.ladle/pseudo";
-import { BothThemes, Row } from "../../.ladle/story-kit";
+import { Row, ThemeMatrix } from "../../.ladle/story-kit";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { Pill } from "./Pill";
 
@@ -8,7 +8,7 @@ export default { title: "Primitives / Pill" } satisfies StoryDefault;
 export const Variants: Story = () => {
   const t = useCopy();
   return (
-    <BothThemes>
+    <ThemeMatrix>
       {() => (
         <>
           <Row label="stage">
@@ -27,6 +27,6 @@ export const Variants: Story = () => {
           </Row>
         </>
       )}
-    </BothThemes>
+    </ThemeMatrix>
   );
 };

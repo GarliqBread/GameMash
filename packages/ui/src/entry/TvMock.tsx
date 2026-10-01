@@ -1,15 +1,8 @@
 import type { ComponentProps } from "react";
-import { ANSWER_SHAPES, type AnswerShapeName } from "../lib/answers.js";
+import { ANSWER_SHAPES, ANSWERS } from "../lib/answers.js";
 import { cn } from "../lib/cn.js";
 
-const DROPS = ["shadow-drop-coral", "shadow-drop-violet", "shadow-drop-lime", "shadow-drop-sky"];
-
-const BARS: Record<AnswerShapeName, string> = {
-  squircle: "bg-answer-squircle",
-  triangle: "bg-answer-triangle",
-  plus: "bg-answer-plus ring-[1.5px] ring-ink-950 ring-inset",
-  dome: "bg-answer-dome",
-};
+const DROPS = ANSWER_SHAPES.map((shape) => ANSWERS[shape].drop);
 
 const PhoneMock = ({ className }: { className: string }) => (
   <span
@@ -19,7 +12,14 @@ const PhoneMock = ({ className }: { className: string }) => (
     )}
   >
     {ANSWER_SHAPES.map((shape) => (
-      <span key={shape} className={cn("flex-1 rounded-bar", BARS[shape])} />
+      <span
+        key={shape}
+        className={cn(
+          "flex-1 rounded-bar",
+          ANSWERS[shape].bg,
+          shape === "plus" && "ring-[1.5px] ring-ink-950 ring-inset",
+        )}
+      />
     ))}
   </span>
 );
@@ -39,7 +39,7 @@ export const TvMock = ({ title, code, className, ...props }: TvMockProps) => (
     {...props}
   >
     <span className="absolute top-4 left-1/2 flex h-[112px] w-[188px] -translate-x-1/2 flex-col items-center justify-center gap-2 rounded-control border-3 border-ink-950 bg-ink-950">
-      <span className="font-display text-xs font-extrabold text-cream">{title}</span>
+      <span className="font-display text-label-sm font-extrabold text-cream">{title}</span>
       <span className="flex gap-[5px]">
         {[...code]
           .map((letter, position) => ({ letter, position }))
@@ -47,7 +47,7 @@ export const TvMock = ({ title, code, className, ...props }: TvMockProps) => (
             <span
               key={tile.position}
               className={cn(
-                "flex h-8 w-[26px] items-center justify-center rounded-sticker bg-cream font-display text-xl font-extrabold text-ink-950",
+                "flex h-8 w-[26px] items-center justify-center rounded-sticker bg-cream font-display text-lead font-extrabold text-ink-950",
                 DROPS[tile.position % DROPS.length],
               )}
             >

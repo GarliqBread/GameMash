@@ -16,6 +16,7 @@ import type { ReactNode } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import type { LobbyStatus } from "../../lib/lobby";
 import { avatarSrc } from "../../lib/players";
+import { useHostCredentials } from "../host/host-credentials";
 import { ReconnectingNote } from "../session/ReconnectingNote";
 import { QuizStageHeader } from "./QuizStageHeader";
 import { useAnswerOptions } from "./useAnswerOptions";
@@ -53,14 +54,14 @@ const toEntries = (sessionId: string, board: QuizLeaderboard, players: Map<strin
   });
 
 export type StageQuizRevealProps = {
-  sessionId: string;
   view: RevealView;
   players: Map<string, LobbyPlayer>;
   status: LobbyStatus;
   next: ReactNode;
 };
 
-export const StageQuizReveal = ({ sessionId, view, players, status, next }: StageQuizRevealProps) => {
+export const StageQuizReveal = ({ view, players, status, next }: StageQuizRevealProps) => {
+  const { sessionId } = useHostCredentials();
   const intl = useIntl();
   const toOptions = useAnswerOptions();
   const options = toOptions(view.answers);

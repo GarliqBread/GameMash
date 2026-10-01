@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useCopy } from "../../.ladle/pseudo";
-import { BothThemes, Frame, WITH_WORKSHOP } from "../../.ladle/story-kit";
+import { Frame, ThemeMatrix } from "../../.ladle/story-kit";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { SegmentedControl } from "./SegmentedControl";
 
@@ -55,7 +55,7 @@ const BrushControl = () => {
 };
 
 export const Examples: Story = () => (
-  <BothThemes themes={WITH_WORKSHOP}>
+  <ThemeMatrix>
     {() => (
       <>
         <Frame width={292}>
@@ -67,5 +67,5 @@ export const Examples: Story = () => (
         <BrushControl />
       </>
     )}
-  </BothThemes>
+  </ThemeMatrix>
 );

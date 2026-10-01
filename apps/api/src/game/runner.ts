@@ -32,6 +32,10 @@ export type GameRunnerDeps = {
 
 export type UploadResult = "accepted" | "closed" | "invalid";
 
+export type UploadRead = { access: "denied" } | { access: "allowed"; payload: string | null };
+
+const DENIED: UploadRead = { access: "denied" };
+
 export type GameSnapshots = {
   host: GameSnapshot;
   players: Map<string, GameSnapshot>;
@@ -345,10 +349,10 @@ export const createGameRunner = ({
       return result === "accepted" ? "accepted" : "closed";
     });
 
-  const readUpload = async (sessionId: string, viewer: UploadViewer, id: string) => {
+  const readUpload = async (sessionId: string, viewer: UploadViewer, id: string): Promise<UploadRead> => {
     const current = await loadPlaying(sessionId);
     const active = current && activeGame(current.loaded.setup, current.game.state);
-    if (!active) return null;
+    if (!active) return DENIED;
     const owner = active.rules.uploadOwner?.({
       config: active.config,
       state: active.state.game,
@@ -356,7 +360,7 @@ export const createGameRunner = ({
       viewer,
       id,
     });
-    return owner ? store.getUpload(sessionId, owner) : null;
+    return owner ? { access: "allowed", payload: await store.getUpload(sessionId, owner) } : DENIED;
   };
 
   const settle = (sessionId: string, connected: Set<string>) =>

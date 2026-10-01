@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useCopy } from "../../.ladle/pseudo";
-import { BothThemes, Caption, Row, StageFrame } from "../../.ladle/story-kit";
+import { Caption, Row, StageFrame, ThemeMatrix } from "../../.ladle/story-kit";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { TimerPill } from "./TimerPill";
 import { TimerRing } from "./TimerRing";
@@ -45,7 +45,7 @@ export const Rings: Story = () => {
 export const Pills: Story = () => {
   const t = useCopy();
   return (
-    <BothThemes>
+    <ThemeMatrix>
       {() => (
         <Row label="active / idle">
           <TimerPill seconds={42} label={t("42 seconds left")} />
@@ -53,6 +53,6 @@ export const Pills: Story = () => {
           <TimerPill seconds={9} tone="idle" label={t("9 seconds left")} />
         </Row>
       )}
-    </BothThemes>
+    </ThemeMatrix>
   );
 };

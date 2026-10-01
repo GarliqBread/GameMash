@@ -64,7 +64,7 @@ export const PhoneDraw: Story = () => {
             <>
               <div className="flex min-w-0 flex-col">
                 <span className="text-caption text-fg-subtle">{t("Draw")}</span>
-                <span className="truncate font-display text-3xl/tight font-extrabold">{t("Lighthouse")}</span>
+                <span className="truncate font-display text-heading/tight font-extrabold">{t("Lighthouse")}</span>
               </div>
               <TimerPill seconds={42} label={t("42 seconds left")} />
             </>
@@ -158,6 +158,45 @@ export const Results: Story = () => {
           drawing={HOUSE}
           drawingLabel="Tekening van Anne-Sophie"
           average="7,1"
+        />
+      </ol>
+    </StageFrame>
+  );
+};
+
+export const Unrated: Story = () => {
+  const t = useCopy();
+  return (
+    <StageFrame>
+      <ol className="grid grid-cols-3 gap-8">
+        <DrawingResultCard
+          rank={1}
+          name="Anouk"
+          drawing={SUN}
+          drawingLabel={t("Drawing by Anouk")}
+          average="8.4"
+          outOf={t("/ 10")}
+          points="+840"
+        />
+        <DrawingResultCard
+          rank={2}
+          name="Bram"
+          drawing={HOUSE}
+          drawingLabel={t("Drawing by Bram")}
+          average={t("No ratings")}
+          isUnrated
+          outOf={t("/ 10")}
+          points="+0"
+        />
+      </ol>
+      <ol className="grid grid-cols-6 gap-5">
+        <DrawingResultChip
+          rank="#4"
+          name="Sophie"
+          drawing={SUN}
+          drawingLabel={t("Drawing by Sophie")}
+          average={t("No ratings")}
+          isUnrated
         />
       </ol>
     </StageFrame>

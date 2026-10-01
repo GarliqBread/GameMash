@@ -2,52 +2,42 @@ import { MS_PER_MINUTE } from "@gamemash/shared";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { clientKey } from "../limits/client-key.js";
 import { createRateLimiter } from "../limits/rate-limiter.js";
+import { routeParam } from "../limits/route-limits.js";
 import { bearerToken } from "./bearer.js";
-import { errorBody } from "./error-body.js";
-import type { SessionService } from "./service.js";
-import type { PlayerRecord, SessionRecord } from "./store.js";
+import { sendError } from "./error-body.js";
+import type { AuthenticatedPlayer, SessionService } from "./service.js";
+import type { SessionRecord } from "./store.js";
 
-export const requireHost = (app: FastifyInstance, sessions: SessionService, requestsPerAddressPerMinute: number) => {
-  const requests = createRateLimiter({ max: requestsPerAddressPerMinute, windowMs: MS_PER_MINUTE });
-  const hosts = new WeakMap<FastifyRequest, SessionRecord>();
+type Authenticate<T> = (sessions: SessionService, request: FastifyRequest, token: string) => Promise<T | null>;
 
-  app.addHook("onRequest", async (request, reply) => {
-    if (!requests.hit(clientKey(request.ip))) return reply.code(429).send(errorBody("rate_limited"));
-    const token = bearerToken(request.headers.authorization);
-    const { sessionId } = request.params as { sessionId?: unknown };
-    const session = token && typeof sessionId === "string" ? await sessions.authenticateHost(sessionId, token) : null;
-    if (!session) return reply.code(401).send(errorBody("unauthorized"));
-    hosts.set(request, session);
-  });
+const requireAuth =
+  <T>(authenticate: Authenticate<T>, missing: string) =>
+  (app: FastifyInstance, sessions: SessionService, requestsPerAddressPerMinute: number) => {
+    const requests = createRateLimiter({ max: requestsPerAddressPerMinute, windowMs: MS_PER_MINUTE });
+    const authenticated = new WeakMap<FastifyRequest, T>();
 
-  return (request: FastifyRequest) => {
-    const session = hosts.get(request);
-    if (!session) throw new Error("host route reached without an authenticated host");
-    return session;
+    app.addHook("onRequest", async (request, reply) => {
+      if (!requests.hit(clientKey(request.ip))) return sendError(reply, "rate_limited");
+      const token = bearerToken(request.headers.authorization);
+      const found = token ? await authenticate(sessions, request, token) : null;
+      if (!found) return sendError(reply, "unauthorized");
+      authenticated.set(request, found);
+    });
+
+    return (request: FastifyRequest) => {
+      const found = authenticated.get(request);
+      if (!found) throw new Error(missing);
+      return found;
+    };
   };
-};
 
-type AuthenticatedPlayer = { session: SessionRecord; player: PlayerRecord };
+export const requireHost = requireAuth<SessionRecord>((sessions, request, token) => {
+  const sessionId = routeParam(request, "sessionId");
+  return sessionId ? sessions.authenticateHost(sessionId, token) : Promise.resolve(null);
+}, "host route reached without an authenticated host");
 
-export const requirePlayer = (app: FastifyInstance, sessions: SessionService, requestsPerAddressPerMinute: number) => {
-  const requests = createRateLimiter({ max: requestsPerAddressPerMinute, windowMs: MS_PER_MINUTE });
-  const players = new WeakMap<FastifyRequest, AuthenticatedPlayer>();
-
-  app.addHook("onRequest", async (request, reply) => {
-    if (!requests.hit(clientKey(request.ip))) return reply.code(429).send(errorBody("rate_limited"));
-    const token = bearerToken(request.headers.authorization);
-    const { sessionId, playerId } = request.params as { sessionId?: unknown; playerId?: unknown };
-    const found =
-      token && typeof sessionId === "string" && typeof playerId === "string"
-        ? await sessions.authenticatePlayer(sessionId, playerId, token)
-        : null;
-    if (!found) return reply.code(401).send(errorBody("unauthorized"));
-    players.set(request, found);
-  });
-
-  return (request: FastifyRequest) => {
-    const found = players.get(request);
-    if (!found) throw new Error("player route reached without an authenticated player");
-    return found;
-  };
-};
+export const requirePlayer = requireAuth<AuthenticatedPlayer>((sessions, request, token) => {
+  const sessionId = routeParam(request, "sessionId");
+  const playerId = routeParam(request, "playerId");
+  return sessionId && playerId ? sessions.authenticatePlayer(sessionId, playerId, token) : Promise.resolve(null);
+}, "player route reached without an authenticated player");

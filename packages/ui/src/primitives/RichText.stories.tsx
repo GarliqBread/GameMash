@@ -1,5 +1,5 @@
 import { useCopy } from "../../.ladle/pseudo";
-import { BothThemes, Caption } from "../../.ladle/story-kit";
+import { Caption, ThemeMatrix } from "../../.ladle/story-kit";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { RichText } from "./RichText";
 
@@ -39,4 +39,4 @@ const Sample = () => {
   );
 };
 
-export const Formatting: Story = () => <BothThemes>{() => <Sample />}</BothThemes>;
+export const Formatting: Story = () => <ThemeMatrix>{() => <Sample />}</ThemeMatrix>;

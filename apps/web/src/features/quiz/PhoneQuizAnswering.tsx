@@ -1,12 +1,13 @@
 import type { QuizAnswerKey, QuizPlayerView } from "@gamemash/games/config";
-import { AnswerButtonGroup, Heading, TimerPill } from "@gamemash/ui";
+import { AnswerButtonGroup } from "@gamemash/ui";
 import { useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { useErrorMessage } from "../../lib/errors";
 import { type LobbyStatus, submitInput } from "../../lib/lobby";
-import { useSecondsLabel } from "../game/useSecondsLabel";
 import { useSecondsLeft } from "../game/useSecondsLeft";
 import { useSocketAction } from "../game/useSocketAction";
+import { PhoneLookUp } from "../play/PhoneLookUp";
+import { PhoneTimerHeader } from "../play/PhoneTimerHeader";
 import { type PlayerIdentity, PlayFrame } from "../play/PlayFrame";
 import { PhoneQuizProgress } from "./PhoneQuizProgress";
 import { useAnswerOptions } from "./useAnswerOptions";
@@ -27,7 +28,6 @@ export const PhoneQuizAnswering = ({ me, view, phaseId, phaseEndsAt, status }: P
   const answer = useSocketAction(submitInput);
   const toOptions = useAnswerOptions();
   const errorMessage = useErrorMessage();
-  const secondsLabel = useSecondsLabel();
   const seconds = useSecondsLeft(phaseEndsAt);
 
   const [picked, setPicked] = useState<QuizAnswerKey | null>(null);
@@ -42,33 +42,15 @@ export const PhoneQuizAnswering = ({ me, view, phaseId, phaseEndsAt, status }: P
   };
 
   const header = (
-    <>
-      <PhoneQuizProgress progress={view} />
-      <TimerPill
-        seconds={seconds}
-        label={secondsLabel(seconds)}
-        tone={selected || isTimeUp || !view.isParticipant ? "idle" : "active"}
-      />
-    </>
+    <PhoneTimerHeader
+      progress={<PhoneQuizProgress progress={view} />}
+      seconds={seconds}
+      isActive={!selected && !isTimeUp && view.isParticipant}
+    />
   );
 
   if (!view.isParticipant) {
-    return (
-      <PlayFrame
-        me={me}
-        total={view.total}
-        status={status}
-        header={header}
-        mainClassName="items-center justify-center gap-3 text-center"
-      >
-        <Heading>
-          <FormattedMessage id="play.lookUp" />
-        </Heading>
-        <p className="text-xl text-fg-muted">
-          <FormattedMessage id="play.notThisRound" />
-        </p>
-      </PlayFrame>
-    );
+    return <PhoneLookUp me={me} total={view.total} status={status} header={header} bodyId="play.notThisRound" />;
   }
 
   return (

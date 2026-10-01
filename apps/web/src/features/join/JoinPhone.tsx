@@ -1,10 +1,9 @@
 import { EntryHero, Heading, Logo, PhoneShell } from "@gamemash/ui";
 import { Link } from "@tanstack/react-router";
 import { FormattedMessage } from "react-intl";
-import type { EntryLayoutProps } from "../entry/entry-layout";
-import { JOIN_FORM_ID } from "./join-layout";
+import type { EntryLayoutProps } from "../entry/useEntryLayout";
 
-export const JoinPhone = ({ fields, submit, onSubmit }: EntryLayoutProps) => (
+export const JoinPhone = ({ formId, fields, submit, onSubmit }: EntryLayoutProps) => (
   <PhoneShell
     theme="workshop"
     isBottomActionSticky
@@ -27,7 +26,7 @@ export const JoinPhone = ({ fields, submit, onSubmit }: EntryLayoutProps) => (
       <FormattedMessage id="join.title" />
     </Heading>
     <form
-      id={JOIN_FORM_ID}
+      id={formId}
       noValidate
       onSubmit={onSubmit}
       className="flex flex-col gap-2.5 rounded-card border-3 border-ink-950 bg-paper-white p-[18px] shadow-brutal-md"

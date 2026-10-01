@@ -2,6 +2,7 @@ import type { QuizPlayerView } from "@gamemash/games/config";
 import { ANSWERS, AnswerShape, cn, Heading, Pill } from "@gamemash/ui";
 import { FormattedMessage, useIntl } from "react-intl";
 import type { LobbyStatus } from "../../lib/lobby";
+import { PhoneLookUp } from "../play/PhoneLookUp";
 import { type PlayerIdentity, PlayFrame } from "../play/PlayFrame";
 import { PhoneQuizProgress } from "./PhoneQuizProgress";
 
@@ -11,20 +12,13 @@ type RevealView = Extract<QuizPlayerView, { kind: "reveal" }>;
 type StatusProps<View> = { me: PlayerIdentity; view: View; status: LobbyStatus };
 
 export const PhoneQuizQuestion = ({ me, view, status }: StatusProps<QuestionView>) => (
-  <PlayFrame
+  <PhoneLookUp
     me={me}
     total={view.total}
     status={status}
     header={<PhoneQuizProgress progress={view} />}
-    mainClassName="items-center justify-center gap-3 text-center"
-  >
-    <Heading>
-      <FormattedMessage id="play.lookUp" />
-    </Heading>
-    <p className="text-xl text-fg-muted">
-      <FormattedMessage id="quiz.getReady" />
-    </p>
-  </PlayFrame>
+    bodyId="quiz.getReady"
+  />
 );
 
 const resultId = (view: RevealView) => {

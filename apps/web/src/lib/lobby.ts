@@ -32,6 +32,9 @@ const failed: SocketAck = { ok: false, error: { code: "internal_error" } };
 
 export const useLobbyStore = create<LobbyStore>(() => INITIAL_STORE);
 
+export const useActiveGame = () =>
+  useLobbyStore(({ game, state }) => (game && state && state.status !== "lobby" ? game : null));
+
 const isFinal = (status: LobbyStatus) => status === "ended" || status === "removed";
 
 const setStatus = (status: LobbyStatus) =>

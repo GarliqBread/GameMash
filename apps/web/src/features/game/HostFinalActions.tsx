@@ -3,7 +3,6 @@ import { useState } from "react";
 import { FormattedMessage } from "react-intl";
 import { useErrorMessage } from "../../lib/errors";
 import { endSession, type LobbyStatus, resetSession } from "../../lib/lobby";
-import { useHostCredentials } from "../host/host-credentials";
 import { ReconnectingNote } from "../session/ReconnectingNote";
 import { useSetupExport } from "../setup/useSetupExport";
 import { useSocketAction } from "./useSocketAction";
@@ -14,10 +13,9 @@ export type HostFinalActionsProps = {
 };
 
 export const HostFinalActions = ({ sessionName, status }: HostFinalActionsProps) => {
-  const credentials = useHostCredentials();
   const reset = useSocketAction(resetSession);
   const end = useSocketAction(endSession);
-  const setupExport = useSetupExport(credentials);
+  const setupExport = useSetupExport();
   const [isConfirmingEnd, setIsConfirmingEnd] = useState(false);
   const errorMessage = useErrorMessage();
   const error = reset.error ?? end.error ?? setupExport.error;

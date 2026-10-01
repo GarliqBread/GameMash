@@ -2,13 +2,6 @@ import type { ComponentProps, CSSProperties } from "react";
 import { ANSWERS, type AnswerShapeName } from "../lib/answers.js";
 import { cn } from "../lib/cn.js";
 
-const FILLS: Record<AnswerShapeName, string> = {
-  squircle: "text-answer-squircle",
-  triangle: "text-answer-triangle",
-  plus: "text-answer-plus",
-  dome: "text-answer-dome",
-};
-
 type StickerSpec = {
   shape: AnswerShapeName;
   rotate: number;
@@ -35,13 +28,13 @@ const VARIANTS = {
 };
 
 const StickerShape = ({ spec, stroke, offset }: { spec: StickerSpec; stroke: number; offset: number }) => {
-  const { path } = ANSWERS[spec.shape];
+  const { path, text } = ANSWERS[spec.shape];
   return (
     <svg
       viewBox="-2 -2 28 28"
       aria-hidden="true"
       focusable="false"
-      className={cn("absolute aspect-square h-auto", FILLS[spec.shape])}
+      className={cn("absolute aspect-square h-auto", text)}
       style={{ ...spec.style, rotate: `${spec.rotate}deg` }}
     >
       <path d={path} transform={`translate(${offset} ${offset})`} className="fill-ink-950" />

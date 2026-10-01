@@ -116,6 +116,7 @@ export const StageDrawResults = ({
                 drawing={drawingOf(entry)}
                 drawingLabel={labelOf(entry)}
                 average={averageOf(entry)}
+                isUnrated={entry.average === null}
                 outOf={<FormattedMessage id="draw.outOf" values={{ max: DRAW_IT_RATING_MAX }} />}
                 points={<FormattedMessage id="draw.pointsPill" values={{ points: entry.points }} />}
               />
@@ -132,6 +133,7 @@ export const StageDrawResults = ({
                 drawing={drawingOf(entry)}
                 drawingLabel={labelOf(entry)}
                 average={averageOf(entry)}
+                isUnrated={entry.average === null}
               />
             ))}
           </ol>

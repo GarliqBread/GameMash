@@ -8,9 +8,9 @@ const NOT_FOUND = 404;
 const playerUrl = ({ sessionId, playerId }: PlayerCredentials, path: string) =>
   `/api/sessions/${sessionId}/players/${playerId}/game/${path}`;
 
-const orNull = async (request: Promise<Drawing>) => {
+const orNull = async (request: Promise<Drawing | undefined>) => {
   try {
-    return await request;
+    return (await request) ?? null;
   } catch (error) {
     if (error instanceof ApiRequestError && error.status === NOT_FOUND) return null;
     throw error;
@@ -26,14 +26,17 @@ export const uploadDrawing = (credentials: PlayerCredentials, phaseId: number, u
 
 export const fetchPlayerDrawing = (credentials: PlayerCredentials, drawingId: string) =>
   orNull(
-    fetchJson<Drawing>(playerUrl(credentials, `uploads/${encodeURIComponent(drawingId)}`), {
+    fetchJson<Drawing | undefined>(playerUrl(credentials, `uploads/${encodeURIComponent(drawingId)}`), {
       headers: playerAuthorization(credentials),
     }),
   );
 
 export const fetchHostDrawing = (credentials: HostCredentials, drawingId: string) =>
   orNull(
-    fetchJson<Drawing>(`/api/sessions/${credentials.sessionId}/game/uploads/${encodeURIComponent(drawingId)}`, {
-      headers: hostAuthorization(credentials),
-    }),
+    fetchJson<Drawing | undefined>(
+      `/api/sessions/${credentials.sessionId}/game/uploads/${encodeURIComponent(drawingId)}`,
+      {
+        headers: hostAuthorization(credentials),
+      },
+    ),
   );

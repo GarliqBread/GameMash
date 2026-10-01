@@ -3,13 +3,11 @@ import { DownloadIcon, ToolButton, UploadIcon, WorkingDialog } from "@gamemash/u
 import { type ChangeEvent, useRef } from "react";
 import { FormattedMessage } from "react-intl";
 import { useErrorMessage } from "../../lib/errors";
-import type { useSetupTransfer } from "./useSetupTransfer";
-
-type Transfer = ReturnType<typeof useSetupTransfer>;
+import type { SetupTransfer } from "./useSetupTransfer";
 
 const ACCEPT = `.${SETUP_FILE_EXTENSION},${SETUP_FILE_CONTENT_TYPE}`;
 
-export const SetupTransferButtons = ({ transfer, canExport }: { transfer: Transfer; canExport: boolean }) => {
+export const SetupTransferButtons = ({ transfer, canExport }: { transfer: SetupTransfer; canExport: boolean }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const isBusy = transfer.isImporting || transfer.isExporting;
 
@@ -41,7 +39,7 @@ export const SetupTransferButtons = ({ transfer, canExport }: { transfer: Transf
   );
 };
 
-export const SetupTransferStatus = ({ transfer }: { transfer: Transfer }) => {
+export const SetupTransferStatus = ({ transfer }: { transfer: SetupTransfer }) => {
   const formatError = useErrorMessage();
   const { problem, addedGames } = transfer;
   if (problem) {

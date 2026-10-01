@@ -1,10 +1,11 @@
 import type { ApiError } from "@gamemash/shared";
 import { useState } from "react";
-import type { HostCredentials } from "../../lib/credentials";
 import { toApiError } from "../../lib/errors";
 import { downloadSetupFile } from "../../lib/setup";
+import { useHostCredentials } from "../host/host-credentials";
 
-export const useSetupExport = (credentials: HostCredentials) => {
+export const useSetupExport = () => {
+  const credentials = useHostCredentials();
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
 

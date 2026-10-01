@@ -1,7 +1,5 @@
 import {
   type DrawItConfig,
-  defaultDrawItConfig,
-  defaultPopQuizConfig,
   emptyQuestion,
   emptyWord,
   type GameSetup,
@@ -16,11 +14,6 @@ import { createLocalId } from "../../lib/ids";
 export const newQuestionId = () => createLocalId("q");
 
 export const newWordId = () => createLocalId("w");
-
-export const newGame = (type: GameType): GameSetup =>
-  type === "draw-it"
-    ? { id: createLocalId("draw"), type, config: defaultDrawItConfig(newWordId()) }
-    : { id: createLocalId("quiz"), type, config: defaultPopQuizConfig(newQuestionId()) };
 
 export const addGame = (setup: SessionSetup, game: GameSetup): SessionSetup => ({
   ...setup,
@@ -41,6 +34,12 @@ const updateGame = (setup: SessionSetup, gameId: string, change: (game: GameSetu
   ...setup,
   games: setup.games.map((game) => (game.id === gameId ? change(game) : game)),
 });
+
+export type ConfigOf<Type extends GameType> = Extract<GameSetup, { type: Type }>["config"];
+
+export type GameOf<Type extends GameType> = {
+  [Key in Type]: { id: string; type: Key; config: ConfigOf<Key> };
+}[Type];
 
 export const updateQuizConfig = (
   setup: SessionSetup,

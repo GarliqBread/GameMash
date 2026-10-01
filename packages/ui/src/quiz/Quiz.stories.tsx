@@ -118,7 +118,7 @@ const PhoneAnswer = ({ count, locked }: { count: 2 | 3 | 4; locked?: boolean }) 
               <span className="truncate font-bold">Priya</span>
             </div>
             <span className="shrink-0 text-fg-muted">
-              <strong className="font-display text-xl text-fg">2,560</strong> {t("pts")}
+              <strong className="font-display text-lead text-fg">2,560</strong> {t("pts")}
             </span>
           </div>
         }

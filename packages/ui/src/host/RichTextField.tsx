@@ -141,7 +141,7 @@ export const RichTextField = ({
           <span
             id={counterId}
             className={cn(
-              "font-pixel tracking-pixel text-xs tabular-nums",
+              "font-pixel tracking-pixel text-label-sm tabular-nums",
               isNearLimit ? "font-bold text-danger" : "text-fg-subtle",
             )}
           >

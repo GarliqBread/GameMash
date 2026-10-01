@@ -2,19 +2,18 @@ import type { ReactNode } from "react";
 
 type Theme = "paper" | "stage" | "workshop";
 
-const THEMES: Theme[] = ["paper", "stage"];
-export const WITH_WORKSHOP: Theme[] = ["paper", "stage", "workshop"];
+const THEMES: Theme[] = ["paper", "stage", "workshop"];
 
-export const BothThemes = ({
+const GRID_COLUMNS = ["", "", "lg:grid-cols-2", "lg:grid-cols-3"];
+
+export const ThemeMatrix = ({
   children,
   themes = THEMES,
 }: {
   children: (theme: Theme) => ReactNode;
   themes?: Theme[];
 }) => (
-  <div
-    className={themes.length > 2 ? "grid gap-px bg-ink-400 lg:grid-cols-3" : "grid gap-px bg-ink-400 lg:grid-cols-2"}
-  >
+  <div className={`grid gap-px bg-ink-400 ${GRID_COLUMNS[themes.length] ?? ""}`}>
     {themes.map((theme) => (
       <section
         key={theme}

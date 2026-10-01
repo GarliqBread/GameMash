@@ -1,43 +1,29 @@
 import type { Server as HttpServer, IncomingMessage } from "node:http";
-import {
-  type ClientToServerEvents,
-  type ErrorCode,
-  MS_PER_MINUTE,
-  type ServerToClientEvents,
-  SOCKET_AUTH_ERROR,
-  type SocketAck,
-} from "@gamemash/shared";
-import {
-  GameInputPayloadSchema,
-  GameNextPayloadSchema,
-  HandshakeAuthSchema,
-  KickPlayerPayloadSchema,
-} from "@gamemash/shared/schemas";
+import { MS_PER_MINUTE, SOCKET_AUTH_ERROR } from "@gamemash/shared";
+import { HandshakeAuthSchema } from "@gamemash/shared/schemas";
 import type { FastifyBaseLogger } from "fastify";
 import proxyAddr from "proxy-addr";
-import { Server, type Socket } from "socket.io";
-import type { Static, TSchema } from "typebox";
+import { Server } from "socket.io";
 import { Value } from "typebox/value";
 import type { GameRunner } from "../game/runner.js";
 import { clientKey } from "../limits/client-key.js";
-import { createRateLimiter, type RateLimiter } from "../limits/rate-limiter.js";
-import { errorBody } from "../sessions/error-body.js";
+import { createRateLimiter } from "../limits/rate-limiter.js";
 import { sessionDeadline } from "../sessions/expiry.js";
 import type { SessionService } from "../sessions/service.js";
+import { createLobbyActions } from "./actions.js";
+import { createDebounce } from "./debounce.js";
+import {
+  hostRoom,
+  INTERNAL_ERROR,
+  type LobbyServer,
+  type LobbySocket,
+  playerRoom,
+  RATE_LIMITED,
+  type SocketData,
+  sessionRoom,
+} from "./lobby-socket.js";
 import type { Notifier } from "./notifier.js";
 import { createPresence, HOST_MEMBER, type Presence } from "./presence.js";
-
-type SocketData = {
-  sessionId: string;
-  member: string;
-  role: "host" | "player";
-  createdAt: number;
-};
-
-type LobbyServer = Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>;
-type LobbySocket = Socket<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>;
-
-type ActionOptions = { role: SocketData["role"]; limiter: RateLimiter; failure: string };
 
 type LobbyLimits = {
   handshakesPerAddressPerMinute: number;
@@ -59,25 +45,7 @@ const MAX_MESSAGE_BYTES = 4 * 1024;
 const BROADCAST_DELAY_MS = 100;
 const DEFAULT_KEEP_ALIVE_MS = 5 * MS_PER_MINUTE;
 
-const RATE_LIMITED = "rate_limited";
-const INTERNAL_ERROR = "internal_error";
 const CONNECTION_CLOSED = "connection_closed";
-
-const sessionRoom = (sessionId: string) => `session:${sessionId}`;
-const hostRoom = (sessionId: string) => `session:${sessionId}:host`;
-const playerRoom = (sessionId: string, playerId: string) => `session:${sessionId}:player:${playerId}`;
-
-const rejected = (code: ErrorCode): SocketAck => ({ ok: false, error: errorBody(code) });
-
-const unauthorized = rejected("unauthorized");
-const rateLimited = rejected(RATE_LIMITED);
-const badRequest = rejected("bad_request");
-const internalError = rejected(INTERNAL_ERROR);
-const accepted: SocketAck = { ok: true };
-
-const replyTo = (ack: unknown) => (result: SocketAck) => {
-  if (typeof ack === "function") ack(result);
-};
 
 const authenticate = async (sessions: SessionService, auth: unknown): Promise<SocketData | null> => {
   if (!Value.Check(HandshakeAuthSchema, auth)) return null;
@@ -132,19 +100,17 @@ export const attachLobby = (
   const sessionActions = createRateLimiter({ max: sessionActionsPerSocketPerMinute, windowMs: MS_PER_MINUTE });
   const gameActions = createRateLimiter({ max: gameActionsPerSocketPerMinute, windowMs: MS_PER_MINUTE });
   const trusted = proxyAddr.compile(trustProxy);
-  const pendingBroadcasts = new Map<string, NodeJS.Timeout>();
-  const pendingGameBroadcasts = new Map<string, NodeJS.Timeout>();
   const lastStates = new Map<string, string>();
   const deadlines = new Map<string, NodeJS.Timeout>();
   const releases = new WeakMap<LobbySocket, () => void>();
 
+  const isPresent = (sessionId: string) => presence.has(sessionId);
+
   const addressOf = (request: IncomingMessage) => clientKey(proxyAddr(request, trusted));
 
   const forgetSession = (sessionId: string) => {
-    clearTimeout(pendingBroadcasts.get(sessionId));
-    pendingBroadcasts.delete(sessionId);
-    clearTimeout(pendingGameBroadcasts.get(sessionId));
-    pendingGameBroadcasts.delete(sessionId);
+    lobbyBroadcasts.cancel(sessionId);
+    gameBroadcasts.cancel(sessionId);
     game.forget(sessionId);
     clearTimeout(deadlines.get(sessionId));
     deadlines.delete(sessionId);
@@ -159,8 +125,8 @@ export const attachLobby = (
 
   const releaseSlot = (sessionId: string, member: string) => {
     presence.disconnect(sessionId, member);
-    if (!presence.has(sessionId)) return forgetSession(sessionId);
-    scheduleBroadcast(sessionId);
+    if (!isPresent(sessionId)) return forgetSession(sessionId);
+    lobbyBroadcasts.schedule(sessionId);
     if (member !== HOST_MEMBER && presence.count(sessionId, member) === 0) settleGame(sessionId);
   };
 
@@ -187,29 +153,21 @@ export const attachLobby = (
   };
 
   const broadcast = async (sessionId: string) => {
-    pendingBroadcasts.delete(sessionId);
     try {
       const state = await sessions.lobbyState(sessionId, presence.connectedPlayers(sessionId));
       if (!state) return endSession(sessionId);
       const serialized = JSON.stringify(state);
       if (lastStates.get(sessionId) === serialized) return;
-      lastStates.set(sessionId, serialized);
+      if (isPresent(sessionId)) lastStates.set(sessionId, serialized);
       io.to(sessionRoom(sessionId)).emit("lobby:state", state);
     } catch (error) {
       log.error({ err: error, sessionId }, "failed to broadcast lobby state");
     }
   };
 
-  const scheduleBroadcast = (sessionId: string) => {
-    if (!presence.has(sessionId) || pendingBroadcasts.has(sessionId)) return;
-    pendingBroadcasts.set(
-      sessionId,
-      setTimeout(() => void broadcast(sessionId), BROADCAST_DELAY_MS),
-    );
-  };
+  const lobbyBroadcasts = createDebounce(BROADCAST_DELAY_MS, isPresent, broadcast);
 
   const broadcastGame = async (sessionId: string) => {
-    pendingGameBroadcasts.delete(sessionId);
     try {
       const snapshots = await game.snapshots(sessionId, [...presence.connectedPlayers(sessionId)]);
       if (!snapshots) return;
@@ -222,13 +180,7 @@ export const attachLobby = (
     }
   };
 
-  const scheduleGameBroadcast = (sessionId: string) => {
-    if (!presence.has(sessionId) || pendingGameBroadcasts.has(sessionId)) return;
-    pendingGameBroadcasts.set(
-      sessionId,
-      setTimeout(() => void broadcastGame(sessionId), BROADCAST_DELAY_MS),
-    );
-  };
+  const gameBroadcasts = createDebounce(BROADCAST_DELAY_MS, isPresent, broadcastGame);
 
   const sendGame = async (socket: LobbySocket) => {
     const { sessionId, role, member } = socket.data;
@@ -262,8 +214,8 @@ export const attachLobby = (
     }
   };
 
-  const unsubscribe = notifier.subscribe(scheduleBroadcast);
-  const unsubscribeGame = game.subscribe(scheduleGameBroadcast);
+  const unsubscribe = notifier.subscribe(lobbyBroadcasts.schedule);
+  const unsubscribeGame = game.subscribe(gameBroadcasts.schedule);
   const keepAliveTimer = setInterval(() => void keepAlive(), keepAliveMs);
   keepAliveTimer.unref();
 
@@ -284,76 +236,17 @@ export const attachLobby = (
     }
   });
 
-  const guard = async (
-    socket: LobbySocket,
-    { role, limiter, failure }: ActionOptions,
-    run: () => Promise<SocketAck>,
-  ): Promise<SocketAck> => {
-    if (socket.data.role !== role) return unauthorized;
-    if (!limiter.hit(socket.id)) return rateLimited;
-    try {
-      return await run();
-    } catch (error) {
-      log.error({ err: error, sessionId: socket.data.sessionId }, failure);
-      return internalError;
-    }
-  };
-
-  const action = (socket: LobbySocket, options: ActionOptions, run: () => Promise<SocketAck>) => async (ack: unknown) =>
-    replyTo(ack)(await guard(socket, options, run));
-
-  const payloadAction =
-    <S extends TSchema>(
-      socket: LobbySocket,
-      options: ActionOptions,
-      schema: S,
-      run: (payload: Static<S>) => Promise<SocketAck>,
-    ) =>
-    async (payload: unknown, ack: unknown) =>
-      replyTo(ack)(
-        await guard(socket, options, async () => (Value.Check(schema, payload) ? run(payload) : badRequest)),
-      );
-
-  const hostSessionAction: Omit<ActionOptions, "failure"> = { role: "host", limiter: sessionActions };
-  const hostGameAction: Omit<ActionOptions, "failure"> = { role: "host", limiter: gameActions };
-
-  const startSession = async (sessionId: string): Promise<SocketAck> => {
-    const result = await sessions.start(sessionId);
-    if (!result.ok) return rejected(result.error);
-    return (await game.begin(sessionId, result.value)) ? accepted : internalError;
-  };
-
-  const resetSession = async (sessionId: string): Promise<SocketAck> => {
-    if (!(await game.reset(sessionId))) return rejected("game_not_finished");
-    scheduleBroadcast(sessionId);
-    return accepted;
-  };
-
-  const closeSession = async (sessionId: string): Promise<SocketAck> => {
-    await sessions.end(sessionId);
-    setImmediate(() => endSession(sessionId));
-    return accepted;
-  };
-
-  const kickPlayer = async (sessionId: string, playerId: string): Promise<SocketAck> => {
-    const result = await sessions.kick(sessionId, playerId);
-    if (!result.ok) return rejected(result.error);
-    const room = playerRoom(sessionId, playerId);
-    io.to(room).emit("player:removed");
-    io.in(room).disconnectSockets(true);
-    return accepted;
-  };
-
-  const submitInput = async (
-    sessionId: string,
-    playerId: string,
-    phaseId: number,
-    input: unknown,
-  ): Promise<SocketAck> => {
-    const result = await game.submit(sessionId, playerId, phaseId, input, presence.connectedPlayers(sessionId));
-    if (result === "accepted") return accepted;
-    return { ok: false, error: { code: result === "duplicate" ? "already_submitted" : "input_closed" } };
-  };
+  const bindActions = createLobbyActions({
+    io,
+    log,
+    sessions,
+    game,
+    presence,
+    sessionActions,
+    gameActions,
+    scheduleBroadcast: lobbyBroadcasts.schedule,
+    endSession,
+  });
 
   const dropIfRemoved = async (socket: LobbySocket) => {
     const { sessionId, member } = socket.data;
@@ -373,50 +266,9 @@ export const attachLobby = (
     }
     void sendState(socket).catch((error: unknown) => log.error({ err: error, sessionId }, "failed to send state"));
     void sendGame(socket).catch((error: unknown) => log.error({ err: error, sessionId }, "failed to send game"));
-    scheduleBroadcast(sessionId);
+    lobbyBroadcasts.schedule(sessionId);
 
-    socket.on(
-      "session:start",
-      action(socket, { ...hostSessionAction, failure: "failed to start session" }, () => startSession(sessionId)),
-    );
-    socket.on(
-      "session:reset",
-      action(socket, { ...hostSessionAction, failure: "failed to reset session" }, () => resetSession(sessionId)),
-    );
-    socket.on(
-      "session:end",
-      action(socket, { ...hostSessionAction, failure: "failed to end session" }, () => closeSession(sessionId)),
-    );
-    socket.on(
-      "player:kick",
-      payloadAction(
-        socket,
-        { ...hostGameAction, failure: "failed to remove player" },
-        KickPlayerPayloadSchema,
-        ({ playerId }) => kickPlayer(sessionId, playerId),
-      ),
-    );
-    socket.on(
-      "game:next",
-      payloadAction(
-        socket,
-        { ...hostGameAction, failure: "failed to advance game" },
-        GameNextPayloadSchema,
-        async ({ phaseId }) => {
-          await game.next(sessionId, phaseId);
-          return accepted;
-        },
-      ),
-    );
-    socket.on(
-      "game:input",
-      payloadAction(
-        socket,
-        { role: "player", limiter: gameActions, failure: "failed to submit game input" },
-        GameInputPayloadSchema,
-        ({ phaseId, input }) => submitInput(sessionId, member, phaseId, input),
-      ),
-    );
+    bindActions(socket);
 
     socket.on("disconnect", () => {
       releases.get(socket)?.();
@@ -428,11 +280,9 @@ export const attachLobby = (
     unsubscribe();
     unsubscribeGame();
     clearInterval(keepAliveTimer);
-    for (const timer of [...pendingBroadcasts.values(), ...pendingGameBroadcasts.values(), ...deadlines.values()]) {
-      clearTimeout(timer);
-    }
-    pendingBroadcasts.clear();
-    pendingGameBroadcasts.clear();
+    lobbyBroadcasts.clear();
+    gameBroadcasts.clear();
+    for (const timer of deadlines.values()) clearTimeout(timer);
     game.close();
     deadlines.clear();
     await io.close();

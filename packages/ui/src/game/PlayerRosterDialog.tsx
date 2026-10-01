@@ -2,8 +2,12 @@ import { Dialog } from "@base-ui/react/dialog";
 import type { ReactNode } from "react";
 import { cn } from "../lib/cn.js";
 import { Avatar } from "../primitives/Avatar.js";
-import { dialogBackdropClassName, dialogPopupClassName, dialogTitleClassName } from "../workshop/dialog.js";
-import { keyButtonClassName } from "../workshop/KeyButton.js";
+import {
+  dialogBackdropClassName,
+  dialogPopupClassName,
+  dialogTitleClassName,
+  keyButtonClassName,
+} from "../workshop/styles.js";
 
 export type RosterPlayer = {
   id: string;
@@ -51,8 +55,8 @@ export const PlayerRosterDialog = ({
                 aria-label={removeLabel(player.name)}
                 onClick={() => onRemove(player.id)}
                 className={cn(
-                  keyButtonClassName,
-                  "h-10 shrink-0 px-4 text-caption",
+                  keyButtonClassName({ size: "sm" }),
+                  "shrink-0",
                   "opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100",
                 )}
               >
@@ -62,7 +66,7 @@ export const PlayerRosterDialog = ({
           ))}
         </ul>
         <div className="flex justify-end">
-          <Dialog.Close className={cn(keyButtonClassName, "h-12 px-5 text-base")}>{closeLabel}</Dialog.Close>
+          <Dialog.Close className={keyButtonClassName({ size: "md" })}>{closeLabel}</Dialog.Close>
         </div>
       </Dialog.Popup>
     </Dialog.Portal>

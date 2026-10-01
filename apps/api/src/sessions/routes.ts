@@ -1,6 +1,6 @@
 import type { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { CreateSessionBodySchema } from "@gamemash/games/schemas";
-import { type ErrorCode, isRoomCode, MS_PER_MINUTE, normalizeRoomCode } from "@gamemash/shared";
+import { isRoomCode, MS_PER_MINUTE, normalizeRoomCode } from "@gamemash/shared";
 import {
   ApiErrorSchema,
   CreateSessionResponseSchema,
@@ -12,7 +12,7 @@ import {
 } from "@gamemash/shared/schemas";
 import { createRateLimiter } from "../limits/rate-limiter.js";
 import { byClient, perMinute, sessionRateLimitKey } from "../limits/route-limits.js";
-import { errorBody } from "./error-body.js";
+import { sendError } from "./error-body.js";
 import type { SessionService } from "./service.js";
 
 export type SessionRouteLimits = {
@@ -29,14 +29,6 @@ export const DEFAULT_SESSION_ROUTE_LIMITS: SessionRouteLimits = {
   lookupMissesPerTenMinutes: 200,
   joinsPerSessionPerMinute: 120,
   joinsPerMinute: 300,
-};
-
-const JOIN_ERROR_STATUS: Partial<Record<ErrorCode, 400 | 404 | 409>> = {
-  invalid_name: 400,
-  room_not_found: 404,
-  name_taken: 409,
-  session_full: 409,
-  session_ended: 409,
 };
 
 export const sessionRoutes =
@@ -59,7 +51,7 @@ export const sessionRoutes =
       },
       async (request, reply) => {
         const result = await sessions.createNamed(request.body.name ?? "");
-        if (!result.ok) return reply.code(400).send(errorBody(result.error));
+        if (!result.ok) return sendError(reply, result.error);
         return reply.code(201).send(result.value);
       },
     );
@@ -75,12 +67,12 @@ export const sessionRoutes =
       },
       async (request, reply) => {
         const client = byClient(request);
-        if (lookupMisses.isLimited(client)) return reply.code(429).send(errorBody("rate_limited"));
+        if (lookupMisses.isLimited(client)) return sendError(reply, "rate_limited");
         const roomCode = normalizeRoomCode(request.params.code);
         const session = isRoomCode(roomCode) ? await sessions.findByRoomCode(roomCode) : null;
         if (session) return { sessionId: session.id, status: session.status };
         lookupMisses.hit(client);
-        return reply.code(404).send(errorBody("room_not_found"));
+        return sendError(reply, "room_not_found");
       },
     );
 
@@ -101,10 +93,10 @@ export const sessionRoutes =
         },
       },
       async (request, reply) => {
-        if (!joins.hit(byClient(request))) return reply.code(429).send(errorBody("rate_limited"));
+        if (!joins.hit(byClient(request))) return sendError(reply, "rate_limited");
         const result = await sessions.join(request.params.sessionId, request.body.name);
         if (result.ok) return reply.code(201).send(result.value);
-        return reply.code(JOIN_ERROR_STATUS[result.error] ?? 400).send(errorBody(result.error));
+        return sendError(reply, result.error);
       },
     );
   };

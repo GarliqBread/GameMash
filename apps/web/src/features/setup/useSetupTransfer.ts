@@ -2,10 +2,10 @@ import type { SessionSetup, SetupImportResponse } from "@gamemash/games/config";
 import { type ApiError, SETUP_IMPORT_MAX_BYTES } from "@gamemash/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import type { HostCredentials } from "../../lib/credentials";
 import { toApiError } from "../../lib/errors";
 import { sessionImagesKey } from "../../lib/query-keys";
 import { importSetupFile } from "../../lib/setup";
+import { useHostCredentials } from "../host/host-credentials";
 import { useSetupExport } from "./useSetupExport";
 
 const BYTES_PER_MB = 1024 * 1024;
@@ -16,16 +16,16 @@ type TransferProblem =
   | { kind: "importFailed"; error: ApiError };
 
 type SetupTransferOptions = {
-  credentials: HostCredentials;
   setup: SessionSetup;
   flush: () => Promise<boolean>;
   replace: (setup: SessionSetup) => void;
   onImported: (result: SetupImportResponse) => void;
 };
 
-export const useSetupTransfer = ({ credentials, setup, flush, replace, onImported }: SetupTransferOptions) => {
+export const useSetupTransfer = ({ setup, flush, replace, onImported }: SetupTransferOptions) => {
+  const credentials = useHostCredentials();
   const queryClient = useQueryClient();
-  const setupExport = useSetupExport(credentials);
+  const setupExport = useSetupExport();
   const [isImporting, setIsImporting] = useState(false);
   const [importProblem, setImportProblem] = useState<TransferProblem | null>(null);
   const [addedGames, setAddedGames] = useState<number | null>(null);
@@ -63,3 +63,5 @@ export const useSetupTransfer = ({ credentials, setup, flush, replace, onImporte
 
   return { exportFile, importFile, isImporting, isExporting: setupExport.isExporting, problem, addedGames };
 };
+
+export type SetupTransfer = ReturnType<typeof useSetupTransfer>;

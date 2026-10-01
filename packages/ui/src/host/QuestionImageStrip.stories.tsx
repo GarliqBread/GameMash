@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useCopy } from "../../.ladle/pseudo";
 import { SAMPLE_QUESTION_IMAGES } from "../../.ladle/screen-data";
-import { BothThemes, Caption, WITH_WORKSHOP } from "../../.ladle/story-kit";
+import { Caption, ThemeMatrix } from "../../.ladle/story-kit";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { QuestionImageStrip } from "./QuestionImageStrip";
 
@@ -42,7 +42,7 @@ const StripCase = ({
 };
 
 export const States: Story = () => (
-  <BothThemes themes={WITH_WORKSHOP}>
+  <ThemeMatrix>
     {() => (
       <>
         <StripCase label="3 images" count={3} />
@@ -53,5 +53,5 @@ export const States: Story = () => (
         <StripCase label="Upload error" count={2} error="A session can hold up to 150 images" />
       </>
     )}
-  </BothThemes>
+  </ThemeMatrix>
 );

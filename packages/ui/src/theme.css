@@ -101,7 +101,8 @@
   --color-canvas: #ffffff;
 
   /* ── Type scale ──────────────────────────────────────────────────────────
-   * Phone / desktop sizes use Tailwind's rem scale plus two extras.
+   * Phone / desktop sizes are the semantic rem tokens below (caption, body,
+   * label-sm … monogram-lg) rather than Tailwind's default text-xs … text-6xl.
    * Stage sizes are in px ON PURPOSE: stage screens are drawn on a fixed
    * 1920×1080 logical canvas that <StageViewport> scales to fit the TV.
    */
@@ -134,6 +135,29 @@
   --text-title: 26px;          /* game cartridge title, medium wordmark */
   --text-title-lg: 28px;       /* workshop question and answer inputs */
   --text-wordmark-lg: 40px;    /* large wordmark */
+
+  /* Phone / desktop UI sizes. Values and line heights match the Tailwind
+     defaults they replaced (text-xs … text-6xl), so rendering is unchanged. */
+  --text-label-sm: 0.75rem;    /* 12px: pixel stickers, chips, counters */
+  --text-label-sm--line-height: calc(1 / 0.75);
+  --text-note: 0.875rem;       /* 14px: trust notes, section tabs */
+  --text-note--line-height: calc(1.25 / 0.875);
+  --text-control: 1rem;        /* 16px: dialog keys, segmented control, switch labels */
+  --text-control--line-height: 1.5;
+  --text-control-lg: 1.125rem; /* 18px: host text field, workshop segmented control */
+  --text-control-lg--line-height: calc(1.75 / 1.125);
+  --text-lead: 1.25rem;        /* 20px: phone text field, join steps */
+  --text-lead--line-height: calc(1.75 / 1.25);
+  --text-heading-sm: 1.5rem;   /* 24px: dialog and panel titles, large button */
+  --text-heading-sm--line-height: calc(2 / 1.5);
+  --text-heading: 1.875rem;    /* 30px: host and small phone headings, answer buttons */
+  --text-heading--line-height: calc(2.25 / 1.875);
+  --text-heading-lg: 2.25rem;  /* 36px: phone heading */
+  --text-heading-lg--line-height: calc(2.5 / 2.25);
+  --text-monogram: 3rem;       /* 48px: avatar initial at 112px */
+  --text-monogram--line-height: 1;
+  --text-monogram-lg: 3.75rem; /* 60px: avatar initial at 140px */
+  --text-monogram-lg--line-height: 1;
 
   --tracking-pixel: 0.04em; /* Silkscreen labels need a little air */
   --tracking-display: -0.02em;       /* display headings and wordmark */

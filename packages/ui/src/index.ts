@@ -94,6 +94,7 @@ export * from "./workshop/RuleSwitchList.js";
 export * from "./workshop/RulesPanel.js";
 export * from "./workshop/SectionTab.js";
 export * from "./workshop/Sticker.js";
+export { type KeyButtonSize, keyButtonClassName } from "./workshop/styles.js";
 export * from "./workshop/ToolButton.js";
 export * from "./workshop/WorkingDialog.js";
 export * from "./workshop/WorkshopShell.js";

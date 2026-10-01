@@ -15,7 +15,6 @@ import {
   Heading,
   isFill,
   pointCount,
-  TimerPill,
   useDrawing,
 } from "@gamemash/ui";
 import { useQuery } from "@tanstack/react-query";
@@ -26,8 +25,9 @@ import { fetchPlayerDrawing } from "../../lib/drawings";
 import { useErrorMessage } from "../../lib/errors";
 import type { LobbyStatus } from "../../lib/lobby";
 import { playerDrawingKey } from "../../lib/query-keys";
-import { useSecondsLabel } from "../game/useSecondsLabel";
 import { useSecondsLeft } from "../game/useSecondsLeft";
+import { PhoneLookUp } from "../play/PhoneLookUp";
+import { PhoneTimerHeader } from "../play/PhoneTimerHeader";
 import { type PlayerIdentity, PlayFrame } from "../play/PlayFrame";
 import { PhoneDrawWord } from "./PhoneDrawWord";
 import { useDrawingSync } from "./useDrawingSync";
@@ -56,7 +56,6 @@ export const PhoneDrawing = ({ credentials, me, view, phaseId, phaseEndsAt, stat
   const intl = useIntl();
   const errorMessage = useErrorMessage();
   const labels = useToolbarLabels();
-  const secondsLabel = useSecondsLabel();
   const seconds = useSecondsLeft(phaseEndsAt);
   const controller = useDrawing();
   const sync = useDrawingSync(credentials, phaseId);
@@ -96,33 +95,15 @@ export const PhoneDrawing = ({ credentials, me, view, phaseId, phaseEndsAt, stat
   }, [isUrgent, flush]);
 
   const header = (
-    <>
-      <PhoneDrawWord progress={view} captionId="draw.drawCaption" />
-      <TimerPill
-        seconds={seconds}
-        label={secondsLabel(seconds)}
-        tone={isFinished || isTimeUp || !view.isParticipant ? "idle" : "active"}
-      />
-    </>
+    <PhoneTimerHeader
+      progress={<PhoneDrawWord progress={view} captionId="draw.drawCaption" />}
+      seconds={seconds}
+      isActive={!isFinished && !isTimeUp && view.isParticipant}
+    />
   );
 
   if (!view.isParticipant) {
-    return (
-      <PlayFrame
-        me={me}
-        total={view.total}
-        status={status}
-        header={header}
-        mainClassName="items-center justify-center gap-3 text-center"
-      >
-        <Heading>
-          <FormattedMessage id="play.lookUp" />
-        </Heading>
-        <p className="text-xl text-fg-muted">
-          <FormattedMessage id="draw.notThisRound" />
-        </p>
-      </PlayFrame>
-    );
+    return <PhoneLookUp me={me} total={view.total} status={status} header={header} bodyId="draw.notThisRound" />;
   }
 
   if (isFinished || isTimeUp) {

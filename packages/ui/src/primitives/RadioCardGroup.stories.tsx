@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BothThemes, Frame } from "../../.ladle/story-kit";
+import { Frame, ThemeMatrix } from "../../.ladle/story-kit";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { RadioCardGroup } from "./RadioCardGroup";
 
@@ -15,7 +15,7 @@ const Scores = () => {
       value={value}
       onValueChange={setValue}
       className="grid grid-cols-5"
-      itemClassName="h-[68px] text-3xl"
+      itemClassName="h-[68px] text-heading"
       options={SCORES.map((score) => ({ value: score, label: score }))}
     />
   );
@@ -39,7 +39,7 @@ const Unselected = () => {
 };
 
 export const Examples: Story = () => (
-  <BothThemes>
+  <ThemeMatrix>
     {() => (
       <>
         <Frame width={358}>
@@ -48,5 +48,5 @@ export const Examples: Story = () => (
         <Unselected />
       </>
     )}
-  </BothThemes>
+  </ThemeMatrix>
 );

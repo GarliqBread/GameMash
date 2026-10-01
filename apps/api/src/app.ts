@@ -6,7 +6,7 @@ import { imageFileRoutes } from "./media/image-file-routes.js";
 import type { ImageStore } from "./media/image-store.js";
 import type { RedisHealth } from "./redis.js";
 import { avatarRoutes } from "./sessions/avatar-routes.js";
-import { errorBody } from "./sessions/error-body.js";
+import { errorBody, sendError } from "./sessions/error-body.js";
 import { imageRoutes } from "./sessions/image-routes.js";
 import { DEFAULT_SESSION_ROUTE_LIMITS, type SessionRouteLimits, sessionRoutes } from "./sessions/routes.js";
 import type { SessionService } from "./sessions/service.js";
@@ -45,15 +45,10 @@ const isRedisUp = async (redis: RedisHealth) => {
 };
 
 const badRequest = errorBody("bad_request");
-const rateLimited = errorBody("rate_limited");
-const payloadTooLarge = errorBody("payload_too_large");
-const unsupportedMediaType = errorBody("unsupported_media_type");
-const notFound = errorBody("not_found");
-const internalError = errorBody("internal_error");
 
 const rejectMalformedRequest = (error: FastifyError, request: FastifyRequest, reply: FastifyReply) => {
   request.log.info({ err: error }, "rejected malformed request");
-  return reply.code(400).send(badRequest);
+  return sendError(reply, "bad_request");
 };
 
 export const buildApp = (
@@ -82,19 +77,19 @@ export const buildApp = (
   if (imageFiles) app.register(imageFileRoutes(imageFiles));
   if (uploads) app.register(uploadRoutes(sessions, uploads));
 
-  app.setNotFoundHandler((_request, reply) => reply.code(404).send(notFound));
+  app.setNotFoundHandler((_request, reply) => sendError(reply, "not_found"));
 
   app.setErrorHandler((error, request, reply) => {
     const statusCode = statusCodeOf(error);
-    if (statusCode === TOO_MANY_REQUESTS) return reply.code(statusCode).send(rateLimited);
-    if (statusCode === PAYLOAD_TOO_LARGE) return reply.code(statusCode).send(payloadTooLarge);
-    if (statusCode === UNSUPPORTED_MEDIA_TYPE) return reply.code(statusCode).send(unsupportedMediaType);
+    if (statusCode === TOO_MANY_REQUESTS) return sendError(reply, "rate_limited");
+    if (statusCode === PAYLOAD_TOO_LARGE) return sendError(reply, "payload_too_large");
+    if (statusCode === UNSUPPORTED_MEDIA_TYPE) return sendError(reply, "unsupported_media_type");
     if (isClientError(statusCode)) {
       request.log.info({ err: error }, "client error");
       return reply.code(statusCode).send(badRequest);
     }
     request.log.error({ err: error }, "unhandled error");
-    return reply.code(INTERNAL_ERROR).send(internalError);
+    return sendError(reply, "internal_error");
   });
 
   return app;

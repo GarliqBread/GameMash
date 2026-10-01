@@ -44,6 +44,13 @@ export const Keys: Story = () => {
         ))}
         <KeyButton disabled>6</KeyButton>
       </Row>
+      <Row label="KeyButton sizes">
+        <KeyButton size="md">Cancel</KeyButton>
+        <KeyButton size="md" className="workshop:bg-brand-coral">
+          Delete
+        </KeyButton>
+        <KeyButton size="sm">Remove</KeyButton>
+      </Row>
       <Row label="ToolButton">
         <ToolButton icon={<ImageIcon size={18} strokeWidth={2.2} />}>Add image</ToolButton>
         <ToolButton icon={<CopyIcon size={18} strokeWidth={2.2} />}>Duplicate</ToolButton>

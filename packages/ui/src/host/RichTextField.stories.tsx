@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useCopy } from "../../.ladle/pseudo";
-import { BothThemes, Caption, WITH_WORKSHOP } from "../../.ladle/story-kit";
+import { Caption, ThemeMatrix } from "../../.ladle/story-kit";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import type { RichTextRun } from "../lib/rich-text";
 import { RichTextField } from "./RichTextField";
@@ -54,4 +54,4 @@ const Cases = () => {
   );
 };
 
-export const States: Story = () => <BothThemes themes={WITH_WORKSHOP}>{() => <Cases />}</BothThemes>;
+export const States: Story = () => <ThemeMatrix>{() => <Cases />}</ThemeMatrix>;

@@ -1,5 +1,5 @@
 import { useCopy } from "../../.ladle/pseudo";
-import { BothThemes, WITH_WORKSHOP } from "../../.ladle/story-kit";
+import { ThemeMatrix } from "../../.ladle/story-kit";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { Heading } from "./Heading";
 
@@ -8,7 +8,7 @@ export default { title: "Primitives / Heading" } satisfies StoryDefault;
 export const Sizes: Story = () => {
   const t = useCopy();
   return (
-    <BothThemes themes={WITH_WORKSHOP}>
+    <ThemeMatrix>
       {() => (
         <>
           <Heading size="display">{t("Host a session")}</Heading>
@@ -25,6 +25,6 @@ export const Sizes: Story = () => {
           </Heading>
         </>
       )}
-    </BothThemes>
+    </ThemeMatrix>
   );
 };

@@ -18,14 +18,7 @@ const SetupPage = () => {
     refetchOnReconnect: false,
   });
 
-  if (setup.data)
-    return (
-      <SetupWorkshop
-        credentials={credentials}
-        initialSetup={setup.data.setup}
-        imagesEnabled={setup.data.imagesEnabled}
-      />
-    );
+  if (setup.data) return <SetupWorkshop initialSetup={setup.data.setup} imagesEnabled={setup.data.imagesEnabled} />;
   if (setup.isError) {
     return (
       <StageMessage

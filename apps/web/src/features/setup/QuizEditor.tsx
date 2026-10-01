@@ -29,8 +29,8 @@ import type { ImageUploads } from "./useImageUploads";
 export type QuizEditorProps = {
   config: PopQuizConfig;
   onChange: (change: (config: PopQuizConfig) => PopQuizConfig) => void;
-  selectedQuestionId: string | undefined;
-  onSelectQuestion: (id: string) => void;
+  selectedItemId: string | undefined;
+  onSelectItem: (id: string) => void;
   uploads: ImageUploads;
   imagesEnabled: boolean;
 };
@@ -38,15 +38,15 @@ export type QuizEditorProps = {
 export const QuizEditor = ({
   config,
   onChange,
-  selectedQuestionId,
-  onSelectQuestion,
+  selectedItemId,
+  onSelectItem,
   uploads,
   imagesEnabled,
 }: QuizEditorProps) => {
   const intl = useIntl();
   const [deletingPosition, setDeletingPosition] = useState<number | null>(null);
   const questionFieldRef = useRef<HTMLElement>(null);
-  const question = config.questions.find((item) => item.id === selectedQuestionId) ?? config.questions[0];
+  const question = config.questions.find((item) => item.id === selectedItemId) ?? config.questions[0];
   if (!question) return null;
 
   const position = config.questions.indexOf(question) + 1;
@@ -56,19 +56,19 @@ export const QuizEditor = ({
   const handleAdd = () => {
     const id = newQuestionId();
     onChange((current) => addQuestion(current, id));
-    onSelectQuestion(id);
+    onSelectItem(id);
   };
 
   const handleDuplicate = () => {
     const id = newQuestionId();
     onChange((current) => insertQuestionAfter(current, question.id, { ...question, id }));
-    onSelectQuestion(id);
+    onSelectItem(id);
   };
 
   const handleDelete = () => {
     const neighbour = config.questions[position] ?? config.questions[position - 2];
     onChange((current) => deleteQuestion(current, question.id));
-    if (neighbour) onSelectQuestion(neighbour.id);
+    if (neighbour) onSelectItem(neighbour.id);
     setDeletingPosition(null);
   };
 
@@ -78,7 +78,7 @@ export const QuizEditor = ({
         questionIds={config.questions.map((item) => item.id)}
         incompleteIds={config.questions.filter((item) => !isQuestionComplete(item)).map((item) => item.id)}
         value={question.id}
-        onValueChange={onSelectQuestion}
+        onValueChange={onSelectItem}
         listLabel={intl.formatMessage({ id: "setup.questions" })}
         tabLabel={(tabPosition, isIncomplete) =>
           intl.formatMessage({ id: "setup.questionTab" }, { position: tabPosition, isIncomplete: String(isIncomplete) })

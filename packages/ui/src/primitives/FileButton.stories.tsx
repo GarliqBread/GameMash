@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useCopy } from "../../.ladle/pseudo";
-import { BothThemes, Row } from "../../.ladle/story-kit";
+import { Row, ThemeMatrix } from "../../.ladle/story-kit";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { CameraIcon } from "../icons/icons";
 import { FileButton } from "./FileButton";
@@ -11,7 +11,7 @@ export const Variants: Story = () => {
   const t = useCopy();
   const [fileName, setFileName] = useState<string | undefined>(undefined);
   return (
-    <BothThemes>
+    <ThemeMatrix>
       {() => (
         <>
           <Row label="Secondary, primary, disabled">
@@ -32,6 +32,6 @@ export const Variants: Story = () => {
           {fileName && <span className="text-caption text-fg-subtle">{fileName}</span>}
         </>
       )}
-    </BothThemes>
+    </ThemeMatrix>
   );
 };

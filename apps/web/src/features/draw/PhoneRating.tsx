@@ -1,5 +1,5 @@
 import { DRAW_IT_RATING_MAX, DRAW_IT_RATING_MIN, type DrawItPlayerView } from "@gamemash/games/config";
-import { Button, DrawingFrame, Heading, RatingScale, TimerPill } from "@gamemash/ui";
+import { Button, DrawingFrame, RatingScale } from "@gamemash/ui";
 import { useQueries } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
@@ -8,9 +8,10 @@ import { fetchPlayerDrawing } from "../../lib/drawings";
 import { useErrorMessage } from "../../lib/errors";
 import { type LobbyStatus, submitInput } from "../../lib/lobby";
 import { playerDrawingKey } from "../../lib/query-keys";
-import { useSecondsLabel } from "../game/useSecondsLabel";
 import { useSecondsLeft } from "../game/useSecondsLeft";
 import { useSocketAction } from "../game/useSocketAction";
+import { PhoneLookUp } from "../play/PhoneLookUp";
+import { PhoneTimerHeader } from "../play/PhoneTimerHeader";
 import { type PlayerIdentity, PlayFrame } from "../play/PlayFrame";
 import { PhoneDrawWord } from "./PhoneDrawWord";
 
@@ -37,7 +38,6 @@ const firstUnrated = (ids: string[], ratings: Record<string, number>) =>
 export const PhoneRating = ({ credentials, me, view, phaseId, phaseEndsAt, status }: PhoneRatingProps) => {
   const intl = useIntl();
   const errorMessage = useErrorMessage();
-  const secondsLabel = useSecondsLabel();
   const seconds = useSecondsLeft(phaseEndsAt);
   const rate = useSocketAction(submitInput);
   const [ratings, setRatings] = useState<Record<string, number>>(view.mine);
@@ -61,32 +61,23 @@ export const PhoneRating = ({ credentials, me, view, phaseId, phaseEndsAt, statu
   const isTimeUp = seconds === 0;
 
   const header = (
-    <>
-      <PhoneDrawWord progress={view} captionId="draw.rateCaption" />
-      <TimerPill
-        seconds={seconds}
-        label={secondsLabel(seconds)}
-        tone={isAllRated || isTimeUp || !view.isParticipant ? "idle" : "active"}
-      />
-    </>
+    <PhoneTimerHeader
+      progress={<PhoneDrawWord progress={view} captionId="draw.rateCaption" />}
+      seconds={seconds}
+      isActive={!isAllRated && !isTimeUp && view.isParticipant}
+    />
   );
 
   if (!view.isParticipant || !drawingId || isTimeUp) {
     return (
-      <PlayFrame
+      <PhoneLookUp
         me={me}
         total={view.total}
         status={status}
         header={header}
-        mainClassName="items-center justify-center gap-3 text-center"
-      >
-        <Heading>
-          <FormattedMessage id={isTimeUp ? "play.timeUp" : "play.lookUp"} />
-        </Heading>
-        <p className="text-xl text-fg-muted">
-          <FormattedMessage id={isTimeUp ? "draw.resultsSoon" : "draw.notRating"} />
-        </p>
-      </PlayFrame>
+        titleId={isTimeUp ? "play.timeUp" : "play.lookUp"}
+        bodyId={isTimeUp ? "draw.resultsSoon" : "draw.notRating"}
+      />
     );
   }
 

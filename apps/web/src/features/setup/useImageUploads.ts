@@ -1,12 +1,12 @@
 import type { ApiError, ImageListResponse, QuestionImage } from "@gamemash/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import type { HostCredentials } from "../../lib/credentials";
 import { toApiError } from "../../lib/errors";
 import { ImageTooLargeError } from "../../lib/image-encoding";
 import { uploadImage } from "../../lib/images";
 import { sessionImagesKey } from "../../lib/query-keys";
 import { resizeQuestionImage } from "../../lib/question-image";
+import { useHostCredentials } from "../host/host-credentials";
 
 class UploadError extends Error {
   constructor(public error: ApiError) {
@@ -24,7 +24,8 @@ const resize = async (file: File) => {
 
 const toUploadError = (caught: unknown) => (caught instanceof UploadError ? caught.error : toApiError(caught));
 
-export const useImageUploads = (credentials: HostCredentials) => {
+export const useImageUploads = () => {
+  const credentials = useHostCredentials();
   const queryClient = useQueryClient();
   const [pending, setPending] = useState<Record<string, number>>({});
   const [errors, setErrors] = useState<Record<string, ApiError | null>>({});

@@ -10,10 +10,9 @@ import {
 } from "@gamemash/ui";
 import { Link } from "@tanstack/react-router";
 import { FormattedMessage } from "react-intl";
-import type { EntryLayoutProps } from "../entry/entry-layout";
-import { HOST_FORM_ID, HOST_STEPS } from "./host-layout";
+import type { EntryLayoutProps } from "../entry/useEntryLayout";
 
-export const HostDesktop = ({ fields, submit, onSubmit }: EntryLayoutProps) => (
+export const HostDesktop = ({ formId, steps, fields, submit, onSubmit }: EntryLayoutProps) => (
   <EntryShell
     logo={<Logo size="md" hasOutline={false} />}
     action={
@@ -26,7 +25,7 @@ export const HostDesktop = ({ fields, submit, onSubmit }: EntryLayoutProps) => (
   >
     <section className="flex w-full max-w-[520px] flex-1 flex-col justify-center gap-[18px]">
       <form
-        id={HOST_FORM_ID}
+        id={formId}
         noValidate
         onSubmit={onSubmit}
         className="flex flex-col gap-3.5 rounded-tile border-3 border-ink-950 bg-paper-white p-9 shadow-brutal-xl"
@@ -52,10 +51,6 @@ export const HostDesktop = ({ fields, submit, onSubmit }: EntryLayoutProps) => (
         </Link>
       </div>
     </section>
-    <HowItWorksSteps
-      variant="cards"
-      className="max-w-[880px]"
-      steps={HOST_STEPS.map((id) => <FormattedMessage key={id} id={id} />)}
-    />
+    <HowItWorksSteps variant="cards" className="max-w-[880px]" steps={steps} />
   </EntryShell>
 );
