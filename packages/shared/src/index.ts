@@ -6,5 +6,6 @@ export * from "./health.js";
 export * from "./images.js";
 export * from "./lobby.js";
 export * from "./session.js";
+export * from "./setup-file.js";
 export * from "./text.js";
 export * from "./time.js";

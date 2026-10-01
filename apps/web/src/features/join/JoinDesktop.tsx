@@ -10,10 +10,9 @@ import {
 } from "@gamemash/ui";
 import { Link } from "@tanstack/react-router";
 import { FormattedMessage } from "react-intl";
-import type { EntryLayoutProps } from "../entry/entry-layout";
-import { JOIN_FORM_ID, JOIN_STEPS } from "./join-layout";
+import type { EntryLayoutProps } from "../entry/useEntryLayout";
 
-export const JoinDesktop = ({ fields, submit, onSubmit }: EntryLayoutProps) => (
+export const JoinDesktop = ({ formId, steps, fields, submit, onSubmit }: EntryLayoutProps) => (
   <EntryShell
     logo={<Logo size="md" hasOutline={false} />}
     action={
@@ -26,7 +25,7 @@ export const JoinDesktop = ({ fields, submit, onSubmit }: EntryLayoutProps) => (
   >
     <section className="flex w-full max-w-[500px] shrink-0 flex-col justify-center gap-[18px] self-center min-[1100px]:self-stretch">
       <form
-        id={JOIN_FORM_ID}
+        id={formId}
         noValidate
         onSubmit={onSubmit}
         className="flex flex-col gap-3 rounded-tile border-3 border-ink-950 bg-paper-white p-8 shadow-brutal-xl"
@@ -50,11 +49,7 @@ export const JoinDesktop = ({ fields, submit, onSubmit }: EntryLayoutProps) => (
       <Heading as="h2" size="display" className="max-w-[560px]">
         <FormattedMessage id="join.tagline" />
       </Heading>
-      <HowItWorksSteps
-        variant="violet"
-        className="mt-2"
-        steps={JOIN_STEPS.map((id) => <FormattedMessage key={id} id={id} />)}
-      />
+      <HowItWorksSteps variant="violet" className="mt-2" steps={steps} />
       <EntryHero variant="desktop" className="absolute -right-[18px] -bottom-[22px] max-[1199px]:hidden" />
     </section>
   </EntryShell>

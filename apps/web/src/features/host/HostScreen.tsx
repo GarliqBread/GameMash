@@ -8,16 +8,19 @@ import { FormattedMessage, useIntl } from "react-intl";
 import { saveCredentials } from "../../lib/credentials";
 import { toApiError, useErrorMessage } from "../../lib/errors";
 import { createSession } from "../../lib/sessions";
-import { DESKTOP_QUERY, useMediaQuery } from "../../lib/useMediaQuery";
+import { useEntryLayout } from "../entry/useEntryLayout";
 import { HostDesktop } from "./HostDesktop";
 import { HostPhone } from "./HostPhone";
-import { HOST_FORM_ID } from "./host-layout";
+
+const FORM_ID = "host";
+const STEP_IDS = ["host.step1", "host.step2", "host.step3"];
+const LAYOUTS = { desktop: HostDesktop, phone: HostPhone };
 
 export const HostScreen = () => {
   const intl = useIntl();
   const navigate = useNavigate();
   const formatError = useErrorMessage();
-  const isDesktop = useMediaQuery(DESKTOP_QUERY);
+  const { isDesktop, Layout } = useEntryLayout(LAYOUTS);
   const [name, setName] = useState("");
   const create = useMutation({
     mutationFn: createSession,
@@ -59,7 +62,7 @@ export const HostScreen = () => {
     <Button
       size="lg"
       type="submit"
-      form={HOST_FORM_ID}
+      form={FORM_ID}
       disabled={create.isPending}
       icon={isDesktop ? <PlayIcon size={22} /> : undefined}
       className="workshop:h-16 workshop:text-2xl workshop:shadow-brutal-md"
@@ -68,6 +71,13 @@ export const HostScreen = () => {
     </Button>
   );
 
-  const Layout = isDesktop ? HostDesktop : HostPhone;
-  return <Layout fields={fields} submit={submit} onSubmit={handleSubmit} />;
+  return (
+    <Layout
+      formId={FORM_ID}
+      steps={STEP_IDS.map((id) => <FormattedMessage key={id} id={id} />)}
+      fields={fields}
+      submit={submit}
+      onSubmit={handleSubmit}
+    />
+  );
 };

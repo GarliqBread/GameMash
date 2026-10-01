@@ -13,13 +13,15 @@ import { type FormEvent, useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { saveCredentials } from "../../lib/credentials";
 import { toApiError, useErrorMessage } from "../../lib/errors";
-import { DESKTOP_QUERY, useMediaQuery } from "../../lib/useMediaQuery";
+import { useEntryLayout } from "../entry/useEntryLayout";
 import { JoinDesktop } from "./JoinDesktop";
 import { type JoinFieldErrors, JoinFields } from "./JoinFields";
 import { JoinPhone } from "./JoinPhone";
-import { JOIN_FORM_ID } from "./join-layout";
 import { joinRoom } from "./join-session";
 
+const FORM_ID = "join";
+const STEP_IDS = ["join.step1", "join.step2", "join.step3"];
+const LAYOUTS = { desktop: JoinDesktop, phone: JoinPhone };
 const CODE_ERRORS: ErrorCode[] = ["room_not_found"];
 const NAME_ERRORS: ErrorCode[] = ["invalid_name", "name_taken"];
 
@@ -37,7 +39,7 @@ export const JoinScreen = ({ initialCode }: JoinScreenProps) => {
   const intl = useIntl();
   const formatError = useErrorMessage();
   const navigate = useNavigate();
-  const isDesktop = useMediaQuery(DESKTOP_QUERY);
+  const { isDesktop, Layout } = useEntryLayout(LAYOUTS);
   const [code, setCode] = useState(initialCode);
   const [name, setName] = useState("");
   const [errors, setErrors] = useState<JoinFieldErrors>({});
@@ -91,7 +93,7 @@ export const JoinScreen = ({ initialCode }: JoinScreenProps) => {
     <Button
       size="lg"
       type="submit"
-      form={JOIN_FORM_ID}
+      form={FORM_ID}
       disabled={join.isPending}
       className="workshop:h-16 workshop:text-2xl workshop:shadow-brutal-md"
     >
@@ -99,6 +101,13 @@ export const JoinScreen = ({ initialCode }: JoinScreenProps) => {
     </Button>
   );
 
-  const Layout = isDesktop ? JoinDesktop : JoinPhone;
-  return <Layout fields={fields} submit={submit} onSubmit={handleSubmit} />;
+  return (
+    <Layout
+      formId={FORM_ID}
+      steps={STEP_IDS.map((id) => <FormattedMessage key={id} id={id} />)}
+      fields={fields}
+      submit={submit}
+      onSubmit={handleSubmit}
+    />
+  );
 };

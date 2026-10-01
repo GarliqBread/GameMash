@@ -20,7 +20,7 @@ export const TimerPill = ({ seconds, label, tone = "active", className, ...props
     {...props}
   >
     <ClockIcon size={20} />
-    <span aria-hidden="true" className="font-display text-2xl/[1] font-extrabold tabular-nums">
+    <span aria-hidden="true" className="font-display text-heading-sm/[1] font-extrabold tabular-nums">
       {seconds}
     </span>
   </div>

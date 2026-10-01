@@ -82,6 +82,24 @@ describe("game upload routes", () => {
     expect((await readAsHost("d1")).statusCode).toBe(404);
   });
 
+  it("answers with no content while the player has not drawn yet", async () => {
+    const { readAsPlayer } = await setup();
+
+    const response = await readAsPlayer("mine");
+
+    expect(response.statusCode).toBe(204);
+    expect(response.body).toBe("");
+  });
+
+  it("returns not_found for drawings the viewer may not see", async () => {
+    const { readAsPlayer, readAsHost } = await setup();
+
+    for (const response of [await readAsPlayer("d1"), await readAsHost("mine")]) {
+      expect(response.statusCode).toBe(404);
+      expect(response.json()).toEqual({ code: "not_found" });
+    }
+  });
+
   it("refuses requests without the right token", async () => {
     const { upload, readAsPlayer, readAsHost, daan, hostToken } = await setup();
 

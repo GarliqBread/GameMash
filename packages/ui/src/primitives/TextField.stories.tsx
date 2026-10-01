@@ -1,5 +1,5 @@
 import { useCopy } from "../../.ladle/pseudo";
-import { BothThemes, Frame, WITH_WORKSHOP } from "../../.ladle/story-kit";
+import { Frame, ThemeMatrix } from "../../.ladle/story-kit";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { TextField } from "./TextField";
 
@@ -8,7 +8,7 @@ export default { title: "Primitives / TextField" } satisfies StoryDefault;
 export const Sizes: Story = () => {
   const t = useCopy();
   return (
-    <BothThemes themes={WITH_WORKSHOP}>
+    <ThemeMatrix>
       {() => (
         <>
           <Frame width={350}>
@@ -28,6 +28,6 @@ export const Sizes: Story = () => {
           </Frame>
         </>
       )}
-    </BothThemes>
+    </ThemeMatrix>
   );
 };

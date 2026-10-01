@@ -13,6 +13,7 @@ import {
 import type { ReactNode } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { avatarSrc } from "../../lib/players";
+import { useHostCredentials } from "../host/host-credentials";
 
 const PODIUM_SIZE = 3;
 
@@ -33,15 +34,15 @@ const rankPlayers = (sessionId: string, standings: GameStanding[], players: Map<
 };
 
 export type StageFinalScoresProps = {
-  sessionId: string;
   sessionName: string;
   standings: GameStanding[];
   players: Map<string, LobbyPlayer>;
   actions?: ReactNode;
 };
 
-export const StageFinalScores = ({ sessionId, sessionName, standings, players, actions }: StageFinalScoresProps) => {
+export const StageFinalScores = ({ sessionName, standings, players, actions }: StageFinalScoresProps) => {
   const intl = useIntl();
+  const { sessionId } = useHostCredentials();
   const ranked = rankPlayers(sessionId, standings, players);
   const formatNumber = (value: number) => intl.formatNumber(value);
   return (

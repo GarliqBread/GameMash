@@ -5,14 +5,14 @@ import { PlayGame } from "../features/play/PlayGame";
 import { WaitingScreen } from "../features/play/WaitingScreen";
 import { PhoneMessage } from "../features/session/PhoneMessage";
 import { loadPlayerCredentials, type PlayerCredentials } from "../lib/credentials";
-import { useLobbyConnection, useLobbyStore } from "../lib/lobby";
+import { useActiveGame, useLobbyConnection, useLobbyStore } from "../lib/lobby";
 import { avatarSrc } from "../lib/players";
 
 const PlayerLobby = ({ credentials }: { credentials: PlayerCredentials }) => {
   useLobbyConnection(credentials);
   const status = useLobbyStore((store) => store.status);
   const state = useLobbyStore((store) => store.state);
-  const game = useLobbyStore((store) => store.game);
+  const game = useActiveGame();
   const me = state?.players.find((player) => player.id === credentials.playerId);
 
   if (status === "removed") {
@@ -36,7 +36,7 @@ const PlayerLobby = ({ credentials }: { credentials: PlayerCredentials }) => {
     );
   }
 
-  if (game && state && state.status !== "lobby") {
+  if (game) {
     return (
       <PlayGame
         credentials={credentials}

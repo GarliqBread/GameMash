@@ -41,7 +41,7 @@ export const AnswerButton = ({
     {...props}
   >
     <AnswerShape shape={shape} size={64} label={shapeLabel} className="shrink-0" />
-    <span className="min-w-0 font-display text-3xl leading-[1.1] font-extrabold hyphens-auto wrap-break-word">
+    <span className="min-w-0 font-display text-heading leading-[1.1] font-extrabold hyphens-auto wrap-break-word">
       {label}
     </span>
   </BaseButton>

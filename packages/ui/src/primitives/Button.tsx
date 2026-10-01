@@ -24,7 +24,7 @@ export const buttonVariants = cva(
       size: {
         sm: "min-h-11 gap-2 rounded-control px-4 py-2 text-caption",
         md: "min-h-12 gap-2.5 rounded-control px-5 py-2.5 text-body workshop:min-h-[52px]",
-        lg: "min-h-16 gap-3 rounded-button px-6 py-3 text-2xl workshop:h-[60px] workshop:min-h-0 workshop:px-7 workshop:py-0 workshop:text-title-sm",
+        lg: "min-h-16 gap-3 rounded-button px-6 py-3 text-heading-sm workshop:h-[60px] workshop:min-h-0 workshop:px-7 workshop:py-0 workshop:text-title-sm",
         stage: "min-h-[88px] gap-4 rounded-card px-[52px] py-[18px] text-stage-lg",
         "stage-sm": "min-h-[68px] gap-3 rounded-card px-9 py-3 text-stage-body",
       },

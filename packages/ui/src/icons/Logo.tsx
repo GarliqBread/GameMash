@@ -1,16 +1,9 @@
 import type { ComponentProps } from "react";
-import { ANSWER_SHAPES, type AnswerShapeName } from "../lib/answers.js";
+import { ANSWER_SHAPES, ANSWERS } from "../lib/answers.js";
 import { cn } from "../lib/cn.js";
 import { AnswerShape } from "./AnswerShape.js";
 
 type LogoSize = "sm" | "md" | "lg";
-
-const FILLS: Record<AnswerShapeName, string> = {
-  squircle: "text-brand-coral",
-  triangle: "text-brand-violet",
-  plus: "text-brand-lime",
-  dome: "text-brand-sky",
-};
 
 const SIZES: Record<LogoSize, { mark: string; gap: string; shape: number; wordmark: string }> = {
   sm: { mark: "gap-0.5", gap: "gap-2.5", shape: 15, wordmark: "text-title-sm" },
@@ -34,7 +27,7 @@ export const Logo = ({ size = "sm", hasOutline = true, className, ...props }: Lo
             shape={shape}
             size={sizing.shape}
             className={cn(
-              FILLS[shape],
+              ANSWERS[shape].brandText,
               hasOutline && "workshop:stroke-ink-950 workshop:stroke-2 workshop:[stroke-linejoin:round]",
             )}
           />

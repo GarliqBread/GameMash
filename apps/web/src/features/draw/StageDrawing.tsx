@@ -15,6 +15,7 @@ import type { LobbyStatus } from "../../lib/lobby";
 import { avatarSrc } from "../../lib/players";
 import { useSecondsLabel } from "../game/useSecondsLabel";
 import { useSecondsLeft } from "../game/useSecondsLeft";
+import { useHostCredentials } from "../host/host-credentials";
 import { ReconnectingNote } from "../session/ReconnectingNote";
 import { DrawStageHeader } from "./DrawStageHeader";
 import { roundValues } from "./round-values";
@@ -25,15 +26,15 @@ const CHIP_COLUMNS = 9;
 const MAX_CHIPS = CHIP_COLUMNS * 2;
 
 export type StageDrawingProps = {
-  sessionId: string;
   view: DrawingView;
   players: Map<string, LobbyPlayer>;
   phaseEndsAt: number | null;
   status: LobbyStatus;
 };
 
-export const StageDrawing = ({ sessionId, view, players, phaseEndsAt, status }: StageDrawingProps) => {
+export const StageDrawing = ({ view, players, phaseEndsAt, status }: StageDrawingProps) => {
   const intl = useIntl();
+  const { sessionId } = useHostCredentials();
   const seconds = useSecondsLeft(phaseEndsAt);
   const secondsLabel = useSecondsLabel();
   const done = new Set(view.doneIds);

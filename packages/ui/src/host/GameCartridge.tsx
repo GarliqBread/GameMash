@@ -67,14 +67,14 @@ export const GameCartridge = ({
         {icon}
       </span>
       <span className="flex min-w-0 flex-col gap-1.5">
-        <span className="font-pixel tracking-pixel text-xs text-fg-subtle">{eyebrow}</span>
+        <span className="font-pixel tracking-pixel text-label-sm text-fg-subtle">{eyebrow}</span>
         <span className="font-display text-title leading-none font-extrabold wrap-break-word">{title}</span>
         {metaChips.length > 0 && (
           <span className="flex flex-wrap gap-1.5">
             {metaChips.map((chip) => (
               <span
                 key={chip}
-                className="rounded-sticker border-2 border-ink-950 bg-cream px-[7px] py-0.5 font-pixel tracking-pixel text-xs"
+                className="rounded-sticker border-2 border-ink-950 bg-cream px-[7px] py-0.5 font-pixel tracking-pixel text-label-sm"
               >
                 {chip}
               </span>

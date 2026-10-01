@@ -2,7 +2,7 @@ import { Toggle } from "@base-ui/react/toggle";
 import { ToggleGroup } from "@base-ui/react/toggle-group";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "../lib/cn.js";
-import { workshopKeyClassName } from "../lib/workshop.js";
+import { workshopKeyClassName } from "../workshop/styles.js";
 
 export type SegmentedOption<Value extends string> = {
   value: Value;
@@ -48,11 +48,11 @@ export const SegmentedControl = <Value extends string>({
         value={option.value}
         aria-label={option.ariaLabel}
         className={cn(
-          "focus-ring flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-control px-3 py-1.5 text-center text-base/tight font-bold text-fg-muted",
+          "focus-ring flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-control px-3 py-1.5 text-center text-control/tight font-bold text-fg-muted",
           "transition-colors duration-100 not-data-[disabled]:hover:text-fg data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
           "data-[pressed]:bg-selected data-[pressed]:text-on-selected not-data-[disabled]:data-[pressed]:hover:text-on-selected",
           workshopKeyClassName,
-          "workshop:min-h-[50px] workshop:px-1 workshop:py-1 workshop:text-lg/tight",
+          "workshop:min-h-[50px] workshop:px-1 workshop:py-1 workshop:text-control-lg/tight",
           itemClassName,
         )}
       >

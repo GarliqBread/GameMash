@@ -10,7 +10,7 @@ export type SwitchProps = Omit<ComponentProps<typeof BaseSwitch.Root>, "classNam
 };
 
 const stateLabelClassName = cn(
-  "hidden col-start-1 row-start-1 min-w-0 px-1 text-center font-pixel tracking-pixel text-xs font-bold text-ink-950",
+  "hidden col-start-1 row-start-1 min-w-0 px-1 text-center font-pixel tracking-pixel text-label-sm font-bold text-ink-950",
   "workshop:block workshop:pl-[34px] workshop:group-data-[checked]:pr-[34px] workshop:group-data-[checked]:pl-1",
 );
 
@@ -64,7 +64,7 @@ export const Switch = ({ label, onLabel, offLabel, className, id, ...props }: Sw
     <div className={cn("flex items-center justify-between gap-4", className)}>
       <label
         htmlFor={controlId}
-        className="min-w-0 flex-1 cursor-pointer text-base/snug text-fg hyphens-auto wrap-break-word [hyphenate-limit-chars:10_4_4]"
+        className="min-w-0 flex-1 cursor-pointer text-control/snug text-fg hyphens-auto wrap-break-word [hyphenate-limit-chars:10_4_4]"
       >
         {label}
       </label>

@@ -71,7 +71,7 @@ export const Answer: Story = () => {
           name="Priya"
           score={
             <>
-              <strong className="font-display text-xl text-fg">2,560</strong> {t("pts")}
+              <strong className="font-display text-lead text-fg">2,560</strong> {t("pts")}
             </>
           }
         />

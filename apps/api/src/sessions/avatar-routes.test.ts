@@ -87,6 +87,16 @@ describe("avatar upload", () => {
     expect((await upload(bytes, "image/webp", daan.playerToken)).statusCode).toBe(401);
   });
 
+  it("rejects a wrong token before reading the body", async () => {
+    const { upload } = await setup();
+    const tooBig = Buffer.concat([fixture("lossy-256.webp"), Buffer.alloc(AVATAR_MAX_BYTES)]);
+
+    const response = await upload(tooBig, "image/webp", "wrong");
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual({ code: "unauthorized" });
+  });
+
   it("accepts the bearer scheme in any case", async () => {
     const { app, url, priya } = await setup();
 

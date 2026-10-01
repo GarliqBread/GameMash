@@ -33,7 +33,7 @@ export const RatingScale = ({
         onValueChange={(rating) => onValueChange(Number(rating))}
         className="grid grid-cols-5"
         itemClassName={cn(
-          "h-[68px] text-3xl data-[checked]:border-sun data-[checked]:bg-sun data-[checked]:text-ink-950",
+          "h-[68px] text-heading data-[checked]:border-sun data-[checked]:bg-sun data-[checked]:text-ink-950",
           itemClassName,
         )}
         options={RATINGS.map((rating) => ({ value: rating, label: rating }))}

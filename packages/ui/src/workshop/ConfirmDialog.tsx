@@ -1,8 +1,7 @@
 import { AlertDialog } from "@base-ui/react/alert-dialog";
 import type { ReactNode, RefObject } from "react";
 import { cn } from "../lib/cn.js";
-import { dialogBackdropClassName, dialogPopupClassName, dialogTitleClassName } from "./dialog.js";
-import { keyButtonClassName } from "./KeyButton.js";
+import { dialogBackdropClassName, dialogPopupClassName, dialogTitleClassName, keyButtonClassName } from "./styles.js";
 
 export type ConfirmDialogProps = {
   open: boolean;
@@ -38,10 +37,10 @@ export const ConfirmDialog = ({
           <AlertDialog.Description className="text-body text-fg-muted">{description}</AlertDialog.Description>
         )}
         <div className="mt-3 flex flex-wrap justify-end gap-3">
-          <AlertDialog.Close className={cn(keyButtonClassName, "h-12 px-5 text-base")}>{cancelLabel}</AlertDialog.Close>
+          <AlertDialog.Close className={keyButtonClassName({ size: "md" })}>{cancelLabel}</AlertDialog.Close>
           <AlertDialog.Close
             onClick={onConfirm}
-            className={cn(keyButtonClassName, "h-12 px-5 text-base workshop:bg-brand-coral")}
+            className={cn(keyButtonClassName({ size: "md" }), "workshop:bg-brand-coral")}
           >
             {confirmLabel}
           </AlertDialog.Close>

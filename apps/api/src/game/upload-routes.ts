@@ -10,9 +10,9 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { Type } from "typebox";
 import { perMinute, routeParam } from "../limits/route-limits.js";
 import { requireHost, requirePlayer } from "../sessions/auth.js";
-import { errorBody } from "../sessions/error-body.js";
+import { sendError } from "../sessions/error-body.js";
 import type { SessionService } from "../sessions/service.js";
-import type { UploadResult } from "./runner.js";
+import type { UploadRead, UploadResult } from "./runner.js";
 
 export type GameUploads = {
   upload: (
@@ -22,7 +22,7 @@ export type GameUploads = {
     body: unknown,
     connected: Set<string>,
   ) => Promise<UploadResult>;
-  readUpload: (sessionId: string, viewer: UploadViewer, id: string) => Promise<string | null>;
+  readUpload: (sessionId: string, viewer: UploadViewer, id: string) => Promise<UploadRead>;
   connectedPlayers: (sessionId: string) => Set<string>;
 };
 
@@ -51,17 +51,25 @@ const errorResponses = {
   429: ApiErrorSchema,
 };
 
+const readResponses = {
+  204: Type.Null(),
+  401: ApiErrorSchema,
+  404: ApiErrorSchema,
+  429: ApiErrorSchema,
+};
+
 const byPlayer = (request: FastifyRequest) => `${routeParam(request, "sessionId")}:${routeParam(request, "playerId")}`;
 
 const byHost = (request: FastifyRequest) => `${routeParam(request, "sessionId")}:host`;
 
-const sendUpload = (reply: FastifyReply, payload: string | null) => {
-  if (payload === null) return reply.code(404).send(errorBody("not_found"));
+const sendUpload = (reply: FastifyReply, read: UploadRead) => {
+  if (read.access === "denied") return sendError(reply, "not_found");
+  if (read.payload === null) return reply.code(204).send(null);
   return reply
     .header("content-type", "application/json; charset=utf-8")
     .header("cache-control", "no-store")
     .header("x-content-type-options", "nosniff")
-    .send(payload);
+    .send(read.payload);
 };
 
 const playerUploadRoutes =
@@ -91,8 +99,8 @@ const playerUploadRoutes =
           uploads.connectedPlayers(session.id),
         );
         if (result === "accepted") return reply.code(204).send(null);
-        if (result === "invalid") return reply.code(400).send(errorBody("bad_request"));
-        return reply.code(409).send(errorBody("input_closed"));
+        if (result === "invalid") return sendError(reply, "bad_request");
+        return sendError(reply, "input_closed");
       },
     );
 
@@ -100,7 +108,7 @@ const playerUploadRoutes =
       "/api/sessions/:sessionId/players/:playerId/game/uploads/:uploadId",
       {
         config: perMinute(READS_PER_VIEWER_PER_MINUTE, byPlayer),
-        schema: { params: PlayerReadParamsSchema, headers: BearerAuthHeadersSchema },
+        schema: { params: PlayerReadParamsSchema, headers: BearerAuthHeadersSchema, response: readResponses },
       },
       async (request, reply) => {
         const { session, player } = playerOf(request);
@@ -119,7 +127,7 @@ const hostUploadRoutes =
       "/api/sessions/:sessionId/game/uploads/:uploadId",
       {
         config: perMinute(READS_PER_VIEWER_PER_MINUTE, byHost),
-        schema: { params: HostReadParamsSchema, headers: BearerAuthHeadersSchema },
+        schema: { params: HostReadParamsSchema, headers: BearerAuthHeadersSchema, response: readResponses },
       },
       async (request, reply) => {
         const session = hostOf(request);

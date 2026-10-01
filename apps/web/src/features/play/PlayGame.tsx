@@ -1,12 +1,11 @@
-import { type QuizPlayerView, rankOf } from "@gamemash/games/config";
+import { rankOf } from "@gamemash/games/config";
 import type { FinishedSnapshot, GameSnapshot } from "@gamemash/shared";
 import { Heading, Pill } from "@gamemash/ui";
 import { FormattedMessage } from "react-intl";
 import type { PlayerCredentials } from "../../lib/credentials";
 import type { LobbyStatus } from "../../lib/lobby";
-import { PhoneDrawIt } from "../draw/PhoneDrawIt";
-import { PhoneQuizAnswering } from "../quiz/PhoneQuizAnswering";
-import { PhoneQuizQuestion, PhoneQuizReveal } from "../quiz/PhoneQuizStatus";
+import { playerGameOf } from "../games/game-views";
+import { GamePhone } from "../games/phone-games";
 import { type PlayerIdentity, PlayFrame } from "./PlayFrame";
 
 const placeOf = (snapshot: FinishedSnapshot, playerId: string) => {
@@ -48,22 +47,7 @@ export type PlayGameProps = {
 
 export const PlayGame = ({ credentials, me, snapshot, status }: PlayGameProps) => {
   if (snapshot.status === "finished") return <PhoneFinal me={me} snapshot={snapshot} status={status} />;
-  if (snapshot.gameType === "draw-it") {
-    return <PhoneDrawIt credentials={credentials} me={me} snapshot={snapshot} status={status} />;
-  }
-  if (snapshot.gameType !== "pop-quiz") return null;
-
-  const view = snapshot.view as QuizPlayerView;
-  if (view.kind === "question") return <PhoneQuizQuestion me={me} view={view} status={status} />;
-  if (view.kind === "reveal") return <PhoneQuizReveal me={me} view={view} status={status} />;
-  return (
-    <PhoneQuizAnswering
-      key={snapshot.phaseId}
-      me={me}
-      view={view}
-      phaseId={snapshot.phaseId}
-      phaseEndsAt={snapshot.phaseEndsAt}
-      status={status}
-    />
-  );
+  const game = playerGameOf(snapshot);
+  if (!game) return null;
+  return <GamePhone game={game} credentials={credentials} me={me} snapshot={snapshot} status={status} />;
 };

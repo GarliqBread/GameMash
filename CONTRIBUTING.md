@@ -25,7 +25,7 @@ These are checked in review, and most of them by the tools too:
 
 ## Checks
 
-Run these before opening a pull request. CI runs the same ones:
+`pnpm install` sets up a pre-commit hook (husky and lint-staged) that runs Biome on the files you commit and fixes what it can, so formatting never fails CI. Run these before opening a pull request. CI runs the same ones:
 
 ```sh
 pnpm services   # Redis and MinIO, needed by the API tests
@@ -54,7 +54,7 @@ Then register it:
 
 1. Add its setup schema to the union in `packages/games/src/setup-schema.ts`, its config rules in `setup.ts` and its definition in `index.ts`.
 2. Add its rules to `gameRules` in `packages/games/src/server.ts`.
-3. Add the big-screen and phone screens in `apps/web/src/features`, and wire them in where the web app switches on the game type: `StageGame.tsx`, `PlayGame.tsx`, the workshop (`SetupWorkshop.tsx`) and `setup-changes.ts`, which creates a new game's default setup.
+3. Add the big-screen and phone screens and the workshop editor and settings in `apps/web/src/features`, then register them in `apps/web/src/features/games`: the view types in `game-views.ts`, the big screen in `stage-games.tsx`, the phone screen in `phone-games.tsx` and the workshop (editor, settings, default setup and readiness hints) in `workshop-games.tsx`. Each registry is keyed by game type, so the web app won't typecheck until the new game is in all of them.
 4. Add its messages to `packages/messages/src/locales`.
 5. Test its rules with Vitest, like `pop-quiz/rules.test.ts`.
 

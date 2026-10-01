@@ -1,4 +1,4 @@
-import { BothThemes, Row, WITH_WORKSHOP } from "../../.ladle/story-kit";
+import { Row, ThemeMatrix } from "../../.ladle/story-kit";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { CopyIcon, EraserIcon, PlusIcon, TrashIcon, UndoIcon } from "../icons/icons";
 import { IconButton } from "./IconButton";
@@ -6,7 +6,7 @@ import { IconButton } from "./IconButton";
 export default { title: "Primitives / IconButton" } satisfies StoryDefault;
 
 export const Variants: Story = () => (
-  <BothThemes themes={WITH_WORKSHOP}>
+  <ThemeMatrix>
     {() => (
       <>
         <Row label="ghost / sm (host)">
@@ -41,5 +41,5 @@ export const Variants: Story = () => (
         </Row>
       </>
     )}
-  </BothThemes>
+  </ThemeMatrix>
 );

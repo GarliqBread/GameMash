@@ -18,11 +18,17 @@
     "format": "biome check --write .",
     "test": "pnpm build:packages && pnpm -r test",
     "services": "docker compose up -d --wait redis minio && docker compose run --rm minio-setup",
-    "stories": "pnpm --filter @gamemash/ui stories"
+    "stories": "pnpm --filter @gamemash/ui stories",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
     "@types/node": "catalog:",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
     "typescript": "catalog:"
+  },
+  "lint-staged": {
+    "*": "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true"
   }
 }

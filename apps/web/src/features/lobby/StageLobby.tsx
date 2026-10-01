@@ -26,6 +26,7 @@ import { FormattedMessage, useIntl } from "react-intl";
 import type { LobbyStatus } from "../../lib/lobby";
 import { avatarSrc } from "../../lib/players";
 import { displayHost, joinUrl } from "../../lib/public-url";
+import { useHostCredentials } from "../host/host-credentials";
 import { ReconnectingNote } from "../session/ReconnectingNote";
 import { lobbySlots } from "./lobby-slots";
 
@@ -33,8 +34,6 @@ const knownGames = (lineup: LineupEntry[]) =>
   lineup.flatMap((entry) => (isGameId(entry.type) ? [{ entry, definition: gameDefinition(entry.type) }] : []));
 
 export type StageLobbyProps = {
-  sessionId: string;
-  roomCode: string;
   sessionName: string;
   lineup: LineupEntry[];
   players: LobbyPlayer[];
@@ -46,8 +45,6 @@ export type StageLobbyProps = {
 };
 
 export const StageLobby = ({
-  sessionId,
-  roomCode,
   sessionName,
   lineup,
   players,
@@ -58,6 +55,7 @@ export const StageLobby = ({
   onRemovePlayer,
 }: StageLobbyProps) => {
   const intl = useIntl();
+  const { sessionId, roomCode } = useHostCredentials();
   const [removing, setRemoving] = useState<LobbyPlayer | null>(null);
   const [isRosterOpen, setIsRosterOpen] = useState(false);
   const askToRemove = (playerId: string) => setRemoving(players.find((player) => player.id === playerId) ?? null);

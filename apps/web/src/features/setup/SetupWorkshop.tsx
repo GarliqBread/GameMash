@@ -1,99 +1,61 @@
-import { GAMES, gameDefinition, isGameId } from "@gamemash/games";
+import { isGameId } from "@gamemash/games";
+import { MAX_GAMES, SESSION_NAME_MAX_LENGTH, type SessionSetup } from "@gamemash/games/config";
 import {
-  type GameSetup,
-  isGameReady,
-  isQuestionComplete,
-  isSetupReady,
-  MAX_GAMES,
-  SESSION_NAME_MAX_LENGTH,
-  type SessionSetup,
-} from "@gamemash/games/config";
-import {
-  AutosaveIndicator,
   Button,
-  ConfirmDialog,
   GamePicker,
-  type GamePickerOption,
-  Heading,
   InsertGameSlot,
   Logo,
   PlayIcon,
   SectionTab,
   SessionNameSticker,
-  ToolButton,
-  TrashIcon,
   TrustNote,
   WorkshopShell,
 } from "@gamemash/ui";
 import { useNavigate } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
-import type { HostCredentials } from "../../lib/credentials";
-import { useErrorMessage } from "../../lib/errors";
-import { DrawItEditor } from "./DrawItEditor";
-import { DrawItRules } from "./DrawItRules";
-import { QuizEditor } from "./QuizEditor";
-import { QuizRules } from "./QuizRules";
+import { GameSettings, newGame } from "../games/workshop-games";
+import { useHostCredentials } from "../host/host-credentials";
 import { SetupLineup } from "./SetupLineup";
-import { SetupTransferButtons, SetupTransferStatus } from "./SetupTransfer";
-import { addGame, newGame, removeGame, reorderGames, updateDrawItConfig, updateQuizConfig } from "./setup-changes";
+import { SetupTransferButtons } from "./SetupTransfer";
+import { addGame, removeGame, reorderGames } from "./setup-changes";
+import { firstUnready, setupProblemId } from "./setup-readiness";
+import { useGamePickerOptions } from "./useGamePickerOptions";
 import { useImageUploads } from "./useImageUploads";
 import { useSetupEditor } from "./useSetupEditor";
 import { useSetupTransfer } from "./useSetupTransfer";
-
-const problemOf = (games: GameSetup[]) => {
-  const unready = games.find((game) => !isGameReady(game));
-  if (!unready) return games.length === 0 ? "needGame" : null;
-  return unready.type === "draw-it" ? "needWords" : "needComplete";
-};
+import { useWorkshopSelection } from "./useWorkshopSelection";
+import { WorkshopEditor } from "./WorkshopEditor";
 
 export type SetupWorkshopProps = {
-  credentials: HostCredentials;
   initialSetup: SessionSetup;
   imagesEnabled: boolean;
 };
 
-export const SetupWorkshop = ({ credentials, initialSetup, imagesEnabled }: SetupWorkshopProps) => {
+export const SetupWorkshop = ({ initialSetup, imagesEnabled }: SetupWorkshopProps) => {
   const intl = useIntl();
   const navigate = useNavigate();
-  const formatError = useErrorMessage();
-  const { setup, status, saveError, update, flush, replace } = useSetupEditor(credentials, initialSetup);
-  const uploads = useImageUploads(credentials);
-  const [selectedGameId, setSelectedGameId] = useState(initialSetup.games[0]?.id);
-  const [selectedQuestions, setSelectedQuestions] = useState<Record<string, string>>({});
+  const { sessionId } = useHostCredentials();
+  const { setup, status, saveError, update, flush, replace } = useSetupEditor(initialSetup);
+  const uploads = useImageUploads();
+  const pickerOptions = useGamePickerOptions();
+  const { game, selectedItemId, selectGame, selectItem } = useWorkshopSelection(setup);
   const [hasTriedToOpen, setHasTriedToOpen] = useState(false);
-  const [isConfirmingRemove, setIsConfirmingRemove] = useState(false);
   const insertSlotRef = useRef<HTMLButtonElement>(null);
   const transfer = useSetupTransfer({
-    credentials,
     setup,
     flush,
     replace,
     onImported: ({ setup: merged, addedGames }) => {
-      if (addedGames > 0) setSelectedGameId(merged.games.at(-addedGames)?.id);
+      if (addedGames > 0) selectGame(merged.games.at(-addedGames)?.id);
     },
-  });
-
-  const game = setup.games.find((item) => item.id === selectedGameId) ?? setup.games[0];
-  const selectQuestion = (gameId: string, questionId: string) =>
-    setSelectedQuestions((current) => ({ ...current, [gameId]: questionId }));
-
-  const pickerOptions: GamePickerOption[] = Object.values(GAMES).map((definition) => {
-    const Icon = definition.icon;
-    return {
-      id: definition.id,
-      title: intl.formatMessage({ id: definition.titleId }),
-      description: intl.formatMessage({ id: definition.descriptionId }),
-      accent: definition.accent,
-      icon: <Icon />,
-    };
   });
 
   const handleInsert = (type: string) => {
     if (!isGameId(type)) return;
-    const game = newGame(type);
-    update((current) => addGame(current, game));
-    setSelectedGameId(game.id);
+    const added = newGame(type);
+    update((current) => addGame(current, added));
+    selectGame(added.id);
   };
 
   const handleRemove = () => {
@@ -101,32 +63,20 @@ export const SetupWorkshop = ({ credentials, initialSetup, imagesEnabled }: Setu
     const index = setup.games.indexOf(game);
     const neighbour = setup.games[index + 1] ?? setup.games[index - 1];
     update((current) => removeGame(current, game.id));
-    setSelectedGameId(neighbour?.id);
-    setIsConfirmingRemove(false);
+    selectGame(neighbour?.id);
   };
 
   const handleOpenLobby = async () => {
     setHasTriedToOpen(true);
-    const unready = setup.games.find((item) => !isGameReady(item));
-    if (setup.games.length === 0 || unready) {
-      if (unready) {
-        setSelectedGameId(unready.id);
-        const incomplete =
-          unready.type === "pop-quiz"
-            ? unready.config.questions.find((question) => !isQuestionComplete(question))
-            : undefined;
-        if (incomplete) selectQuestion(unready.id, incomplete.id);
-      }
+    const unready = firstUnready(setup);
+    if (unready) {
+      selectGame(unready.game.id);
+      if (unready.itemId) selectItem(unready.game.id, unready.itemId);
       return;
     }
-    if (await flush())
-      void navigate({
-        to: "/host/$sessionId",
-        params: { sessionId: credentials.sessionId },
-      });
+    if (setup.games.length === 0) return;
+    if (await flush()) void navigate({ to: "/host/$sessionId", params: { sessionId } });
   };
-
-  const problem = !hasTriedToOpen || isSetupReady(setup) ? null : problemOf(setup.games);
 
   return (
     <WorkshopShell
@@ -162,7 +112,7 @@ export const SetupWorkshop = ({ credentials, initialSetup, imagesEnabled }: Setu
           <SetupLineup
             games={setup.games}
             selectedId={game?.id}
-            onSelect={setSelectedGameId}
+            onSelect={selectGame}
             onReorder={(ids) => update((current) => reorderGames(current, ids))}
           />
           <GamePicker
@@ -182,108 +132,25 @@ export const SetupWorkshop = ({ credentials, initialSetup, imagesEnabled }: Setu
         </>
       }
       editor={
-        <>
-          <div className="flex items-end justify-between gap-4">
-            <div className="flex flex-col gap-1.5">
-              {game && (
-                <SectionTab as="span" variant="accent">
-                  <FormattedMessage id={gameDefinition(game.type).titleId} />
-                </SectionTab>
-              )}
-              <Heading size="host">
-                <FormattedMessage
-                  id={!game ? "setup.emptyTitle" : game.type === "draw-it" ? "setup.editWords" : "setup.editQuestions"}
-                />
-              </Heading>
-            </div>
-            <div className="flex items-center gap-4">
-              <AutosaveIndicator
-                status={status}
-                onRetry={() => void flush()}
-                labels={{
-                  saving: <FormattedMessage id="setup.saving" />,
-                  saved: <FormattedMessage id="setup.saved" />,
-                  error: <FormattedMessage id="setup.saveFailed" />,
-                }}
-              />
-              {game && (
-                <ToolButton
-                  icon={<TrashIcon size={18} strokeWidth={2.2} />}
-                  onClick={() => setIsConfirmingRemove(true)}
-                >
-                  <FormattedMessage id="setup.removeGame" />
-                </ToolButton>
-              )}
-            </div>
-          </div>
-          {status === "error" && saveError && (
-            <p role="alert" className="font-bold text-danger">
-              {formatError(saveError)}
-            </p>
-          )}
-          {problem && (
-            <p role="alert" className="font-bold text-danger">
-              <FormattedMessage id={`setup.${problem}`} />
-            </p>
-          )}
-          <SetupTransferStatus transfer={transfer} />
-          {game?.type === "draw-it" ? (
-            <DrawItEditor
-              key={game.id}
-              config={game.config}
-              onChange={(change) => update((current) => updateDrawItConfig(current, game.id, change))}
-            />
-          ) : game ? (
-            <QuizEditor
-              key={game.id}
-              config={game.config}
-              onChange={(change) => update((current) => updateQuizConfig(current, game.id, change))}
-              selectedQuestionId={selectedQuestions[game.id]}
-              onSelectQuestion={(questionId) => selectQuestion(game.id, questionId)}
-              uploads={uploads}
-              imagesEnabled={imagesEnabled}
-            />
-          ) : (
-            <div className="flex flex-col items-start gap-5">
-              <p className="text-lg text-fg-muted">
-                <FormattedMessage id="setup.emptyBody" values={{ max: MAX_GAMES }} />
-              </p>
-              <GamePicker
-                options={pickerOptions}
-                onPick={handleInsert}
-                trigger={
-                  <Button size="lg">
-                    <FormattedMessage id="setup.addGame" />
-                  </Button>
-                }
-              />
-            </div>
-          )}
-          <ConfirmDialog
-            open={isConfirmingRemove}
-            onOpenChange={setIsConfirmingRemove}
-            title={<FormattedMessage id="setup.removeGameTitle" />}
-            description={<FormattedMessage id="setup.cannotUndo" />}
-            confirmLabel={<FormattedMessage id="setup.removeGame" />}
-            cancelLabel={<FormattedMessage id="setup.keep" />}
-            onConfirm={handleRemove}
-            finalFocus={insertSlotRef}
-          />
-        </>
+        <WorkshopEditor
+          game={game}
+          update={update}
+          selectedItemId={selectedItemId}
+          onSelectItem={selectItem}
+          saveStatus={status}
+          saveError={saveError}
+          onRetrySave={() => void flush()}
+          problemId={hasTriedToOpen ? setupProblemId(setup) : null}
+          transfer={transfer}
+          uploads={uploads}
+          imagesEnabled={imagesEnabled}
+          pickerOptions={pickerOptions}
+          onInsert={handleInsert}
+          onRemove={handleRemove}
+          removeFocusRef={insertSlotRef}
+        />
       }
-      settings={
-        game?.type === "draw-it" ? (
-          <DrawItRules
-            config={game.config}
-            onChange={(change) => update((current) => updateDrawItConfig(current, game.id, change))}
-          />
-        ) : game ? (
-          <QuizRules
-            config={game.config}
-            onChange={(change) => update((current) => updateQuizConfig(current, game.id, change))}
-          />
-        ) : null
-      }
+      settings={game ? <GameSettings game={game} update={update} /> : null}
     />
   );
 };

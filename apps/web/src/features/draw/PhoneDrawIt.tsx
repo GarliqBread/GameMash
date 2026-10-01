@@ -1,21 +1,10 @@
 import type { DrawItPlayerView } from "@gamemash/games/config";
-import type { PlayingSnapshot } from "@gamemash/shared";
-import type { PlayerCredentials } from "../../lib/credentials";
-import type { LobbyStatus } from "../../lib/lobby";
-import type { PlayerIdentity } from "../play/PlayFrame";
+import type { PhoneGameProps } from "../games/game-views";
 import { PhoneDrawing } from "./PhoneDrawing";
 import { PhoneDrawResult } from "./PhoneDrawResult";
 import { PhoneRating } from "./PhoneRating";
 
-export type PhoneDrawItProps = {
-  credentials: PlayerCredentials;
-  me: PlayerIdentity;
-  snapshot: PlayingSnapshot;
-  status: LobbyStatus;
-};
-
-export const PhoneDrawIt = ({ credentials, me, snapshot, status }: PhoneDrawItProps) => {
-  const view = snapshot.view as DrawItPlayerView;
+export const PhoneDrawIt = ({ credentials, me, snapshot, view, status }: PhoneGameProps<DrawItPlayerView>) => {
   if (view.kind === "draw") {
     return (
       <PhoneDrawing

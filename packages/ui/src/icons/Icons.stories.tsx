@@ -1,5 +1,5 @@
 import { SHAPE_LABELS } from "../../.ladle/screen-data";
-import { BothThemes, Row, WITH_WORKSHOP } from "../../.ladle/story-kit";
+import { Row, ThemeMatrix } from "../../.ladle/story-kit";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { ANSWER_SHAPES, ANSWERS } from "../lib/answers";
 import { AnswerShape } from "./AnswerShape";
@@ -9,7 +9,7 @@ import { Logo } from "./Logo";
 export default { title: "Foundations / Icons & logo" } satisfies StoryDefault;
 
 export const Logos: Story = () => (
-  <BothThemes themes={WITH_WORKSHOP}>
+  <ThemeMatrix>
     {() => (
       <>
         <Logo size="sm" />
@@ -18,11 +18,11 @@ export const Logos: Story = () => (
         <Logo size="md" hasOutline={false} />
       </>
     )}
-  </BothThemes>
+  </ThemeMatrix>
 );
 
 export const AnswerShapes: Story = () => (
-  <BothThemes themes={WITH_WORKSHOP}>
+  <ThemeMatrix>
     {() => (
       <>
         <Row label="currentColor">
@@ -42,11 +42,11 @@ export const AnswerShapes: Story = () => (
         </Row>
       </>
     )}
-  </BothThemes>
+  </ThemeMatrix>
 );
 
 export const GenericIcons: Story = () => (
-  <BothThemes themes={WITH_WORKSHOP}>
+  <ThemeMatrix>
     {() => (
       <Row>
         {Object.entries(icons).map(([name, IconComponent]) => (
@@ -57,5 +57,5 @@ export const GenericIcons: Story = () => (
         ))}
       </Row>
     )}
-  </BothThemes>
+  </ThemeMatrix>
 );

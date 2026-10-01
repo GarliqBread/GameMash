@@ -3,7 +3,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { cn } from "../lib/cn.js";
 
 const stickerVariants = cva(
-  "inline-flex items-center gap-1.5 rounded-sticker border-2 border-ink-950 px-2 py-1 font-pixel tracking-pixel text-xs font-bold text-ink-950 shadow-brutal-sm",
+  "inline-flex items-center gap-1.5 rounded-sticker border-2 border-ink-950 px-2 py-1 font-pixel tracking-pixel text-label-sm font-bold text-ink-950 shadow-brutal-sm",
   {
     variants: {
       tone: {

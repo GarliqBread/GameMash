@@ -65,7 +65,7 @@ const Tile = ({
           "has-focus-visible:outline-3 has-focus-visible:outline-offset- has-focus-visible:outline-(--color-focus)",
           isCorrect
             ? "rotate-[-4deg] bg-sun px-2.5 py-1.25 text-label shadow-brutal-sm"
-            : "min-h-8.5 bg-paper-white px-2.5 py-1 text-xs/tight shadow-brutal-sm motion-safe:transition-[translate,box-shadow] active:brutal-pressed",
+            : "min-h-8.5 bg-paper-white px-2.5 py-1 text-label-sm/tight shadow-brutal-sm motion-safe:transition-[translate,box-shadow] active:brutal-pressed",
         )}
       >
         <input

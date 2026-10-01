@@ -2,13 +2,14 @@ import type { SessionSetup } from "@gamemash/games/config";
 import type { ApiError } from "@gamemash/shared";
 import type { AutosaveStatus } from "@gamemash/ui";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
-import type { HostCredentials } from "../../lib/credentials";
 import { toApiError } from "../../lib/errors";
 import { saveSetup } from "../../lib/setup";
+import { useHostCredentials } from "../host/host-credentials";
 
 const SAVE_DELAY_MS = 800;
 
-export const useSetupEditor = (credentials: HostCredentials, initialSetup: SessionSetup) => {
+export const useSetupEditor = (initialSetup: SessionSetup) => {
+  const credentials = useHostCredentials();
   const [setup, setSetup] = useState(initialSetup);
   const [status, setStatus] = useState<AutosaveStatus>("saved");
   const [saveError, setSaveError] = useState<ApiError | null>(null);

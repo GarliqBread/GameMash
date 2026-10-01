@@ -1,6 +1,5 @@
 import type { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import {
-  type ErrorCode,
   QUESTION_IMAGE_CONTENT_TYPES,
   QUESTION_IMAGE_MAX_BYTES,
   type QuestionImageContentType,
@@ -9,21 +8,12 @@ import { ApiErrorSchema, BearerAuthHeadersSchema, SessionParamsSchema } from "@g
 import { Type } from "typebox";
 import { perSession } from "../limits/route-limits.js";
 import { requireHost } from "./auth.js";
-import { errorBody } from "./error-body.js";
+import { sendError } from "./error-body.js";
 import type { SessionService } from "./service.js";
 
 const UPLOADS_PER_SESSION_PER_MINUTE = 60;
 const LISTS_PER_SESSION_PER_MINUTE = 120;
 const REQUESTS_PER_ADDRESS_PER_MINUTE = 300;
-
-const IMAGE_ERROR_STATUS: Partial<Record<ErrorCode, 400 | 401 | 409 | 503>> = {
-  invalid_image: 400,
-  unauthorized: 401,
-  setup_locked: 409,
-  image_limit_reached: 409,
-  images_unavailable: 503,
-  image_storage_full: 503,
-};
 
 const QuestionImageSchema = Type.Object({ id: Type.String(), url: Type.String() });
 
@@ -65,11 +55,11 @@ export const imageRoutes =
       async (request, reply) => {
         const contentType: QuestionImageContentType | undefined = toContentType(request.headers["content-type"]);
         if (!Buffer.isBuffer(request.body) || !contentType) {
-          return reply.code(415).send(errorBody("unsupported_media_type"));
+          return sendError(reply, "unsupported_media_type");
         }
         const result = await sessions.uploadImage(hostOf(request), request.body, contentType);
         if (result.ok) return { imageId: result.value.id, url: result.value.url };
-        return reply.code(IMAGE_ERROR_STATUS[result.error] ?? 400).send(errorBody(result.error));
+        return sendError(reply, result.error);
       },
     );
 
@@ -86,7 +76,7 @@ export const imageRoutes =
       async (request, reply) => {
         const result = await sessions.listImages(hostOf(request));
         if (result.ok) return { images: result.value };
-        return reply.code(IMAGE_ERROR_STATUS[result.error] ?? 400).send(errorBody(result.error));
+        return sendError(reply, result.error);
       },
     );
   };

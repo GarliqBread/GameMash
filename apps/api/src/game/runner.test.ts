@@ -471,7 +471,7 @@ describe("draw it on the game runner", () => {
     const line = { color: "red", size: "thin", points: [[0.5, 0.5, 0.5]] };
 
     await runner.upload(sessionId, priya, 1, { done: false, drawing: { strokes: [line] } }, everyone);
-    expect(await mine()).not.toBeNull();
+    expect(await mine()).toEqual({ access: "allowed", payload: JSON.stringify({ strokes: [line] }) });
 
     await vi.advanceTimersByTimeAsync(30_000);
     await settle();
@@ -479,7 +479,7 @@ describe("draw it on the game runner", () => {
     await runner.next(sessionId, 2);
 
     expect(playing(await host())).toMatchObject({ phase: "draw", view: { word: "Cat" } });
-    expect(await mine()).toBeNull();
+    expect(await mine()).toEqual({ access: "allowed", payload: null });
   });
 
   it("draws, rates and scores a round, letting players change their mind", async () => {
@@ -501,10 +501,11 @@ describe("draw it on the game runner", () => {
     expect(await runner.upload(sessionId, priya, 1, drawing([line, line]), everyone)).toBe("accepted");
     expect(await runner.upload(sessionId, daan, 1, drawing([line]), everyone)).toBe("accepted");
     expect(playing(await host())).toMatchObject({ phase: "draw", view: { doneIds: [priya, daan] } });
-    expect(await runner.readUpload(sessionId, { kind: "player", playerId: priya }, "mine")).toBe(
-      JSON.stringify({ strokes: [line, line] }),
-    );
-    expect(await runner.readUpload(sessionId, { kind: "host" }, "mine")).toBeNull();
+    expect(await runner.readUpload(sessionId, { kind: "player", playerId: priya }, "mine")).toEqual({
+      access: "allowed",
+      payload: JSON.stringify({ strokes: [line, line] }),
+    });
+    expect(await runner.readUpload(sessionId, { kind: "host" }, "mine")).toEqual({ access: "denied" });
     expect(await runner.upload(sessionId, lars, 1, drawing([]), everyone)).toBe("accepted");
     await settle();
 
@@ -517,13 +518,14 @@ describe("draw it on the game runner", () => {
     };
     const priyaRates = await toRate(priya);
     expect(await runner.upload(sessionId, priya, 2, drawing([line]), everyone)).toBe("closed");
-    expect(await runner.readUpload(sessionId, { kind: "player", playerId: priya }, priyaRates)).toBe(
-      JSON.stringify({ strokes: [line] }),
-    );
+    expect(await runner.readUpload(sessionId, { kind: "player", playerId: priya }, priyaRates)).toEqual({
+      access: "allowed",
+      payload: JSON.stringify({ strokes: [line] }),
+    });
     expect(
       await runner.readUpload(sessionId, { kind: "player", playerId: priya }, priyaRates === "d1" ? "d2" : "d1"),
-    ).toBeNull();
-    expect(await runner.readUpload(sessionId, { kind: "host" }, "d1")).not.toBeNull();
+    ).toEqual({ access: "denied" });
+    expect(await runner.readUpload(sessionId, { kind: "host" }, "d1")).toMatchObject({ access: "allowed" });
     expect(await runner.submit(sessionId, priya, 2, { [priyaRates]: 3 }, everyone)).toBe("accepted");
     expect(await runner.submit(sessionId, priya, 2, { [priyaRates]: 9 }, everyone)).toBe("accepted");
     expect(await runner.submit(sessionId, daan, 2, { [await toRate(daan)]: 5 }, everyone)).toBe("accepted");

@@ -1,7 +1,7 @@
 import { AlertDialog } from "@base-ui/react/alert-dialog";
 import type { ReactNode } from "react";
 import { cn } from "../lib/cn.js";
-import { dialogBackdropClassName, dialogPopupClassName, dialogTitleClassName } from "./dialog.js";
+import { dialogBackdropClassName, dialogPopupClassName, dialogTitleClassName } from "./styles.js";
 
 export type WorkingDialogProps = {
   open: boolean;

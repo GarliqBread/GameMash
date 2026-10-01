@@ -17,7 +17,7 @@ const DOT_CLASSES: Record<AutosaveStatus, string> = {
 
 export const AutosaveIndicator = ({ status, labels, onRetry, className, ...props }: AutosaveIndicatorProps) => (
   <span
-    className={cn("flex items-center gap-1.5 font-pixel tracking-pixel text-xs text-fg-muted", className)}
+    className={cn("flex items-center gap-1.5 font-pixel tracking-pixel text-label-sm text-fg-muted", className)}
     {...props}
   >
     <span

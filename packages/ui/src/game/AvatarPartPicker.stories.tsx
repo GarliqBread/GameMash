@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useCopy } from "../../.ladle/pseudo";
-import { BothThemes, Frame } from "../../.ladle/story-kit";
+import { Frame, ThemeMatrix } from "../../.ladle/story-kit";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { type AvatarPartOption, AvatarPartPicker } from "./AvatarPartPicker";
 
@@ -35,7 +35,7 @@ export const Picker: Story = () => {
     caption: hasNone && index === 0 ? t("None") : undefined,
   }));
   return (
-    <BothThemes>
+    <ThemeMatrix>
       {() => (
         <Frame width={358}>
           <AvatarPartPicker
@@ -49,6 +49,6 @@ export const Picker: Story = () => {
           />
         </Frame>
       )}
-    </BothThemes>
+    </ThemeMatrix>
   );
 };

@@ -1,12 +1,11 @@
 import { buttonVariants, Heading, HowItWorksSteps, Logo, PhoneShell, TrustNote, TvMock } from "@gamemash/ui";
 import { Link } from "@tanstack/react-router";
 import { FormattedMessage, useIntl } from "react-intl";
-import type { EntryLayoutProps } from "../entry/entry-layout";
-import { HOST_FORM_ID, HOST_STEPS } from "./host-layout";
+import type { EntryLayoutProps } from "../entry/useEntryLayout";
 
 const SAMPLE_ROOM_CODE = "KWPX";
 
-export const HostPhone = ({ fields, submit, onSubmit }: EntryLayoutProps) => {
+export const HostPhone = ({ formId, steps, fields, submit, onSubmit }: EntryLayoutProps) => {
   const intl = useIntl();
   return (
     <PhoneShell
@@ -47,8 +46,8 @@ export const HostPhone = ({ fields, submit, onSubmit }: EntryLayoutProps) => {
         <FormattedMessage id="host.title" />
       </Heading>
       <TvMock title={intl.formatMessage({ id: "lobby.title" })} code={SAMPLE_ROOM_CODE} />
-      <HowItWorksSteps variant="phone" steps={HOST_STEPS.map((id) => <FormattedMessage key={id} id={id} />)} />
-      <form id={HOST_FORM_ID} noValidate onSubmit={onSubmit} className="mt-1 flex flex-col gap-2">
+      <HowItWorksSteps variant="phone" steps={steps} />
+      <form id={formId} noValidate onSubmit={onSubmit} className="mt-1 flex flex-col gap-2">
         {fields}
       </form>
     </PhoneShell>

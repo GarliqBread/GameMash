@@ -60,6 +60,8 @@ type LobbySummary = Static<typeof LobbySummarySchema>;
 
 const EMPTY_SUMMARY: LobbySummary = { name: "", lineup: [] };
 
+export type AuthenticatedPlayer = { session: SessionRecord; player: PlayerRecord };
+
 type ServiceLogger = {
   warn: (details: Record<string, unknown>, message: string) => void;
 };
@@ -169,7 +171,11 @@ export const createSessionService = ({
     return session && matchesSecretHash(hostToken, session.hostTokenHash) ? session : null;
   };
 
-  const authenticatePlayer = async (sessionId: string, playerId: string, playerToken: string) => {
+  const authenticatePlayer = async (
+    sessionId: string,
+    playerId: string,
+    playerToken: string,
+  ): Promise<AuthenticatedPlayer | null> => {
     const [session, player] = await Promise.all([store.findById(sessionId), store.findPlayer(sessionId, playerId)]);
     return session && player && matchesSecretHash(playerToken, player.tokenHash) ? { session, player } : null;
   };
@@ -187,13 +193,9 @@ export const createSessionService = ({
   };
 
   const setAvatar = async (
-    sessionId: string,
-    playerId: string,
-    playerToken: string,
+    { session, player }: AuthenticatedPlayer,
     bytes: Buffer,
   ): Promise<Result<{ version: number }>> => {
-    const match = await authenticatePlayer(sessionId, playerId, playerToken);
-    if (!match) return fail("unauthorized");
     const image = bytes.length <= AVATAR_MAX_BYTES ? inspectImage(bytes) : null;
     const isAllowed =
       image !== null &&
@@ -205,35 +207,29 @@ export const createSessionService = ({
 
     const version = now();
     const result = await store.setAvatar(
-      sessionId,
-      playerId,
+      session.id,
+      player.id,
       { bytes, type: image.type, version },
-      sessionExpiresAt(match.session.createdAt, now()),
+      sessionExpiresAt(session.createdAt, now()),
     );
-    return finishAvatarChange(match.session, result, { version });
+    return finishAvatarChange(session, result, { version });
   };
 
   const setCharacter = async (
-    sessionId: string,
-    playerId: string,
-    playerToken: string,
+    { session, player }: AuthenticatedPlayer,
     character: Character,
   ): Promise<Result<null>> => {
-    const match = await authenticatePlayer(sessionId, playerId, playerToken);
-    if (!match) return fail("unauthorized");
     const result = await store.setCharacter(
-      sessionId,
-      { ...match.player, character },
-      sessionExpiresAt(match.session.createdAt, now()),
+      session.id,
+      { ...player, character },
+      sessionExpiresAt(session.createdAt, now()),
     );
-    return finishAvatarChange(match.session, result, null);
+    return finishAvatarChange(session, result, null);
   };
 
-  const removeAvatar = async (sessionId: string, playerId: string, playerToken: string): Promise<Result<null>> => {
-    const match = await authenticatePlayer(sessionId, playerId, playerToken);
-    if (!match) return fail("unauthorized");
-    const result = await store.removeAvatar(sessionId, playerId, sessionExpiresAt(match.session.createdAt, now()));
-    return finishAvatarChange(match.session, result, null);
+  const removeAvatar = async ({ session, player }: AuthenticatedPlayer): Promise<Result<null>> => {
+    const result = await store.removeAvatar(session.id, player.id, sessionExpiresAt(session.createdAt, now()));
+    return finishAvatarChange(session, result, null);
   };
 
   const pruneImages = async (sessionId: string, usedIds: string[]) => {

@@ -2,8 +2,8 @@ import { Tabs } from "@base-ui/react/tabs";
 import type { ComponentProps, ReactNode } from "react";
 import { PlusIcon } from "../icons/icons.js";
 import { cn } from "../lib/cn.js";
-import { workshopKeyClassName } from "../lib/workshop.js";
 import { IconButton } from "../primitives/IconButton.js";
+import { workshopKeyClassName } from "../workshop/styles.js";
 
 export type QuestionTabsProps = Omit<
   ComponentProps<typeof Tabs.Root>,

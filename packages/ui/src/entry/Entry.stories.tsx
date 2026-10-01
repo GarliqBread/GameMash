@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useCopy } from "../../.ladle/pseudo";
-import { BothThemes, Frame, WITH_WORKSHOP } from "../../.ladle/story-kit";
+import { Frame, ThemeMatrix } from "../../.ladle/story-kit";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { Logo } from "../icons/Logo";
 import { buttonVariants } from "../primitives/Button";
@@ -26,7 +26,7 @@ const HOST_STEPS = [
 ];
 
 export const Hero: Story = () => (
-  <BothThemes themes={WITH_WORKSHOP}>
+  <ThemeMatrix>
     {() => (
       <>
         <Frame width={350}>
@@ -40,13 +40,13 @@ export const Hero: Story = () => (
         </div>
       </>
     )}
-  </BothThemes>
+  </ThemeMatrix>
 );
 
 export const Steps: Story = () => {
   const t = useCopy();
   return (
-    <BothThemes themes={WITH_WORKSHOP}>
+    <ThemeMatrix>
       {() => (
         <>
           <Frame width={350}>
@@ -60,14 +60,14 @@ export const Steps: Story = () => {
           </div>
         </>
       )}
-    </BothThemes>
+    </ThemeMatrix>
   );
 };
 
 export const Tv: Story = () => {
   const t = useCopy();
   return (
-    <BothThemes themes={WITH_WORKSHOP}>
+    <ThemeMatrix>
       {() => (
         <>
           <Frame width={350}>
@@ -78,7 +78,7 @@ export const Tv: Story = () => {
           </Frame>
         </>
       )}
-    </BothThemes>
+    </ThemeMatrix>
   );
 };
 

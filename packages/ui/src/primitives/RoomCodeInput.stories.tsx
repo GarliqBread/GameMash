@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useCopy } from "../../.ladle/pseudo";
-import { BothThemes, Frame, WITH_WORKSHOP } from "../../.ladle/story-kit";
+import { Frame, ThemeMatrix } from "../../.ladle/story-kit";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { RoomCodeInput } from "./RoomCodeInput";
 
@@ -32,7 +32,7 @@ const Example = ({ initial, error, size = "phone", width = 350 }: ExampleProps) 
 };
 
 export const Default: Story = () => (
-  <BothThemes themes={WITH_WORKSHOP}>
+  <ThemeMatrix>
     {() => (
       <>
         <Example initial="KWPX" />
@@ -41,20 +41,20 @@ export const Default: Story = () => (
         <Example initial="KWP" error="We couldn't find that room" />
       </>
     )}
-  </BothThemes>
+  </ThemeMatrix>
 );
 
 export const Desktop: Story = () => (
-  <BothThemes themes={WITH_WORKSHOP}>
+  <ThemeMatrix>
     {() => (
       <>
         <Example initial="KW" size="desktop" width={436} />
         <Example initial="" size="desktop" width={436} />
       </>
     )}
-  </BothThemes>
+  </ThemeMatrix>
 );
 
 export const NarrowPhone: Story = () => (
-  <BothThemes themes={["workshop"]}>{() => <Example initial="KWPX" width={280} />}</BothThemes>
+  <ThemeMatrix themes={["workshop"]}>{() => <Example initial="KWPX" width={280} />}</ThemeMatrix>
 );

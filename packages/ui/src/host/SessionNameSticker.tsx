@@ -16,9 +16,9 @@ export const SessionNameSticker = ({ label, className, ...props }: SessionNameSt
       className,
     )}
   >
-    <Field.Label className="shrink-0 font-pixel tracking-pixel text-xs font-bold">{label}</Field.Label>
+    <Field.Label className="shrink-0 font-pixel tracking-pixel text-label-sm font-bold">{label}</Field.Label>
     <Field.Control
-      className="h-10 w-[250px] min-w-0 bg-transparent font-display text-2xl font-extrabold text-ink-950 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ink-950"
+      className="h-10 w-[250px] min-w-0 bg-transparent font-display text-heading-sm font-extrabold text-ink-950 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-ink-950"
       {...props}
     />
     <PencilIcon size={20} strokeWidth={2.2} className="shrink-0" />
