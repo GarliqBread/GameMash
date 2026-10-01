@@ -1,7 +1,7 @@
 import { Menu } from "@base-ui/react/menu";
 import type { ReactElement, ReactNode } from "react";
 import { cn } from "../lib/cn.js";
-import { GAME_ACCENT_FILL, type GameAccent } from "./GameCartridge.js";
+import { GAME_ACCENT_FILL, type GameAccent } from "../lib/game-accent.js";
 
 export type GamePickerOption = {
   id: string;

@@ -96,14 +96,12 @@ export const EraserIcon = (props: IconProps) => (
   </Icon>
 );
 
-export const DragHandleIcon = (props: IconProps) => (
-  <Icon fill="currentColor" stroke="none" {...props}>
-    <circle cx="9" cy="6" r="1.6" />
-    <circle cx="15" cy="6" r="1.6" />
-    <circle cx="9" cy="12" r="1.6" />
-    <circle cx="15" cy="12" r="1.6" />
-    <circle cx="9" cy="18" r="1.6" />
-    <circle cx="15" cy="18" r="1.6" />
+export const PaintBucketIcon = (props: IconProps) => (
+  <Icon strokeWidth={1.8} {...props}>
+    <path d="M11 4 L18 11 L11 18 L4 11 Z" />
+    <path d="M6 2.5 L10 6.5" />
+    <path d="M4 11 H18" />
+    <path d="M20 14.5 C19.2 16.2 18.5 17 18.5 18.2 A1.5 1.5 0 0 0 21.5 18.2 C21.5 17 20.8 16.2 20 14.5 Z" />
   </Icon>
 );
 

@@ -9,20 +9,22 @@ import {
   StageLayout,
   StageNote,
   StageViewport,
+  TIMER_WARNING_SECONDS,
   TimerRing,
 } from "@gamemash/ui";
 import { useEffect, useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import type { LobbyStatus } from "../../lib/lobby";
+import { useSecondsLabel } from "../game/useSecondsLabel";
 import { useSecondsLeft } from "../game/useSecondsLeft";
 import { ReconnectingNote } from "../session/ReconnectingNote";
-import { DrawStageHeader, roundValues } from "./stage-display";
+import { DrawStageHeader } from "./DrawStageHeader";
+import { roundValues } from "./round-values";
 import { useHostDrawings } from "./useHostDrawings";
 
 type RatingView = Extract<DrawItStageView, { kind: "rate" }>;
 
 const CYCLE_MS = 4000;
-const WARNING_SECONDS = 5;
 const MAX_DOTS = 15;
 const FRAME_SIZE = 860;
 
@@ -36,7 +38,7 @@ export type StageRatingProps = {
 export const StageRating = ({ roundKey, view, phaseEndsAt, status }: StageRatingProps) => {
   const intl = useIntl();
   const seconds = useSecondsLeft(phaseEndsAt);
-  const secondsLabel = (value: number) => intl.formatMessage({ id: "quiz.secondsLeft" }, { seconds: value });
+  const secondsLabel = useSecondsLabel();
   const [index, setIndex] = useState(0);
   const count = view.drawingIds.length;
 
@@ -100,7 +102,7 @@ export const StageRating = ({ roundKey, view, phaseEndsAt, status }: StageRating
               seconds={seconds}
               total={view.rateSeconds}
               label={secondsLabel(seconds)}
-              warningLabel={secondsLabel(WARNING_SECONDS)}
+              warningLabel={secondsLabel(TIMER_WARNING_SECONDS)}
             />
             <CountStat
               align="start"

@@ -14,7 +14,7 @@ import {
 
 const AnswerTextSchema = Type.String({ maxLength: POP_QUIZ_ANSWER_MAX_LENGTH });
 
-export const QuizTextRunSchema = Type.Object(
+const QuizTextRunSchema = Type.Object(
   {
     text: Type.String({ minLength: 1, maxLength: POP_QUIZ_QUESTION_MAX_LENGTH }),
     bold: Type.Optional(Type.Boolean()),
@@ -25,10 +25,10 @@ export const QuizTextRunSchema = Type.Object(
 );
 export type QuizTextRun = Static<typeof QuizTextRunSchema>;
 
-export const QuizTextSchema = Type.Array(QuizTextRunSchema, { maxItems: POP_QUIZ_TEXT_MAX_RUNS });
+const QuizTextSchema = Type.Array(QuizTextRunSchema, { maxItems: POP_QUIZ_TEXT_MAX_RUNS });
 export type QuizText = Static<typeof QuizTextSchema>;
 
-export const QuizQuestionSchema = Type.Object(
+const QuizQuestionSchema = Type.Object(
   {
     id: ItemIdSchema,
     kind: Type.Enum(POP_QUIZ_QUESTION_KINDS),

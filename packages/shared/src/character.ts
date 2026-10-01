@@ -15,7 +15,7 @@ export const CHARACTER_PART_COUNTS: Record<CharacterPart, number> = {
   mustache: 4,
 };
 
-export const FACIAL_HAIR_CHANCE = 0.1;
+const FACIAL_HAIR_CHANCE = 0.1;
 
 const pick = (part: CharacterPart, random: () => number) => Math.floor(random() * CHARACTER_PART_COUNTS[part]);
 

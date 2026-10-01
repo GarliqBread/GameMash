@@ -1,5 +1,6 @@
-import { isBlankDrawing, pointCount } from "@gamemash/shared";
+import { isBlankDrawing, MS_PER_SECOND, pointCount } from "@gamemash/shared";
 import { Value } from "typebox/value";
+import { shuffled } from "../random.js";
 import { rankOf } from "../ranking.js";
 import type { GameRules, Phase, Points, Submission, UploadViewer } from "../rules.js";
 import { DRAW_IT_MAX_POINTS, type DrawItConfig, type DrawItWord, OWN_DRAWING_ID } from "./config.js";
@@ -9,13 +10,12 @@ import {
   averageOf,
   DRAW_IT_RATE_MS_PER_DRAWING,
   DRAW_IT_RESULTS_MS,
+  type DrawItDrawing,
   drawingPoints,
   isRating,
   ratingsPerPlayer,
 } from "./scoring.js";
 import type { DrawItPlayerView, DrawItResultEntry, DrawItStageView } from "./views.js";
-
-export type DrawItDrawing = { id: string; playerId: string };
 
 export type DrawItState = {
   roundIndex: number;
@@ -24,11 +24,10 @@ export type DrawItState = {
   results: DrawItResultEntry[];
 };
 
-export type DrawInput = { done: boolean; blank: boolean };
-export type RateInput = Record<string, number>;
+type DrawInput = { done: boolean; blank: boolean };
+type RateInput = Record<string, number>;
 export type DrawItInput = DrawInput | RateInput;
 
-const MS_PER_SECOND = 1000;
 const MIN_DRAWINGS_TO_RATE = 2;
 
 const drawPhase = (config: DrawItConfig, playerIds: string[]): Phase => ({
@@ -95,12 +94,6 @@ const drawInputs = (submissions: Map<string, Submission<DrawItInput>>) =>
 
 const rateInputs = (submissions: Map<string, Submission<DrawItInput>>) =>
   [...submissions].flatMap(([, { input }]) => (isDrawInput(input) ? [] : [input]));
-
-const shuffled = <T>(items: T[], random: () => number) =>
-  items
-    .map((item) => ({ item, key: random() }))
-    .toSorted((a, b) => a.key - b.key)
-    .map(({ item }) => item);
 
 const drawingsFrom = (submissions: Map<string, Submission<DrawItInput>>, random: () => number): DrawItDrawing[] =>
   shuffled(

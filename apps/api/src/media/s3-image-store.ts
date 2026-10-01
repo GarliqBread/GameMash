@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { QUESTION_IMAGE_CONTENT_TYPES } from "@gamemash/shared";
+import { MS_PER_MINUTE, MS_PER_SECOND, QUESTION_IMAGE_CONTENT_TYPES } from "@gamemash/shared";
 import { AwsClient } from "aws4fetch";
 import type { S3Config } from "../config.js";
 import {
@@ -14,7 +14,7 @@ import {
 const MAX_PAGE_SIZE = 1000;
 const RETRIES = 2;
 const MISSING_STATUSES = new Set([403, 404]);
-const SIGNING_WINDOW_MS = 10 * 60 * 1000;
+const SIGNING_WINDOW_MS = 10 * MS_PER_MINUTE;
 const XML_ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
 
 export type S3ImageStoreOptions = {
@@ -22,7 +22,7 @@ export type S3ImageStoreOptions = {
   now?: (() => number) | undefined;
 };
 
-export class S3RequestError extends Error {
+class S3RequestError extends Error {
   constructor(action: string, status: number, body: string) {
     super(`S3 ${action} failed with status ${status}: ${body.slice(0, 500)}`);
   }
@@ -109,7 +109,7 @@ export const createS3ImageStore = (
     presignedUrl: async (sessionId, imageId) => {
       const signedAt = Math.floor(now() / SIGNING_WINDOW_MS) * SIGNING_WINDOW_MS;
       const url = new URL(objectUrl(imageKey(sessionId, imageId)));
-      url.searchParams.set("X-Amz-Expires", String(PRESIGNED_URL_TTL_SECONDS + SIGNING_WINDOW_MS / 1000));
+      url.searchParams.set("X-Amz-Expires", String(PRESIGNED_URL_TTL_SECONDS + SIGNING_WINDOW_MS / MS_PER_SECOND));
       const signed = await client.sign(url.toString(), {
         method: "GET",
         aws: { signQuery: true, datetime: amzDate(signedAt) },

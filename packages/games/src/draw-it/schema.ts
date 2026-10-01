@@ -10,7 +10,7 @@ import {
   DRAW_IT_WORD_MAX_LENGTH,
 } from "./config.js";
 
-export const DrawItWordSchema = Type.Object(
+const DrawItWordSchema = Type.Object(
   {
     id: ItemIdSchema,
     text: Type.String({ maxLength: DRAW_IT_WORD_MAX_LENGTH }),
@@ -30,7 +30,7 @@ export type DrawItConfig = Static<typeof DrawItConfigSchema>;
 
 const UnitSchema = Type.Number({ minimum: 0, maximum: 1 });
 
-export const StrokeSchema = Type.Object(
+const StrokeSchema = Type.Object(
   {
     color: Type.Union([Type.Enum(DRAW_COLORS), Type.Literal(ERASER)]),
     size: Type.Enum(BRUSH_SIZES),
@@ -38,7 +38,7 @@ export const StrokeSchema = Type.Object(
   },
   { additionalProperties: false },
 );
-export const FillSchema = Type.Object(
+const FillSchema = Type.Object(
   {
     kind: Type.Literal(FILL),
     color: Type.Enum(DRAW_COLORS),
@@ -49,7 +49,7 @@ export const FillSchema = Type.Object(
   },
   { additionalProperties: false },
 );
-export const DrawingSchema = Type.Object(
+const DrawingSchema = Type.Object(
   { strokes: Type.Array(Type.Union([StrokeSchema, FillSchema]), { maxItems: DRAW_IT_MAX_STROKES }) },
   { additionalProperties: false },
 );

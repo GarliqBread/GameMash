@@ -7,7 +7,7 @@ const parseOrigin = (value: string | undefined) => {
   }
 };
 
-export const publicOrigin = () => parseOrigin(import.meta.env.VITE_PUBLIC_URL) ?? window.location.origin;
+const publicOrigin = () => parseOrigin(import.meta.env.VITE_PUBLIC_URL) ?? window.location.origin;
 
 export const joinUrl = (roomCode: string) => `${publicOrigin()}/join/${roomCode}`;
 

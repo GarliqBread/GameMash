@@ -2,6 +2,7 @@ import { Dialog } from "@base-ui/react/dialog";
 import type { ReactNode } from "react";
 import { cn } from "../lib/cn.js";
 import { Avatar } from "../primitives/Avatar.js";
+import { dialogBackdropClassName, dialogPopupClassName, dialogTitleClassName } from "../workshop/dialog.js";
 import { keyButtonClassName } from "../workshop/KeyButton.js";
 
 export type RosterPlayer = {
@@ -34,12 +35,12 @@ export const PlayerRosterDialog = ({
 }: PlayerRosterDialogProps) => (
   <Dialog.Root open={open} onOpenChange={onOpenChange}>
     <Dialog.Portal>
-      <Dialog.Backdrop className="fixed inset-0 bg-ink-950/40" />
+      <Dialog.Backdrop className={dialogBackdropClassName} />
       <Dialog.Popup
         data-theme="workshop"
-        className="fixed top-1/2 left-1/2 flex max-h-[80dvh] w-[min(92vw,520px)] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-card border-3 border-ink-950 bg-paper-white p-6 text-ink-950 shadow-brutal-xl"
+        className={cn(dialogPopupClassName, "max-h-[80dvh] w-[min(92vw,520px)] flex-col gap-4")}
       >
-        <Dialog.Title className="font-display text-2xl font-extrabold">{title}</Dialog.Title>
+        <Dialog.Title className={dialogTitleClassName}>{title}</Dialog.Title>
         <ul className="-mx-2 flex min-h-0 flex-col gap-1 overflow-y-auto px-2">
           {players.map((player) => (
             <li key={player.id} className="group flex min-w-0 items-center gap-3 py-1.5">

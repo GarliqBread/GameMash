@@ -1,3 +1,4 @@
+import { MS_PER_SECOND } from "@gamemash/shared";
 import {
   IMAGE_SESSIONS_PREFIX,
   type ImageStore,
@@ -6,8 +7,6 @@ import {
   type StoredImage,
   sessionImagesPrefix,
 } from "./image-store.js";
-
-export type { StoredImage };
 
 const MEMORY_ORIGIN = "https://images.memory.test";
 
@@ -26,7 +25,7 @@ export const createMemoryImageStore = (now: () => number = Date.now): MemoryImag
     get: async (sessionId, imageId) => objects.get(imageKey(sessionId, imageId)) ?? null,
     presignedUrl: async (sessionId, imageId) => {
       const url = new URL(imageKey(sessionId, imageId), MEMORY_ORIGIN);
-      url.searchParams.set("expires", String(now() + PRESIGNED_URL_TTL_SECONDS * 1000));
+      url.searchParams.set("expires", String(now() + PRESIGNED_URL_TTL_SECONDS * MS_PER_SECOND));
       return url.toString();
     },
     deleteImages: async (sessionId, imageIds) => {

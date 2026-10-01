@@ -1,9 +1,12 @@
-export const DRAW_IT_MAX_TO_RATE = 5;
+const DRAW_IT_MAX_TO_RATE = 5;
 export const DRAW_IT_RATE_MS_PER_DRAWING = 12_000;
 export const DRAW_IT_RESULTS_MS = 8000;
 export const DRAW_IT_RATING_MIN = 1;
 export const DRAW_IT_RATING_MAX = 10;
 export const DRAW_IT_POINTS_PER_RATING_POINT = 100;
+const AVERAGE_DECIMALS_FACTOR = 10;
+
+export type DrawItDrawing = { id: string; playerId: string };
 
 export const ratingsPerPlayer = (drawingCount: number) => Math.min(DRAW_IT_MAX_TO_RATE, drawingCount - 1);
 
@@ -12,7 +15,7 @@ const wrapped = <T>(items: T[], start: number, count: number) =>
     (item): item is T => item !== undefined,
   );
 
-export const assignRatings = (drawings: { id: string; playerId: string }[], raters: string[]) => {
+export const assignRatings = (drawings: DrawItDrawing[], raters: string[]) => {
   const count = ratingsPerPlayer(drawings.length);
   const artists = new Map(drawings.map((drawing, index) => [drawing.playerId, index]));
   const ids = drawings.map((drawing) => drawing.id);
@@ -34,7 +37,8 @@ export const isRating = (value: unknown): value is number =>
 export const averageOf = (ratings: number[]) =>
   ratings.length === 0
     ? null
-    : Math.round((ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length) * 10) / 10;
+    : Math.round((ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length) * AVERAGE_DECIMALS_FACTOR) /
+      AVERAGE_DECIMALS_FACTOR;
 
 export const drawingPoints = (average: number | null) =>
   average === null ? 0 : Math.round(average * DRAW_IT_POINTS_PER_RATING_POINT);

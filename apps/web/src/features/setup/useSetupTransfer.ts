@@ -4,17 +4,18 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import type { HostCredentials } from "../../lib/credentials";
 import { toApiError } from "../../lib/errors";
-import { downloadSetupFile, importSetupFile } from "../../lib/setup";
-import { sessionImagesKey } from "../quiz/useQuestionImages";
+import { sessionImagesKey } from "../../lib/query-keys";
+import { importSetupFile } from "../../lib/setup";
+import { useSetupExport } from "./useSetupExport";
 
 const BYTES_PER_MB = 1024 * 1024;
 
-export type TransferProblem =
+type TransferProblem =
   | { kind: "tooLarge"; maxMb: number }
   | { kind: "exportFailed"; error: ApiError }
   | { kind: "importFailed"; error: ApiError };
 
-export type SetupTransferOptions = {
+type SetupTransferOptions = {
   credentials: HostCredentials;
   setup: SessionSetup;
   flush: () => Promise<boolean>;
@@ -24,30 +25,25 @@ export type SetupTransferOptions = {
 
 export const useSetupTransfer = ({ credentials, setup, flush, replace, onImported }: SetupTransferOptions) => {
   const queryClient = useQueryClient();
+  const setupExport = useSetupExport(credentials);
   const [isImporting, setIsImporting] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const [problem, setProblem] = useState<TransferProblem | null>(null);
+  const [importProblem, setImportProblem] = useState<TransferProblem | null>(null);
   const [addedGames, setAddedGames] = useState<number | null>(null);
+  const problem: TransferProblem | null =
+    importProblem ?? (setupExport.error && { kind: "exportFailed", error: setupExport.error });
 
   const exportFile = async () => {
-    setProblem(null);
+    setImportProblem(null);
     setAddedGames(null);
-    setIsExporting(true);
-    try {
-      if (!(await flush())) return;
-      await downloadSetupFile(credentials, setup.name);
-    } catch (caught) {
-      setProblem({ kind: "exportFailed", error: toApiError(caught) });
-    } finally {
-      setIsExporting(false);
-    }
+    await setupExport.exportSetup(setup.name, flush);
   };
 
   const importFile = async (file: File) => {
-    setProblem(null);
+    setImportProblem(null);
+    setupExport.clearError();
     setAddedGames(null);
     if (file.size > SETUP_IMPORT_MAX_BYTES) {
-      setProblem({ kind: "tooLarge", maxMb: SETUP_IMPORT_MAX_BYTES / BYTES_PER_MB });
+      setImportProblem({ kind: "tooLarge", maxMb: SETUP_IMPORT_MAX_BYTES / BYTES_PER_MB });
       return;
     }
     setIsImporting(true);
@@ -59,11 +55,11 @@ export const useSetupTransfer = ({ credentials, setup, flush, replace, onImporte
       setAddedGames(result.addedGames);
       onImported(result);
     } catch (caught) {
-      setProblem({ kind: "importFailed", error: toApiError(caught) });
+      setImportProblem({ kind: "importFailed", error: toApiError(caught) });
     } finally {
       setIsImporting(false);
     }
   };
 
-  return { exportFile, importFile, isImporting, isExporting, problem, addedGames };
+  return { exportFile, importFile, isImporting, isExporting: setupExport.isExporting, problem, addedGames };
 };

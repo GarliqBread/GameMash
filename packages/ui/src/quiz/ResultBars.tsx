@@ -7,7 +7,7 @@ export type ResultRow = {
   shape: AnswerShapeName;
   label: string;
   count: number;
-  shapeLabel?: string | undefined;
+  shapeLabel: string;
 };
 
 const barShare = (count: number, total: number) => (total <= 0 ? 0 : Math.min(1, Math.max(0, count / total)));
@@ -32,7 +32,7 @@ export const ResultBars = ({ rows, total, correct, correctLabel, className, ...p
               ANSWERS[row.shape].fg,
             )}
           >
-            <AnswerShape shape={row.shape} size={40} label={row.shapeLabel ?? ANSWERS[row.shape].defaultLabel} />
+            <AnswerShape shape={row.shape} size={40} label={row.shapeLabel} />
           </span>
           <span className="w-[260px] shrink-0 truncate text-stage-lg font-bold">
             {row.label}

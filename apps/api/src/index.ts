@@ -1,9 +1,11 @@
 import { gameRules } from "@gamemash/games/server";
+import { MS_PER_MINUTE } from "@gamemash/shared";
 import pino from "pino";
 import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { createGameRunner } from "./game/runner.js";
-import { createLobbyNotifier } from "./lobby/notifier.js";
+import { createNotifier } from "./lobby/notifier.js";
+import { createPresence } from "./lobby/presence.js";
 import { attachLobby } from "./lobby/socket.js";
 import { createDiskImageStore } from "./media/disk-image-store.js";
 import { createS3ImageStore } from "./media/s3-image-store.js";
@@ -12,12 +14,12 @@ import { createRedisSessionStore } from "./sessions/redis-store.js";
 import { createSessionService } from "./sessions/service.js";
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
-const IMAGE_SWEEP_INTERVAL_MS = 10 * 60 * 1000;
+const IMAGE_SWEEP_INTERVAL_MS = 10 * MS_PER_MINUTE;
 
 const config = loadConfig();
 const log = pino({ level: config.logLevel });
 const redis = createRedis(config.redisUrl, log);
-const notifier = createLobbyNotifier();
+const notifier = createNotifier();
 const store = createRedisSessionStore(redis);
 const imageFiles =
   !config.s3 && config.imagesDir
@@ -27,16 +29,20 @@ const images = config.s3 ? createS3ImageStore(config.s3) : imageFiles;
 if (!images) log.warn("neither IMAGES_DIR nor S3 storage is configured, question images are disabled");
 const sessions = createSessionService({ store, notifier, log, images, maxActiveImages: config.maxActiveImages });
 const game = createGameRunner({ store, readSetup: sessions.readSetup, rules: gameRules, log });
-const uploads = {
-  upload: game.upload,
-  readUpload: game.readUpload,
-  connectedPlayers: (sessionId: string) => lobby.connectedPlayers(sessionId),
-};
+const presence = createPresence();
+const uploads = { upload: game.upload, readUpload: game.readUpload, connectedPlayers: presence.connectedPlayers };
 const app = buildApp(
   { redis, sessions, imageFiles, uploads },
   { loggerInstance: log, trustProxy: config.trustProxy.length > 0 ? config.trustProxy.join(",") : false },
 );
-const lobby = attachLobby(app.server, { log: app.log, sessions, notifier, game, trustProxy: config.trustProxy });
+const lobby = attachLobby(app.server, {
+  log: app.log,
+  sessions,
+  notifier,
+  game,
+  presence,
+  trustProxy: config.trustProxy,
+});
 
 const sweepImages = async () => {
   try {

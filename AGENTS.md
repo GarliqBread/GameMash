@@ -1,6 +1,6 @@
 # GameMash agent guide
 
-Product spec, decisions, progress and open questions: [docs/spec.md](docs/spec.md). Read it before starting work. Setup, URLs and environment variables: [README.md](README.md).
+Product spec, decisions, progress and open questions: [docs/spec.md](docs/spec.md). Read it before starting work. Setup, URLs and environment variables: [README.md](README.md). Contributor conventions and how to add a game: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## How we work
 
@@ -8,7 +8,7 @@ Product spec, decisions, progress and open questions: [docs/spec.md](docs/spec.m
 - Don't fill gaps with assumptions. Ask when the spec is missing something.
 - Anything under "Open questions" in the spec is not decided. Discuss before implementing.
 - Never create git commits. The maintainer commits.
-- Before handing work back: run lint, typecheck and tests, and check UI changes in a real browser (Playwright against `pnpm dev`, or Ladle for components).
+- Before handing work back: run lint, typecheck and tests, and check UI changes in a real browser (against `pnpm dev`, or Ladle for components).
 - When reviewing, be critical and verify findings (read the code, reproduce) before reporting them.
 
 ## Layout
@@ -39,12 +39,11 @@ Product spec, decisions, progress and open questions: [docs/spec.md](docs/spec.m
 - Message style: no full stop at the end of a message, `...` instead of `…`, numbers through ICU (`{count, number}` or `#` in plurals), limits passed in as values rather than written into the text.
 - Web code must not import `@gamemash/shared/schemas` or `@gamemash/games/schemas` at runtime (type-only imports are fine). They pull TypeBox into the bundle.
 - The API rejects unknown fields (ajv `removeAdditional: false`). Validate request bodies with TypeBox schemas; check auth in `onRequest` before large bodies are parsed; rate-limit per client address, not only per session.
-- Every Redis key carries an expiry. A new session key must be added to the touch script in `sessions/scripts.ts` and to the contract test that checks all TTLs.
+- Every Redis key carries an expiry. A new session key must be added to `sessionKeys` in `sessions/redis-store.ts` (the delete and touch scripts loop over it) and to the contract test that checks all TTLs.
 - Phones only ever receive what they may see: never quiz answers, tokens or token hashes.
 - Socket-driven live state lives in Zustand, never in the Query cache.
 - Styling is our own Tailwind on top of Base UI. No shadcn. Links that look like buttons use `buttonVariants` on a real `<Link>`, not a Base UI `Button` rendered as a link.
 - `packages/ui/src/theme.css` holds all design tokens. Colours, font sizes, radii and shadows must come from it. New tokens may be added only with the maintainer's approval; the maintainer keeps the design source in sync. It's excluded from Biome. When adding a token that Tailwind utilities use, register it in `packages/ui/src/lib/cn.ts` so `tailwind-merge` doesn't drop it.
-- Approved additions so far: `--color-canvas`, `--shadow-tile-*`, `--shadow-card-word`, the per-theme `--gm-*` tokens for primary hover/shadow/press offset, selected, trust icon and danger, `--tracking-pixel` (letter spacing for Silkscreen labels), `--text-key` (19px workshop key buttons and question tabs), `--text-label` (13px), `--text-title-sm` (22px), `--text-title` (26px), `--text-title-lg` (28px), `--text-wordmark-lg` (40px), `--tracking-display` (-0.02em), `--tracking-display-tight` (-0.03em) the drawing colours `--color-draw-gray`, `--color-draw-white`, `--color-draw-brown`, `--color-draw-sky` and `--color-draw-pink`, the entry TV illustration tokens `--shadow-drop-coral`, `--shadow-drop-violet`, `--shadow-drop-lime`, `--shadow-drop-sky` and `--radius-bar`, and the landing page tokens `--text-headline`, `--text-display-sm`, `--text-display`, `--text-display-lg`, `--text-display-xl` (fluid), `--tracking-display-tightest` (-0.045em), `--shadow-brutal-2xl`, `--shadow-brutal-3xl`, `--shadow-brutal-violet`, `--shadow-brutal-violet-2xl`, `--shadow-brutal-sun-2xl` and `--shadow-brutal-white`.
 - UI components take all copy through props, contain no game logic or stores, and never persist player data.
 - Stage (big screen) components are laid out on a fixed 1920×1080 canvas scaled by `StageViewport`. No breakpoints there.
 - Every primitive has a Ladle story in both themes. Use the pseudo-locale toggle to check that long strings don't overflow.

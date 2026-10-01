@@ -1,20 +1,20 @@
 import {
+  MS_PER_MINUTE,
   QUESTION_IMAGE_MAX_BYTES,
   QUESTION_IMAGE_MAX_DIMENSION,
   QUESTION_IMAGES_MAX_PER_SESSION,
   type QuestionImage,
   type QuestionImageContentType,
-  SESSION_MAX_AGE_SECONDS,
 } from "@gamemash/shared";
-import { sessionExpiresAt } from "../sessions/expiry.js";
+import { sessionDeadline, sessionExpiresAt } from "../sessions/expiry.js";
 import { inspectImage } from "../sessions/image.js";
 import { fail, type Result } from "../sessions/result.js";
 import type { SessionRecord, SessionStore } from "../sessions/store.js";
 import { createImageId, type ImageStore } from "./image-store.js";
 
-export const DEFAULT_MAX_ACTIVE_IMAGES = 3000;
-const LEASE_GRACE_MS = 30 * 60 * 1000;
-const UNUSED_IMAGE_GRACE_MS = 10 * 60 * 1000;
+const DEFAULT_MAX_ACTIVE_IMAGES = 3000;
+const LEASE_GRACE_MS = 30 * MS_PER_MINUTE;
+const UNUSED_IMAGE_GRACE_MS = 10 * MS_PER_MINUTE;
 
 const ADD_IMAGE_ERRORS = {
   limit_reached: "image_limit_reached",
@@ -68,7 +68,7 @@ export const createImageService = ({
       maxPerSession: QUESTION_IMAGES_MAX_PER_SESSION,
       maxActive: maxActiveImages,
       expiresAt,
-      leaseUntil: session.createdAt + SESSION_MAX_AGE_SECONDS * 1000 + LEASE_GRACE_MS,
+      leaseUntil: sessionDeadline(session.createdAt) + LEASE_GRACE_MS,
       uploadedAt: now(),
     });
     if (added !== "added") return fail(ADD_IMAGE_ERRORS[added]);

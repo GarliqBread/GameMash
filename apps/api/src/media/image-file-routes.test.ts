@@ -5,12 +5,11 @@ import { join } from "node:path";
 import type { CreateSessionResponse, UploadImageResponse } from "@gamemash/shared";
 import { describe, expect, it } from "vitest";
 import { buildApp } from "../app.js";
-import type { RedisHealth } from "../redis.js";
 import { createMemorySessionStore } from "../sessions/memory-store.js";
 import { createSessionService } from "../sessions/service.js";
+import { healthyRedis } from "../test-app.js";
 import { createDiskImageStore } from "./disk-image-store.js";
 
-const redis = { ping: async () => "PONG", isReady: true } as unknown as RedisHealth;
 const photo = readFileSync(new URL("../sessions/fixtures/photo-256.jpg", import.meta.url));
 
 const setup = async () => {
@@ -19,7 +18,7 @@ const setup = async () => {
     minFreeBytes: 1,
   });
   const sessions = createSessionService({ store: createMemorySessionStore(), images: imageFiles });
-  const app = buildApp({ redis, sessions, imageFiles, rateLimit: false });
+  const app = buildApp({ redis: healthyRedis, sessions, imageFiles, rateLimit: false });
   const session = (await app.inject({ method: "POST", url: "/api/sessions" })).json<CreateSessionResponse>();
   const upload = async () =>
     (

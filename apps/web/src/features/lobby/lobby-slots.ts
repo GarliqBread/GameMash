@@ -3,7 +3,7 @@ import type { LobbyPlayer } from "@gamemash/shared";
 const VISIBLE_SLOTS = 15;
 const WAITING_SLOTS = 3;
 
-export type LobbySlot =
+type LobbySlot =
   | { kind: "player"; player: LobbyPlayer }
   | { kind: "more"; count: number }
   | { kind: "waiting"; key: string };

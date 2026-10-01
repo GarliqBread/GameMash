@@ -2,6 +2,11 @@ import { type Static, Type } from "typebox";
 import { CHARACTER_PART_COUNTS } from "./character.js";
 import { ERROR_CODES } from "./errors.js";
 
+const RAW_ROOM_CODE_MAX_LENGTH = 16;
+const RAW_AUTHORIZATION_MAX_LENGTH = 256;
+const RAW_NAME_MAX_LENGTH = 256;
+const RAW_TOKEN_MAX_LENGTH = 128;
+
 export const ApiErrorSchema = Type.Object({
   code: Type.Enum([...ERROR_CODES]),
   params: Type.Optional(Type.Record(Type.String(), Type.Union([Type.String(), Type.Number()]))),
@@ -22,7 +27,7 @@ export const CreateSessionResponseSchema = Type.Object({
 export type CreateSessionResponse = Static<typeof CreateSessionResponseSchema>;
 
 export const RoomLookupParamsSchema = Type.Object({
-  code: Type.String({ minLength: 1, maxLength: 16 }),
+  code: Type.String({ minLength: 1, maxLength: RAW_ROOM_CODE_MAX_LENGTH }),
 });
 export type RoomLookupParams = Static<typeof RoomLookupParamsSchema>;
 
@@ -39,7 +44,7 @@ export const PlayerParamsSchema = Type.Object({
 export type PlayerParams = Static<typeof PlayerParamsSchema>;
 
 export const BearerAuthHeadersSchema = Type.Object({
-  authorization: Type.Optional(Type.String({ maxLength: 256 })),
+  authorization: Type.Optional(Type.String({ maxLength: RAW_AUTHORIZATION_MAX_LENGTH })),
 });
 
 export const SessionParamsSchema = Type.Object({
@@ -65,7 +70,7 @@ export const CharacterSchema = Type.Object(
 export type Character = Static<typeof CharacterSchema>;
 
 export const JoinSessionBodySchema = Type.Object({
-  name: Type.String({ maxLength: 256 }),
+  name: Type.String({ maxLength: RAW_NAME_MAX_LENGTH }),
 });
 export type JoinSessionBody = Static<typeof JoinSessionBodySchema>;
 
@@ -96,13 +101,13 @@ export const HandshakeAuthSchema = Type.Union([
   Type.Object({
     role: Type.Literal("host"),
     sessionId: Type.String({ format: "uuid" }),
-    hostToken: Type.String({ maxLength: 128 }),
+    hostToken: Type.String({ maxLength: RAW_TOKEN_MAX_LENGTH }),
   }),
   Type.Object({
     role: Type.Literal("player"),
     sessionId: Type.String({ format: "uuid" }),
     playerId: Type.String({ format: "uuid" }),
-    playerToken: Type.String({ maxLength: 128 }),
+    playerToken: Type.String({ maxLength: RAW_TOKEN_MAX_LENGTH }),
   }),
 ]);
 export type HandshakeAuth = Static<typeof HandshakeAuthSchema>;

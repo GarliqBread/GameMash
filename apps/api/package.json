@@ -7,7 +7,7 @@
     "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
     "build": "tsc -b",
     "start": "node --env-file-if-exists=.env dist/index.js",
-    "typecheck": "tsc -b",
+    "typecheck": "tsc -b && tsc -p tsconfig.test.json",
     "test": "vitest run"
   },
   "dependencies": {
@@ -27,6 +27,7 @@
   "devDependencies": {
     "@types/proxy-addr": "^2.0.3",
     "socket.io-client": "catalog:",
-    "tsx": "^4.23.15"
+    "tsx": "^4.23.15",
+    "vitest": "catalog:"
   }
 }

@@ -23,8 +23,8 @@ import {
   randomCharacter,
 } from "@gamemash/shared";
 import { type Static, Type } from "typebox";
-import { Value } from "typebox/value";
-import type { LobbyNotifier } from "../lobby/notifier.js";
+import { parseJson } from "../json.js";
+import type { Notifier } from "../lobby/notifier.js";
 import { createImageService } from "../media/image-service.js";
 import type { ImageStore } from "../media/image-store.js";
 import { sessionExpiresAt } from "./expiry.js";
@@ -41,8 +41,6 @@ export class RoomCodesExhaustedError extends Error {
     super("could not find a free room code");
   }
 }
-
-export type { Result } from "./result.js";
 
 const isValidName = (name: string) =>
   name.length > 0 && [...name].length <= PLAYER_NAME_MAX_LENGTH && !hasHiddenCharacters(name);
@@ -62,26 +60,13 @@ type LobbySummary = Static<typeof LobbySummarySchema>;
 
 const EMPTY_SUMMARY: LobbySummary = { name: "", lineup: [] };
 
-const parseJson = <T>(json: string | null, isValid: (value: unknown) => value is T): T | null => {
-  if (!json) return null;
-  try {
-    const value: unknown = JSON.parse(json);
-    return isValid(value) ? value : null;
-  } catch {
-    return null;
-  }
-};
-
-const isSetup = (value: unknown): value is SessionSetup => Value.Check(SessionSetupSchema, value);
-const isSummary = (value: unknown): value is LobbySummary => Value.Check(LobbySummarySchema, value);
-
-export type ServiceLogger = {
+type ServiceLogger = {
   warn: (details: Record<string, unknown>, message: string) => void;
 };
 
 export type SessionServiceDeps = {
   store: SessionStore;
-  notifier?: LobbyNotifier | undefined;
+  notifier?: Notifier | undefined;
   now?: (() => number) | undefined;
   roomCode?: (() => string) | undefined;
   maxPlayers?: number | undefined;
@@ -104,7 +89,7 @@ export const createSessionService = ({
 
   const readSetup = async (sessionId: string) => {
     const json = await store.getSetup(sessionId);
-    const setup = parseJson(json, isSetup);
+    const setup = parseJson(SessionSetupSchema, json);
     if (json && !setup) log?.warn({ sessionId }, "stored setup failed validation");
     return setup ?? emptySetup();
   };
@@ -302,7 +287,7 @@ export const createSessionService = ({
       store.getLobbySummary(sessionId),
     ]);
     if (!session) return null;
-    const summary = parseJson(summaryJson, isSummary) ?? EMPTY_SUMMARY;
+    const summary = parseJson(LobbySummarySchema, summaryJson) ?? EMPTY_SUMMARY;
     return {
       sessionId: session.id,
       roomCode: session.roomCode,

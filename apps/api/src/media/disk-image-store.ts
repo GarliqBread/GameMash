@@ -1,14 +1,7 @@
 import { mkdir, readdir, readFile, rename, rm, statfs, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { QUESTION_IMAGE_CONTENT_TYPES, type QuestionImageContentType } from "@gamemash/shared";
-import { IMAGE_SESSIONS_PREFIX, type ImageStore } from "./image-store.js";
-
-const SAFE_ID = /^[A-Za-z0-9_-]{1,64}$/;
-
-const EXTENSIONS: Record<QuestionImageContentType, string> = {
-  "image/webp": "webp",
-  "image/jpeg": "jpg",
-};
+import { IMAGE_EXTENSIONS, IMAGE_SESSIONS_PREFIX, type ImageStore, isSafeImagePathId } from "./image-store.js";
 
 export const DISK_IMAGE_PATH = "/api/images";
 
@@ -17,10 +10,6 @@ export type DiskImageStoreOptions = {
   minFreeBytes: number;
 };
 
-export type DiskImageStore = ImageStore;
-
-export const isSafeImagePathId = (value: string) => SAFE_ID.test(value);
-
 const isMissing = (error: unknown) =>
   typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
 
@@ -28,11 +17,11 @@ const assertSafe = (...ids: string[]) => {
   if (!ids.every(isSafeImagePathId)) throw new Error("unsafe image path id");
 };
 
-export const createDiskImageStore = ({ directory, minFreeBytes }: DiskImageStoreOptions): DiskImageStore => {
+export const createDiskImageStore = ({ directory, minFreeBytes }: DiskImageStoreOptions): ImageStore => {
   const sessionsDir = join(directory, IMAGE_SESSIONS_PREFIX);
   const sessionDir = (sessionId: string) => join(sessionsDir, sessionId);
   const imagePath = (sessionId: string, imageId: string, contentType: QuestionImageContentType) =>
-    join(sessionDir(sessionId), `${imageId}.${EXTENSIONS[contentType]}`);
+    join(sessionDir(sessionId), `${imageId}.${IMAGE_EXTENSIONS[contentType]}`);
 
   const readVariant = async (sessionId: string, imageId: string, contentType: QuestionImageContentType) => {
     try {

@@ -1,14 +1,13 @@
-import type { ImageListResponse } from "@gamemash/shared";
+import { type ImageListResponse, MS_PER_MINUTE } from "@gamemash/shared";
 import type { QuestionImage } from "@gamemash/ui";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useIntl } from "react-intl";
 import { fetchImages } from "../../lib/images";
+import { sessionImagesKey } from "../../lib/query-keys";
 import { useHostCredentials } from "../host/host-credentials";
 
-const URL_REFRESH_MS = 30 * 60 * 1000;
-
-export const sessionImagesKey = (sessionId: string) => ["session-images", sessionId];
+const URL_REFRESH_MS = 30 * MS_PER_MINUTE;
 
 const toUrls = (data: ImageListResponse) => new Map(data.images.map((image) => [image.id, image.url]));
 

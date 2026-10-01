@@ -20,7 +20,7 @@ export const createRedisClient = (url: string, reconnectStrategy?: ReconnectStra
 
 export type RedisClient = ReturnType<typeof createRedisClient>;
 
-export type RedisHealth = Pick<RedisClient, "ping" | "isReady">;
+export type RedisHealth = { isReady: boolean; ping: () => Promise<unknown> };
 
 export const createRedis = (url: string, log: RedisLogger): RedisClient => {
   const client = createRedisClient(url);

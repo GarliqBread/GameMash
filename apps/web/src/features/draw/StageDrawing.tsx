@@ -1,16 +1,26 @@
 import type { DrawItStageView } from "@gamemash/games/config";
 import type { LobbyPlayer } from "@gamemash/shared";
-import { CountStat, PlayerChip, PlayerGrid, StageLayout, StageViewport, TimerRing, WordCard } from "@gamemash/ui";
+import {
+  CountStat,
+  PlayerChip,
+  PlayerGrid,
+  StageLayout,
+  StageViewport,
+  TIMER_WARNING_SECONDS,
+  TimerRing,
+  WordCard,
+} from "@gamemash/ui";
 import { FormattedMessage, useIntl } from "react-intl";
 import type { LobbyStatus } from "../../lib/lobby";
 import { avatarSrc } from "../../lib/players";
+import { useSecondsLabel } from "../game/useSecondsLabel";
 import { useSecondsLeft } from "../game/useSecondsLeft";
 import { ReconnectingNote } from "../session/ReconnectingNote";
-import { DrawStageHeader, roundValues } from "./stage-display";
+import { DrawStageHeader } from "./DrawStageHeader";
+import { roundValues } from "./round-values";
 
 type DrawingView = Extract<DrawItStageView, { kind: "draw" }>;
 
-const WARNING_SECONDS = 5;
 const CHIP_COLUMNS = 9;
 const MAX_CHIPS = CHIP_COLUMNS * 2;
 
@@ -25,7 +35,7 @@ export type StageDrawingProps = {
 export const StageDrawing = ({ sessionId, view, players, phaseEndsAt, status }: StageDrawingProps) => {
   const intl = useIntl();
   const seconds = useSecondsLeft(phaseEndsAt);
-  const secondsLabel = (value: number) => intl.formatMessage({ id: "quiz.secondsLeft" }, { seconds: value });
+  const secondsLabel = useSecondsLabel();
   const done = new Set(view.doneIds);
   const artists = view.participantIds.flatMap((playerId) => {
     const player = players.get(playerId);
@@ -46,7 +56,7 @@ export const StageDrawing = ({ sessionId, view, players, phaseEndsAt, status }: 
                 seconds={seconds}
                 total={view.drawSeconds}
                 label={secondsLabel(seconds)}
-                warningLabel={secondsLabel(WARNING_SECONDS)}
+                warningLabel={secondsLabel(TIMER_WARNING_SECONDS)}
               />
             }
           />
@@ -83,7 +93,7 @@ export const StageDrawing = ({ sessionId, view, players, phaseEndsAt, status }: 
                 />
               )}
             </PlayerGrid>
-            {status === "reconnecting" && <ReconnectingNote status={status} />}
+            <ReconnectingNote status={status} />
           </div>
         }
       >

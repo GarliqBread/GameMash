@@ -66,6 +66,7 @@ export {
   pointCount,
   type Stroke,
 } from "./lib/drawing.js";
+export type { GameAccent } from "./lib/game-accent.js";
 export { RICH_TEXT_MARKS, type RichTextMark, type RichTextRun, richTextLength } from "./lib/rich-text.js";
 export * from "./primitives/Avatar.js";
 export * from "./primitives/Button.js";
@@ -87,7 +88,6 @@ export * from "./quiz/CorrectAnswerBanner.js";
 export * from "./quiz/QuestionImageGrid.js";
 export * from "./quiz/ResultBars.js";
 export * from "./workshop/AutosaveIndicator.js";
-export * from "./workshop/CoinToggleGroup.js";
 export * from "./workshop/ConfirmDialog.js";
 export * from "./workshop/KeyButton.js";
 export * from "./workshop/RuleSwitchList.js";

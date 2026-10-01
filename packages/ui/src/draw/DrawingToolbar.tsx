@@ -1,7 +1,7 @@
 import { Radio } from "@base-ui/react/radio";
 import { RadioGroup } from "@base-ui/react/radio-group";
-import { Eraser, PaintBucket, Trash2, Undo2 } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
+import { EraserIcon, PaintBucketIcon, TrashIcon, UndoIcon } from "../icons/icons.js";
 import { cn } from "../lib/cn.js";
 import { BRUSH_SIZES, type BrushSize, DRAW_COLORS, type DrawColor, type DrawTool } from "../lib/drawing.js";
 import { IconButton } from "../primitives/IconButton.js";
@@ -30,7 +30,7 @@ const BRUSH_DOTS: Record<BrushSize, string> = {
   thick: "size-5",
 };
 
-export type ColorSwatchPickerProps = Omit<
+type ColorSwatchPickerProps = Omit<
   ComponentProps<typeof RadioGroup>,
   "value" | "defaultValue" | "onValueChange" | "className" | "children"
 > & {
@@ -40,13 +40,7 @@ export type ColorSwatchPickerProps = Omit<
   className?: string | undefined;
 };
 
-export const ColorSwatchPicker = ({
-  value,
-  onValueChange,
-  colorLabels,
-  className,
-  ...props
-}: ColorSwatchPickerProps) => (
+const ColorSwatchPicker = ({ value, onValueChange, colorLabels, className, ...props }: ColorSwatchPickerProps) => (
   <RadioGroup<DrawColor | null>
     value={value}
     onValueChange={(next) => {
@@ -70,7 +64,7 @@ export const ColorSwatchPicker = ({
   </RadioGroup>
 );
 
-export type BrushSizePickerProps = {
+type BrushSizePickerProps = {
   value: BrushSize;
   onValueChange: (size: BrushSize) => void;
   sizeLabels: Record<BrushSize, string>;
@@ -78,7 +72,7 @@ export type BrushSizePickerProps = {
   className?: string | undefined;
 };
 
-export const BrushSizePicker = ({ value, onValueChange, sizeLabels, groupLabel, className }: BrushSizePickerProps) => (
+const BrushSizePicker = ({ value, onValueChange, sizeLabels, groupLabel, className }: BrushSizePickerProps) => (
   <SegmentedControl
     aria-label={groupLabel}
     value={value}
@@ -173,10 +167,10 @@ export const DrawingToolbar = ({
             groupLabel={labels.sizeGroup}
           />
           <ToolToggle tool="eraser" current={tool} label={labels.eraser} onToolChange={onToolChange}>
-            <Eraser aria-hidden="true" />
+            <EraserIcon />
           </ToolToggle>
           <ToolToggle tool="fill" current={tool} label={labels.fill} onToolChange={onToolChange}>
-            <PaintBucket aria-hidden="true" />
+            <PaintBucketIcon />
           </ToolToggle>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
@@ -188,7 +182,7 @@ export const DrawingToolbar = ({
             disabled={!canUndo}
             onClick={onUndo}
           >
-            <Undo2 aria-hidden="true" />
+            <UndoIcon />
           </IconButton>
           <IconButton
             label={labels.clear}
@@ -198,7 +192,7 @@ export const DrawingToolbar = ({
             disabled={!canUndo}
             onClick={onClear}
           >
-            <Trash2 aria-hidden="true" />
+            <TrashIcon />
           </IconButton>
         </div>
       </div>

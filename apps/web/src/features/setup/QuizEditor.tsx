@@ -44,8 +44,7 @@ export const QuizEditor = ({
   imagesEnabled,
 }: QuizEditorProps) => {
   const intl = useIntl();
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
-  const [deletingPosition, setDeletingPosition] = useState(1);
+  const [deletingPosition, setDeletingPosition] = useState<number | null>(null);
   const questionFieldRef = useRef<HTMLElement>(null);
   const question = config.questions.find((item) => item.id === selectedQuestionId) ?? config.questions[0];
   if (!question) return null;
@@ -70,7 +69,7 @@ export const QuizEditor = ({
     const neighbour = config.questions[position] ?? config.questions[position - 2];
     onChange((current) => deleteQuestion(current, question.id));
     if (neighbour) onSelectQuestion(neighbour.id);
-    setIsConfirmingDelete(false);
+    setDeletingPosition(null);
   };
 
   return (
@@ -140,10 +139,7 @@ export const QuizEditor = ({
             </ToolButton>
             <ToolButton
               icon={<TrashIcon size={18} strokeWidth={2.2} />}
-              onClick={() => {
-                setDeletingPosition(position);
-                setIsConfirmingDelete(true);
-              }}
+              onClick={() => setDeletingPosition(position)}
               disabled={config.questions.length <= 1}
             >
               <FormattedMessage id="setup.deleteQuestion" />
@@ -152,9 +148,11 @@ export const QuizEditor = ({
         </div>
       </QuestionTabs>
       <ConfirmDialog
-        open={isConfirmingDelete}
-        onOpenChange={setIsConfirmingDelete}
-        title={<FormattedMessage id="setup.deleteQuestionTitle" values={{ position: deletingPosition }} />}
+        open={deletingPosition !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeletingPosition(null);
+        }}
+        title={<FormattedMessage id="setup.deleteQuestionTitle" values={{ position: deletingPosition ?? position }} />}
         description={<FormattedMessage id="setup.cannotUndo" />}
         confirmLabel={<FormattedMessage id="setup.deleteQuestion" />}
         cancelLabel={<FormattedMessage id="setup.keep" />}

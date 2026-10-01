@@ -1,8 +1,8 @@
+import { MS_PER_SECOND } from "@gamemash/shared";
 import { useEffect, useState } from "react";
 import { useLobbyStore } from "../../lib/lobby";
 
 const TICK_MS = 250;
-const MS_PER_SECOND = 1000;
 
 const secondsLeft = (endsAt: number | null, clockOffset: number) =>
   endsAt === null ? 0 : Math.max(0, Math.ceil((endsAt - (Date.now() + clockOffset)) / MS_PER_SECOND));

@@ -1,7 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "../lib/cn.js";
-
-const numberedSteps = (steps: ReactNode[]) => steps.map((content, position) => ({ content, number: position + 1 }));
+import { numberedSteps } from "../lib/steps.js";
 
 export type JoinStepsProps = ComponentProps<"div"> & {
   steps: ReactNode[];

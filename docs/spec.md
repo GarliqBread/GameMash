@@ -2,12 +2,7 @@
 
 A web app where companies host fun team game sessions. Open source under the AGPL-3.0; the hosted version runs at [gamemash.io](https://gamemash.io).
 
-This file records what has been decided, what is done and what is still open. It is the reference for contributors and coding agents.
-
-## How we work
-- Build step by step. Propose a plan before writing code, and keep changes small and reviewable.
-- Don't fill gaps with assumptions. If the spec doesn't cover something, ask in an issue or pull request.
-- Items under "Open questions" are NOT decided. Discuss them before implementing anything.
+This file records what has been decided, what is done and what is still open. How to contribute is in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Decided
 - **Jackbox model:** one shared big screen (meeting-room TV or screen share); players use their phones as controllers.
@@ -36,10 +31,9 @@ This file records what has been decided, what is done and what is still open. It
 - **Drawing tools:** 12 colours (black, gray, white, brown, red, orange, yellow, green, light blue, blue, violet, pink), three brush sizes, eraser, bucket fill, undo and clear. The bucket fills the connected area around the tap: each pixel counts as its nearest palette colour, so anti-aliased edges split between the two colours and repeated fills never eat into the lines. The phone works the fill out on a 512×512 grid, traces its outline (holes included) and sends it as a vector "fill" step next to the strokes, so every screen shows exactly what the artist drew. A gap in a line lets the fill spill, as in any paint app. Undo and clear treat a fill like a stroke.
 - **Draw it rating (parallel):** everyone rates at the same time on their own phone. Each player rates K = min(5, drawings − 1) other drawings, 1 to 10. The drawings are shuffled and player *i* gets the K drawings after their own, so every drawing gets exactly K ratings and nobody ever rates their own. The phone shows one drawing at a time with Prev/Next, and ratings can change until rating ends (time runs out, or every connected player has rated everything). Rating time is 12 s × K and ends early once everyone has rated everything. Late joiners and players who didn't draw still rate. The big screen shows the drawings without names, cycling, plus how many players have finished rating. With fewer than 2 drawings the round skips rating.
 - **Drawings:** phones send the whole drawing (vector strokes and fills, at most 500 of them, 5,000 points including fill outlines, 200 outline rings per fill and 128 KB) over HTTP while drawing, and again with "I'm done"; each upload replaces the previous one. Drawings are kept in Redis with the session's expiry, and only until the next round starts. Who can fetch a drawing: the artist their own while drawing; the big screen every drawing and each phone only the drawings it has to rate while rating; everyone after the results. Drawings are fetched by an anonymous id, never by player.
-- **Draw it scoring:** the average rating is rounded to one decimal (as shown, e.g. 8.4) and points = that average × 100 (840). A drawing without ratings scores 0, and players who didn't draw score nothing that round. Drawings with equal points share a rank. Names are revealed on the results screen (top 3 with drawings, the rest as chips). Results move on automatically after 8 s, and the host can press "Next now".
+- **Draw it scoring:** the average rating is rounded to one decimal (as shown, e.g. 8.4) and points = that average × 100 (840). A drawing without ratings scores 0, and players who didn't draw score nothing that round. Drawings with equal points share a rank. Names are revealed on the results screen (top 3 with drawings, the rest as chips). Results move on automatically after 8 s, and the host can press "Go now".
 - **Speed bonus (Kahoot-style):** with "faster answers earn more points" on, a correct answer earns `points × (1 − elapsed / limit ÷ 2)`, rounded, so an instant answer gets full points and a last-second answer gets half. With it off, every correct answer earns the full points. Wrong or missing answers earn 0.
 - **Big-screen lobby:** shows up to 15 player slots; beyond that the 14 most recent players plus "+N more". Slots nobody has taken yet read "Empty".
-- **Order of work:** Pop quiz end to end first, then Draw it.
 - **Export and import:** the workshop can export the whole lineup (session name and every game, with question images) as a `.gamemash` file, a zip with `setup.json` (format and version) and the images as they are stored. Every entry is stored uncompressed; import refuses compressed entries, so a small file can never unpack into something huge. Import adds the file's games after the current ones (at most 10 games in total), takes the session name only when the current one is empty, gives every game and question new ids and checks every image like a normal upload (same caps). Files are at most 50 MB, and export refuses a lineup whose images add up to more, so every exported file can be imported again. The server handles at most two exports or imports at a time. Import works only while the session is in the lobby, and if anything fails nothing is kept. Files hold only the host's own content, never player data. Without image storage configured, imported images are dropped.
 - **After the final scores:** the big screen shows three host actions under the podium. "Play again" (only once the last game is over) sends everyone back to the lobby with the same players and lineup; scores start from 0 on the next Start, and the host can edit games, remove players or let new ones join first. Back in the lobby players can change their avatar again. Answers and drawings from the finished run are deleted; phase ids keep counting up across runs, so a late answer or drawing from the old run is refused. "Export games" downloads the lineup as a `.gamemash` file (same as the workshop). "End session" asks for confirmation, then deletes the session straight away (players, scores, images and room code, so the code stops working) and every screen shows that the session ended. Phones have no actions here. Start, Play again and End session are host-only and share one rate limit per connection.
 - **Adding a game:** "Insert game" in the workshop opens a picker with every game type.
@@ -66,7 +60,6 @@ This file records what has been decided, what is done and what is still open. It
 - **Phase engine:** games are built from phases (prompt → submit → vote → reveal → score) so new games are cheap to add.
 - **Games as plugins:** each game is a self-contained module (server logic + big-screen view + phone view + config editor), so open-source contributors can add games.
 - **Per-viewer views:** the server sends each screen only what it may see (phones never receive quiz answers or others' drawings before the reveal).
-- **Reconnects:** a reconnect token per player so phones that lock or drop resume where the game is.
 - **Storage:** all session data in Redis with TTLs. Small resized avatar photos and character choices stored in Redis too. Question images live on disk under `sessions/{id}/`.
 
 ## Progress
@@ -81,7 +74,7 @@ This file records what has been decided, what is done and what is still open. It
 ## Open questions
 - Does the landing page need an imprint page?
 - Is the Croodles credit in the avatar editor footer enough, or should it also go on an about page?
-- Scoring across games: raw points, or normalized so each game counts equally?
+- Scoring across games: raw points, or normalised so each game counts equally?
 - How long final scores stay visible after the last game when the host does nothing (today: until the session expires)
 - Which languages to support at launch, and how players pick one (browser locale, per player, or set by the host?)
 - Should hosts write quiz content in any language, with only the UI localised?

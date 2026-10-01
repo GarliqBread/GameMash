@@ -2,13 +2,12 @@ import { SESSION_NAME_MAX_LENGTH } from "@gamemash/games/config";
 import type { CreateSessionResponse } from "@gamemash/shared";
 import { describe, expect, it } from "vitest";
 import { buildApp } from "../app.js";
-import type { RedisHealth } from "../redis.js";
+import { healthyRedis } from "../test-app.js";
 import { createMemorySessionStore } from "./memory-store.js";
 import { createSessionService } from "./service.js";
 
-const redis = { ping: async () => "PONG", isReady: true } as unknown as RedisHealth;
-
-const setup = () => buildApp({ redis, sessions: createSessionService({ store: createMemorySessionStore() }) });
+const setup = () =>
+  buildApp({ redis: healthyRedis, sessions: createSessionService({ store: createMemorySessionStore() }) });
 
 const createSession = async (app: ReturnType<typeof setup>) =>
   (await app.inject({ method: "POST", url: "/api/sessions" })).json<CreateSessionResponse>();

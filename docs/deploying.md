@@ -8,11 +8,11 @@ Every push to `main` that passes CI builds the `api` and `web` images, pushes th
 
 In Domain List → Manage → Advanced DNS for `gamemash.io`, delete the default parking records (the `www` CNAME and the URL redirect), then add:
 
-| Type | Host   | Value                 |
-| ---- | ------ | --------------------- |
-| A    | `@`    | the server's IPv4     |
-| A    | `play` | the server's IPv4     |
-| A    | `www`  | the server's IPv4     |
+| Type | Host               | Value             |
+| ---- | ------------------ | ----------------- |
+| A    | `@`                | the server's IPv4 |
+| A    | `play`             | the server's IPv4 |
+| A    | `www`              | the server's IPv4 |
 | AAAA | `@`, `play`, `www` | the server's IPv6 |
 
 For every other domain, add the same A and AAAA records for `@` and `www`, and list them in `REDIRECT_DOMAINS`.
@@ -43,7 +43,7 @@ For every other domain, add the same A and AAAA records for `@` and `www`, and l
    echo "<contents of ~/.ssh/gamemash-deploy.pub>" | sudo tee /home/deploy/.ssh/authorized_keys
    sudo chown deploy:deploy /home/deploy/.ssh/authorized_keys && sudo chmod 600 /home/deploy/.ssh/authorized_keys
    ```
-7. Create `/opt/gamemash/.env` from [`deploy/.env.example`](../deploy/.env.example) (`sudo -u deploy nano /opt/gamemash/.env`) and set the domains. `REDIRECT_DOMAINS` is a comma-separated list, for example `www.gamemash.io, gamemash.app, www.gamemash.app`. Deploys keep `IMAGE_TAG` up to date.
+7. Create `/opt/gamemash/.env` from [`deploy/.env.example`](../deploy/.env.example) (`sudo -u deploy nano /opt/gamemash/.env`) and set the domains. `REDIRECT_DOMAINS` is a comma-separated list, for example `www.gamemash.io, gamemash.online, www.gamemash.online`. Each deploy writes `IMAGE_PREFIX` and `IMAGE_TAG` into it, so the server always runs the images CI just published.
 
 Being in the `docker` group gives `deploy` root-level access to the server, so keep its key only in GitHub.
 
@@ -51,11 +51,11 @@ Being in the `docker` group gives `deploy` root-level access to the server, so k
 
 In the repository's Settings → Secrets and variables → Actions, add these secrets:
 
-| Secret               | Value                                                                                   |
-| -------------------- | --------------------------------------------------------------------------------------- |
-| `DEPLOY_HOST`        | the server's IP address                                                                 |
-| `DEPLOY_USER`        | `deploy`                                                                                |
-| `DEPLOY_SSH_KEY`     | the contents of `~/.ssh/gamemash-deploy` (the private key)                              |
+| Secret               | Value                                                                                                                       |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `DEPLOY_HOST`        | the server's IP address                                                                                                     |
+| `DEPLOY_USER`        | `deploy`                                                                                                                    |
+| `DEPLOY_SSH_KEY`     | the contents of `~/.ssh/gamemash-deploy` (the private key)                                                                  |
 | `DEPLOY_KNOWN_HOSTS` | the output of `ssh-keyscan -t ed25519 <server-ip>` (check it matches the fingerprint you accepted when you first logged in) |
 
 The variables `PUBLIC_URL` (default `https://play.gamemash.io`) and `LANDING_URL` (default `https://gamemash.io`) are optional. The deploy job runs in the `production` environment; add required reviewers there if you want to approve each deploy.

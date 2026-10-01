@@ -18,7 +18,7 @@ export const saveSetup = (credentials: HostCredentials, setup: SessionSetup) =>
     body: JSON.stringify(setup),
   });
 
-export const exportSetupFile = async (credentials: HostCredentials) => {
+const exportSetupFile = async (credentials: HostCredentials) => {
   const response = await fetch(`${setupPath(credentials.sessionId)}/export`, {
     headers: hostAuthorization(credentials),
   });

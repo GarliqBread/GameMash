@@ -4,12 +4,10 @@ import type { CreateSessionResponse, ImageListResponse, UploadImageResponse } fr
 import { describe, expect, it } from "vitest";
 import { buildApp } from "../app.js";
 import { createMemoryImageStore } from "../media/memory-image-store.js";
-import type { RedisHealth } from "../redis.js";
+import { healthyRedis } from "../test-app.js";
 import { createMemorySessionStore } from "./memory-store.js";
 import { createSessionService } from "./service.js";
 import { readySetup } from "./test-setup.js";
-
-const redis = { ping: async () => "PONG", isReady: true } as unknown as RedisHealth;
 
 const quizSetup = readySetup;
 const photo = readFileSync(new URL("./fixtures/photo-256.jpg", import.meta.url));
@@ -31,7 +29,7 @@ const setup = async ({ now = Date.now, withImageStore = true }: SetupOptions = {
   const images = createMemoryImageStore();
   const store = createMemorySessionStore(now);
   const sessions = createSessionService({ store, now, images: withImageStore ? images : undefined });
-  const app = buildApp({ redis, sessions, rateLimit: false });
+  const app = buildApp({ redis: healthyRedis, sessions, rateLimit: false });
   const session = (await app.inject({ method: "POST", url: "/api/sessions" })).json<CreateSessionResponse>();
   const url = `/api/sessions/${session.sessionId}/setup`;
   const auth = (token: string | null = session.hostToken) => (token ? { authorization: `Bearer ${token}` } : {});

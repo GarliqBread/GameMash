@@ -1,3 +1,6 @@
+import { MS_PER_SECOND } from "@gamemash/shared";
+import { shuffled } from "../random.js";
+import { rankOf } from "../ranking.js";
 import type { GameRules, Phase, Points, Submission } from "../rules.js";
 import {
   answerKeysOf,
@@ -7,7 +10,7 @@ import {
   type QuizQuestion,
   questionTimeLimit,
 } from "./config.js";
-import { buildLeaderboard, POP_QUIZ_READ_MS, quizPoints, rankOf } from "./scoring.js";
+import { buildLeaderboard, POP_QUIZ_READ_MS, quizPoints } from "./scoring.js";
 import type { QuizAnswerOption, QuizFastest, QuizPlayerView, QuizStageView } from "./views.js";
 
 type QuizResult = {
@@ -24,8 +27,6 @@ export type QuizState = {
   results: Record<string, QuizResult>;
 };
 
-const MS_PER_SECOND = 1000;
-
 const questionPhase: Phase = { name: "question", durationMs: POP_QUIZ_READ_MS, input: null };
 const revealPhase: Phase = { name: "reveal", durationMs: null, input: null };
 
@@ -37,12 +38,6 @@ const answeringPhase = (config: PopQuizConfig, question: QuizQuestion, playerIds
 
 const isShownShape = (question: QuizQuestion, value: unknown): value is QuizAnswerKey =>
   answerKeysOf(question).some((shape) => shape === value);
-
-const shuffled = <T>(items: T[], random: () => number) =>
-  items
-    .map((item) => ({ item, key: random() }))
-    .toSorted((a, b) => a.key - b.key)
-    .map(({ item }) => item);
 
 const questionAt = (config: PopQuizConfig, index: number): QuizQuestion => {
   const question = config.questions[index];
@@ -68,8 +63,11 @@ const originalKey = (question: QuizQuestion, state: QuizState, shape: QuizAnswer
 const answersOf = (question: QuizQuestion, state: QuizState): QuizAnswerOption[] =>
   answerKeysOf(question).map((shape) => ({ shape, text: question.answers[originalKey(question, state, shape)] }));
 
-const correctShape = (question: QuizQuestion, state: QuizState): QuizAnswerKey =>
-  answerKeysOf(question).find((shape) => originalKey(question, state, shape) === question.correct) ?? "squircle";
+const correctShape = (question: QuizQuestion, state: QuizState): QuizAnswerKey => {
+  const shape = answerKeysOf(question).find((key) => originalKey(question, state, key) === question.correct);
+  if (!shape) throw new Error(`pop quiz question ${question.id} has no correct answer`);
+  return shape;
+};
 
 const scoreAnswers = (
   config: PopQuizConfig,

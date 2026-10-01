@@ -3,7 +3,7 @@ import { Heading, Pill } from "@gamemash/ui";
 import { FormattedMessage } from "react-intl";
 import type { LobbyStatus } from "../../lib/lobby";
 import { type PlayerIdentity, PlayFrame } from "../play/PlayFrame";
-import { PhoneDrawWord } from "./draw-display";
+import { PhoneDrawWord } from "./PhoneDrawWord";
 
 type ResultsView = Extract<DrawItPlayerView, { kind: "results" }>;
 

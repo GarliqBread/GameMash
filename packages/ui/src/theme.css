@@ -11,17 +11,18 @@
  * Two layers:
  *   1. Raw palette (@theme)          → bg-ink-950, text-answer-plus, …
  *   2. Semantic tokens (@theme inline) → bg-bg, bg-surface, text-fg-muted, bg-primary, …
- *      which switch between the "stage" (dark, big screen + in-game phone)
- *      and "paper" (light, join + host setup) themes via data-theme.
+ *      which switch between the "stage" (dark, big screen + in-game phone),
+ *      "paper" (light, join pages) and "workshop" (light graph paper, host
+ *      session builder) themes via data-theme.
  *
  * Components should use SEMANTIC tokens wherever possible, and raw palette only
  * for things that never change with theme (answer colours, avatar colours, medals).
  */
 
 /* ── Fonts ────────────────────────────────────────────────────────────────
- * Self-host both fonts (e.g. @fontsource-variable/bricolage-grotesque and
- * @fontsource/atkinson-hyperlegible) rather than loading them from Google
- * Fonts. That avoids sending player IPs to a third party, which fits the
+ * Self-host all three fonts (@fontsource-variable/bricolage-grotesque,
+ * @fontsource/atkinson-hyperlegible and @fontsource/silkscreen, see fonts.css)
+ * rather than loading them from Google Fonts. That avoids sending player IPs to a third party, which fits the
  * "nothing is stored" promise.
  */
 
@@ -37,9 +38,7 @@
   --color-ink-950: #1a1726; /* stage background, text on light */
   --color-ink-900: #25213a; /* stage panels, chips */
   --color-ink-850: #2e2946; /* bar tracks */
-  --color-ink-800: #332e4d; /* highlighted row, timer track, card drop */
   --color-ink-700: #3a3456; /* borders on stage; secondary text on paper */
-  --color-ink-600: #4a4468; /* dashed placeholders on stage */
   --color-ink-500: #5e5872; /* subtle text on paper */
   --color-ink-400: #8e87a6; /* faint text on stage, strong border on paper */
   --color-ink-300: #b9b3cc; /* subtle text on stage */
@@ -49,7 +48,6 @@
   --color-cream: #fbf6ec;    /* paper background, text on stage */
   --color-sand-100: #f1ebdf; /* tinted surface on paper */
   --color-sand-200: #e6dfd0; /* segmented-control track, inactive number chip */
-  --color-sand-300: #dcd4c4; /* hairline borders on paper */
 
   /* ── Answer colours: the "squishy" set (fixed, never themed) ─────────────
    * Each answer = a SHAPE + a COLOUR + a distinct LIGHTNESS, so players can
@@ -79,17 +77,13 @@
   /* ── Accent: "sun" (primary action on stage) ──────────────────────────── */
   --color-sun: #f5c542;
   --color-sun-hover: #ffd970;
-  --color-sun-press: #b8901f; /* the hard drop shadow under yellow buttons */
-  --color-sun-deep: #e0ae1f;  /* inset ring on pressed workshop coins */
 
   /* ── Status & misc ─────────────────────────────────────────────────────── */
   --color-success: #c4de4a;       /* switches on, "correct" radio, "done" chips: lime, always ink text */
   --color-success-ink: #3f5a0a;   /* success text/icon on light backgrounds */
-  --color-link: #2350c8;
-  --color-link-hover: #1a3c99;
   --color-medal-gold: #f5c542;
   --color-medal-silver: #dad5e8;
-  --color-medal-bronze: #d98c5f; /* no longer the same as answer coral */
+  --color-medal-bronze: #d98c5f; /* softer than answer coral */
 
   /* Drawing palette offered on the phone (order = UI order) */
   --color-draw-black: #1a1726;
@@ -167,8 +161,6 @@
   --radius-panel: 36px;   /* stage panels */
 
   /* ── Shadows: flat, hard "pressable" drops, no blur ──────────────────── */
-  --shadow-press-sun: 0 8px 0 #b8901f;
-  --shadow-press-sm: 0 6px 0 #b8901f;
   --shadow-card-stage: 0 16px 0 #332e4d;
   --shadow-knob: 0 1px 2px rgb(26 23 38 / 0.3);
   --shadow-tile-coral: 0 10px 0 #f26b3a;
@@ -234,7 +226,6 @@
   --gm-fg-subtle: #5e5872;
   --gm-primary: #1a1726;
   --gm-on-primary: #fbf6ec;
-  --gm-primary-press: #000000;
   --gm-focus: #2350c8;
   --gm-primary-hover: #000000;
   --gm-primary-shadow: 0 0 #0000;
@@ -260,7 +251,6 @@
   --gm-fg-subtle: #b9b3cc;
   --gm-primary: #f5c542;
   --gm-on-primary: #1a1726;
-  --gm-primary-press: #b8901f;
   --gm-focus: #f5c542;
   --gm-primary-hover: #ffd970;
   --gm-primary-shadow: 0 8px 0 #b8901f;
@@ -287,7 +277,6 @@
   --gm-fg-subtle: #5e5872;
   --gm-primary: #f5c542;
   --gm-on-primary: #1a1726;
-  --gm-primary-press: #1a1726;
   --gm-focus: #2350c8;
   --gm-primary-hover: #ffd970;
   --gm-primary-shadow: 0 0 #0000;
@@ -313,7 +302,6 @@
   --color-fg-subtle: var(--gm-fg-subtle);
   --color-primary: var(--gm-primary);
   --color-on-primary: var(--gm-on-primary);
-  --color-primary-press: var(--gm-primary-press);
   --color-focus: var(--gm-focus);
   --color-primary-hover: var(--gm-primary-hover);
   --color-selected: var(--gm-selected);

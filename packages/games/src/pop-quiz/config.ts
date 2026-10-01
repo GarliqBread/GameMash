@@ -18,7 +18,7 @@ export const POP_QUIZ_POINTS: Record<QuizPointLevel, number> = { standard: 1000,
 
 export type QuizAnswerKey = "squircle" | "triangle" | "plus" | "dome";
 export const QUIZ_ANSWER_KEYS: QuizAnswerKey[] = ["squircle", "triangle", "plus", "dome"];
-export const TRUE_FALSE_ANSWER_KEYS: QuizAnswerKey[] = ["plus", "squircle"];
+const TRUE_FALSE_ANSWER_KEYS: QuizAnswerKey[] = ["plus", "squircle"];
 
 export type QuizQuestionKind = "choice" | "trueFalse";
 export const POP_QUIZ_QUESTION_KINDS: QuizQuestionKind[] = ["choice", "trueFalse"];
@@ -42,18 +42,18 @@ export const defaultPopQuizConfig = (firstQuestionId: string): PopQuizConfig => 
   shuffleAnswers: false,
 });
 
-export const quizPlainText = (text: QuizText) => text.map((run) => run.text).join("");
+const quizPlainText = (text: QuizText) => text.map((run) => run.text).join("");
 
 export const questionTimeLimit = (config: PopQuizConfig, question: QuizQuestion) =>
   question.timeLimitSeconds ?? config.timeLimitSeconds;
 
-export const quizTimeRange = (config: PopQuizConfig) => {
+const quizTimeRange = (config: PopQuizConfig) => {
   const times = config.questions.map((question) => questionTimeLimit(config, question));
   if (times.length === 0) return { min: config.timeLimitSeconds, max: config.timeLimitSeconds };
   return { min: Math.min(...times), max: Math.max(...times) };
 };
 
-export const isQuestionTextValid = (text: QuizText) => {
+const isQuestionTextValid = (text: QuizText) => {
   const plain = quizPlainText(text);
   return plain.length <= POP_QUIZ_QUESTION_MAX_LENGTH && !hasHiddenCharacters(plain);
 };
@@ -63,7 +63,7 @@ export const answerKeysOf = (question: QuizQuestion) =>
 
 const isFilled = (value: string) => value.trim().length > 0;
 
-export const hasOnlyActiveAnswers = (question: QuizQuestion) => {
+const hasOnlyActiveAnswers = (question: QuizQuestion) => {
   const keys = answerKeysOf(question);
   const isUnused = (key: QuizAnswerKey) => !keys.includes(key);
   return (

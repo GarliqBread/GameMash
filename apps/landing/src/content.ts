@@ -8,8 +8,8 @@ export const PLAY_HOST = new URL(PLAY_URL).host;
 export const HOST_URL = `${PLAY_URL}/host`;
 export const JOIN_URL = `${PLAY_URL}/join`;
 export const REPO_URL = "https://github.com/GarliqBread/GameMash";
-export const SELF_HOSTING_URL = `${REPO_URL}#readme`;
-export const LICENSE_NAME = "AGPL-3.0";
+export const SELF_HOSTING_URL = `${REPO_URL}#self-hosting`;
+const LICENSE_NAME = "AGPL-3.0";
 export const CODE_PATTERN = `[${ROOM_CODE_ALPHABET}${ROOM_CODE_ALPHABET.toLowerCase()}]{${ROOM_CODE_LENGTH}}`;
 export const CODE_LENGTH = ROOM_CODE_LENGTH;
 

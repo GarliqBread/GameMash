@@ -1,6 +1,7 @@
 import { cva } from "class-variance-authority";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "../lib/cn.js";
+import { numberedSteps } from "../lib/steps.js";
 
 type StepsVariant = "phone" | "violet" | "cards";
 
@@ -37,8 +38,6 @@ const keyVariants = cva(
     },
   },
 );
-
-const numberedSteps = (steps: ReactNode[]) => steps.map((content, position) => ({ content, number: position + 1 }));
 
 export type HowItWorksStepsProps = Omit<ComponentProps<"ol">, "children"> & {
   steps: ReactNode[];

@@ -1,8 +1,8 @@
 import type { GameRules, SessionSetup, Submission, UploadViewer } from "@gamemash/games/config";
 import type { GameSnapshot, GameStanding } from "@gamemash/shared";
 import { Type } from "typebox";
-import { Value } from "typebox/value";
-import { createLobbyNotifier } from "../lobby/notifier.js";
+import { parseJson } from "../json.js";
+import { createNotifier } from "../lobby/notifier.js";
 import { sessionExpiresAt } from "../sessions/expiry.js";
 import type { SessionRecord, SessionStore, SubmitInputResult } from "../sessions/store.js";
 import {
@@ -17,7 +17,7 @@ import {
   type TransitionContext,
 } from "./engine.js";
 
-export type GameLogger = {
+type GameLogger = {
   error: (details: Record<string, unknown>, message: string) => void;
 };
 
@@ -47,24 +47,17 @@ type ActiveGame = { rules: GameRules; config: unknown; state: PlayingState };
 
 const StoredSubmissionSchema = Type.Object({ input: Type.Unknown(), at: Type.Number() });
 
-const parseState = (json: string): EngineState | null => {
-  try {
-    const value: unknown = JSON.parse(json);
-    return Value.Check(EngineStateSchema, value) ? value : null;
-  } catch {
-    return null;
-  }
-};
+const parseState = (json: string) => parseJson(EngineStateSchema, json);
 
 const parseInput = ({ rules, config, state }: ActiveGame, playerId: string, input: unknown) =>
   rules.parseInput({ config, state: state.game, phase: state.phase, playerId, input });
 
 const parseSubmission = (json: string, active: ActiveGame, playerId: string): Submission<unknown> | null => {
+  const stored = parseJson(StoredSubmissionSchema, json);
+  if (!stored) return null;
   try {
-    const value: unknown = JSON.parse(json);
-    if (!Value.Check(StoredSubmissionSchema, value)) return null;
-    const input = parseInput(active, playerId, value.input);
-    return input === null ? null : { input, at: value.at };
+    const input = parseInput(active, playerId, stored.input);
+    return input === null ? null : { input, at: stored.at };
   } catch {
     return null;
   }
@@ -84,7 +77,7 @@ export const createGameRunner = ({
   random = Math.random,
 }: GameRunnerDeps) => {
   const registry: RulesRegistry = new Map(rules.map((entry) => [entry.type, entry]));
-  const notifier = createLobbyNotifier();
+  const notifier = createNotifier();
   const timers = new Map<string, NodeJS.Timeout>();
   const queues = new Map<string, Promise<unknown>>();
   const setups = new Map<string, SessionSetup>();
@@ -189,22 +182,21 @@ export const createGameRunner = ({
     return commit(session, version, next);
   };
 
-  const withPlaying = async (
-    sessionId: string,
-    version: number,
-    action: (loaded: Loaded, game: PlayingGame) => Promise<boolean>,
-  ) => {
-    const loaded = await load(sessionId);
-    const game = loaded?.game;
-    if (!loaded || !game || game.version !== version || game.state.status !== "playing") return false;
-    return action(loaded, { version: game.version, state: game.state });
-  };
-
   const loadPlaying = async (sessionId: string) => {
     const loaded = await load(sessionId);
     const game = loaded?.game;
     if (!loaded || !game || game.state.status !== "playing") return null;
     return { loaded, game: { version: game.version, state: game.state } };
+  };
+
+  const withPlaying = async (
+    sessionId: string,
+    version: number,
+    action: (loaded: Loaded, game: PlayingGame) => Promise<boolean>,
+  ) => {
+    const current = await loadPlaying(sessionId);
+    if (!current || current.game.version !== version) return false;
+    return action(current.loaded, current.game);
   };
 
   const advance = (sessionId: string, version: number) =>

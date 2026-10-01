@@ -11,6 +11,7 @@ import {
   QUIZ_OPTIONS,
   ROOM_CODE,
   SAMPLE_QUESTION_IMAGES,
+  SHAPE_LABELS,
 } from "../../.ladle/screen-data";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { DrawingFrame } from "../draw/DrawingFrame";
@@ -226,7 +227,12 @@ export const QuizReveal: Story = () => {
       >
         <section className="flex min-w-0 flex-1 flex-col gap-7">
           <p className="text-stage-lg text-fg-muted">{t("Which planet has the most known moons?")}</p>
-          <CorrectAnswerBanner shape="triangle" label={t("Saturn")} caption={t("Correct answer")} />
+          <CorrectAnswerBanner
+            shape="triangle"
+            label={t("Saturn")}
+            shapeLabel={SHAPE_LABELS.triangle}
+            caption={t("Correct answer")}
+          />
           <ResultBars
             className="mt-2"
             total={9}

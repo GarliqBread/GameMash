@@ -7,14 +7,14 @@ export type CorrectAnswerBannerProps = Omit<ComponentProps<"div">, "children"> &
   shape: AnswerShapeName;
   label: string;
   caption: ReactNode;
-  shapeLabel?: string | undefined;
+  shapeLabel: string;
 };
 
 export const CorrectAnswerBanner = ({
   shape,
   label,
   caption,
-  shapeLabel = ANSWERS[shape].defaultLabel,
+  shapeLabel,
   className,
   ...props
 }: CorrectAnswerBannerProps) => (

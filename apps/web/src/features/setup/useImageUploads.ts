@@ -5,8 +5,8 @@ import type { HostCredentials } from "../../lib/credentials";
 import { toApiError } from "../../lib/errors";
 import { ImageTooLargeError } from "../../lib/image-encoding";
 import { uploadImage } from "../../lib/images";
+import { sessionImagesKey } from "../../lib/query-keys";
 import { resizeQuestionImage } from "../../lib/question-image";
-import { sessionImagesKey } from "../quiz/useQuestionImages";
 
 class UploadError extends Error {
   constructor(public error: ApiError) {

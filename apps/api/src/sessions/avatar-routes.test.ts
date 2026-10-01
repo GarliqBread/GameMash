@@ -7,17 +7,16 @@ import {
 } from "@gamemash/shared";
 import { describe, expect, it } from "vitest";
 import { buildApp } from "../app.js";
-import type { RedisHealth } from "../redis.js";
+import { healthyRedis } from "../test-app.js";
 import { createMemorySessionStore } from "./memory-store.js";
 import { createSessionService } from "./service.js";
 
 const fixture = (name: string) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url));
-const redis = { ping: async () => "PONG", isReady: true } as unknown as RedisHealth;
 
 const setup = async () => {
   const store = createMemorySessionStore();
   const sessions = createSessionService({ store });
-  const app = buildApp({ redis, sessions, rateLimit: false });
+  const app = buildApp({ redis: healthyRedis, sessions, rateLimit: false });
   const session = (await app.inject({ method: "POST", url: "/api/sessions" })).json<CreateSessionResponse>();
   const join = async (name: string) =>
     (

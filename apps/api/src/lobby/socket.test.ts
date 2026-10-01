@@ -16,17 +16,16 @@ import { buildApp } from "../app.js";
 import { createGameRunner } from "../game/runner.js";
 import { testRules } from "../game/test-rules.js";
 import { createMemoryImageStore, type MemoryImageStore } from "../media/memory-image-store.js";
-import type { RedisHealth } from "../redis.js";
 import { createMemorySessionStore } from "../sessions/memory-store.js";
 import { createSessionService, type SessionService } from "../sessions/service.js";
 import { readySetup } from "../sessions/test-setup.js";
-import { createLobbyNotifier } from "./notifier.js";
+import { healthyRedis } from "../test-app.js";
+import { createNotifier } from "./notifier.js";
 import { attachLobby } from "./socket.js";
 
 type Client = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 const WAIT_MS = 2000;
-const redis = { ping: async () => "PONG", isReady: true } as unknown as RedisHealth;
 const cleanups: (() => Promise<void>)[] = [];
 
 afterEach(async () => {
@@ -50,10 +49,10 @@ const startServer = async ({
   authenticatePlayer,
   images,
 }: ServerOptions = {}) => {
-  const notifier = createLobbyNotifier();
+  const notifier = createNotifier();
   const store = createMemorySessionStore(now);
   const sessions = createSessionService({ store, notifier, now, images });
-  const app = buildApp({ redis, sessions, rateLimit: false });
+  const app = buildApp({ redis: healthyRedis, sessions, rateLimit: false });
   const game = createGameRunner({ store, readSetup: sessions.readSetup, rules: [testRules], log: app.log, now });
   const lobbySessions = {
     ...sessions,

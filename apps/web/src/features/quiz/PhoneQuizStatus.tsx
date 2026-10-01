@@ -3,7 +3,7 @@ import { ANSWERS, AnswerShape, cn, Heading, Pill } from "@gamemash/ui";
 import { FormattedMessage, useIntl } from "react-intl";
 import type { LobbyStatus } from "../../lib/lobby";
 import { type PlayerIdentity, PlayFrame } from "../play/PlayFrame";
-import { PhoneQuizProgress } from "./quiz-display";
+import { PhoneQuizProgress } from "./PhoneQuizProgress";
 
 type QuestionView = Extract<QuizPlayerView, { kind: "question" }>;
 type RevealView = Extract<QuizPlayerView, { kind: "reveal" }>;

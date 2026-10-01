@@ -87,12 +87,12 @@ export const Podium = ({ players, formatNumber, rankLabel, className, ...props }
   </ol>
 );
 
-export type RankChipProps = Omit<ComponentProps<"li">, "children"> & {
+type RankChipProps = Omit<ComponentProps<"li">, "children"> & {
   player: RankedPlayer;
   formatNumber: (value: number) => string;
 };
 
-export const RankChip = ({ player, formatNumber, className, ...props }: RankChipProps) => (
+const RankChip = ({ player, formatNumber, className, ...props }: RankChipProps) => (
   <li
     className={cn(
       "flex min-w-0 items-center gap-3.5 rounded-card border-2 border-border bg-surface px-5 py-4",

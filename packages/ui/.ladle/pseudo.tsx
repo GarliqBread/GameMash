@@ -18,7 +18,7 @@ const ACCENTS: Record<string, string> = {
 
 const EXPANSION = 0.4;
 
-export const pseudoLocalize = (text: string) => {
+const pseudoLocalize = (text: string) => {
   const accented = [...text].map((char) => ACCENTS[char] ?? char).join("");
   const padding = "·".repeat(Math.max(2, Math.ceil(text.length * EXPANSION)));
   return `[${accented} ${padding}]`;

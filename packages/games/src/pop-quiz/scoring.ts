@@ -3,9 +3,10 @@ import type { Points } from "../rules.js";
 import type { QuizLeaderboard } from "./views.js";
 
 export const POP_QUIZ_READ_MS = 5000;
-export const POP_QUIZ_LEADERBOARD_SIZE = 5;
+const POP_QUIZ_LEADERBOARD_SIZE = 5;
+const MAX_SPEED_PENALTY = 0.5;
 
-export type QuizPointsInput = {
+type QuizPointsInput = {
   points: number;
   speedBonus: boolean;
   limitMs: number;
@@ -15,10 +16,8 @@ export type QuizPointsInput = {
 export const quizPoints = ({ points, speedBonus, limitMs, elapsedMs }: QuizPointsInput) => {
   if (!speedBonus) return points;
   const ratio = Math.min(Math.max(elapsedMs / limitMs, 0), 1);
-  return Math.round(points * (1 - ratio / 2));
+  return Math.round(points * (1 - ratio * MAX_SPEED_PENALTY));
 };
-
-export { rankOf };
 
 export const buildLeaderboard = (totals: Points, gains: Points, size = POP_QUIZ_LEADERBOARD_SIZE): QuizLeaderboard => {
   const playerIds = [...new Set([...Object.keys(totals), ...Object.keys(gains)])];

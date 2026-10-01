@@ -3,13 +3,14 @@ import {
   type ApiError,
   type ErrorCode,
   type ErrorParams,
+  PLAYER_NAME_MAX_LENGTH,
   QUESTION_IMAGES_MAX_PER_SESSION,
   SETUP_IMPORT_MAX_BYTES,
 } from "@gamemash/shared";
-
-const BYTES_PER_MB = 1024 * 1024;
+import { BYTES_PER_MB } from "../units.js";
 
 const ERROR_PARAMS: Partial<Record<ErrorCode, ErrorParams>> = {
+  invalid_name: { max: PLAYER_NAME_MAX_LENGTH },
   image_limit_reached: { max: QUESTION_IMAGES_MAX_PER_SESSION },
   import_too_many_games: { max: MAX_GAMES },
   export_too_large: { max: SETUP_IMPORT_MAX_BYTES / BYTES_PER_MB },

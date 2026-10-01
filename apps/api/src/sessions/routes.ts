@@ -1,6 +1,6 @@
 import type { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { CreateSessionBodySchema } from "@gamemash/games/schemas";
-import { type ErrorCode, isRoomCode, normalizeRoomCode, PLAYER_NAME_MAX_LENGTH } from "@gamemash/shared";
+import { type ErrorCode, isRoomCode, MS_PER_MINUTE, normalizeRoomCode } from "@gamemash/shared";
 import {
   ApiErrorSchema,
   CreateSessionResponseSchema,
@@ -10,12 +10,10 @@ import {
   RoomLookupResponseSchema,
   SessionParamsSchema,
 } from "@gamemash/shared/schemas";
-import type { FastifyRequest } from "fastify";
-import { clientKey } from "../limits/client-key.js";
 import { createRateLimiter } from "../limits/rate-limiter.js";
+import { byClient, perMinute, sessionRateLimitKey } from "../limits/route-limits.js";
+import { errorBody } from "./error-body.js";
 import type { SessionService } from "./service.js";
-
-const MINUTE_MS = 60_000;
 
 export type SessionRouteLimits = {
   sessionsPerMinute: number;
@@ -41,23 +39,16 @@ const JOIN_ERROR_STATUS: Partial<Record<ErrorCode, 400 | 404 | 409>> = {
   session_ended: 409,
 };
 
-const byClient = (request: FastifyRequest) => clientKey(request.ip);
-
-const joinKey = (request: FastifyRequest) => {
-  const { sessionId } = request.params as { sessionId?: unknown };
-  return `${byClient(request)}:${typeof sessionId === "string" ? sessionId : ""}`;
-};
-
 export const sessionRoutes =
   (sessions: SessionService, limits: SessionRouteLimits = DEFAULT_SESSION_ROUTE_LIMITS): FastifyPluginAsyncTypebox =>
   async (app) => {
-    const lookupMisses = createRateLimiter({ max: limits.lookupMissesPerTenMinutes, windowMs: 10 * MINUTE_MS });
-    const joins = createRateLimiter({ max: limits.joinsPerMinute, windowMs: MINUTE_MS });
+    const lookupMisses = createRateLimiter({ max: limits.lookupMissesPerTenMinutes, windowMs: 10 * MS_PER_MINUTE });
+    const joins = createRateLimiter({ max: limits.joinsPerMinute, windowMs: MS_PER_MINUTE });
 
     app.post(
       "/api/sessions",
       {
-        config: { rateLimit: { max: limits.sessionsPerMinute, timeWindow: MINUTE_MS, keyGenerator: byClient } },
+        config: perMinute(limits.sessionsPerMinute, byClient),
         schema: {
           body: CreateSessionBodySchema,
           response: { 201: CreateSessionResponseSchema, 400: ApiErrorSchema },
@@ -68,7 +59,7 @@ export const sessionRoutes =
       },
       async (request, reply) => {
         const result = await sessions.createNamed(request.body.name ?? "");
-        if (!result.ok) return reply.code(400).send({ code: result.error });
+        if (!result.ok) return reply.code(400).send(errorBody(result.error));
         return reply.code(201).send(result.value);
       },
     );
@@ -76,7 +67,7 @@ export const sessionRoutes =
     app.get(
       "/api/sessions/by-code/:code",
       {
-        config: { rateLimit: { max: limits.lookupsPerMinute, timeWindow: MINUTE_MS, keyGenerator: byClient } },
+        config: perMinute(limits.lookupsPerMinute, byClient),
         schema: {
           params: RoomLookupParamsSchema,
           response: { 200: RoomLookupResponseSchema, 404: ApiErrorSchema, 429: ApiErrorSchema },
@@ -84,19 +75,19 @@ export const sessionRoutes =
       },
       async (request, reply) => {
         const client = byClient(request);
-        if (lookupMisses.isLimited(client)) return reply.code(429).send({ code: "rate_limited" });
+        if (lookupMisses.isLimited(client)) return reply.code(429).send(errorBody("rate_limited"));
         const roomCode = normalizeRoomCode(request.params.code);
         const session = isRoomCode(roomCode) ? await sessions.findByRoomCode(roomCode) : null;
         if (session) return { sessionId: session.id, status: session.status };
         lookupMisses.hit(client);
-        return reply.code(404).send({ code: "room_not_found" });
+        return reply.code(404).send(errorBody("room_not_found"));
       },
     );
 
     app.post(
       "/api/sessions/:sessionId/players",
       {
-        config: { rateLimit: { max: limits.joinsPerSessionPerMinute, timeWindow: MINUTE_MS, keyGenerator: joinKey } },
+        config: perMinute(limits.joinsPerSessionPerMinute, sessionRateLimitKey),
         schema: {
           params: SessionParamsSchema,
           body: JoinSessionBodySchema,
@@ -110,14 +101,10 @@ export const sessionRoutes =
         },
       },
       async (request, reply) => {
-        if (!joins.hit(byClient(request))) return reply.code(429).send({ code: "rate_limited" });
+        if (!joins.hit(byClient(request))) return reply.code(429).send(errorBody("rate_limited"));
         const result = await sessions.join(request.params.sessionId, request.body.name);
         if (result.ok) return reply.code(201).send(result.value);
-        const status = JOIN_ERROR_STATUS[result.error] ?? 400;
-        if (result.error === "invalid_name") {
-          return reply.code(status).send({ code: result.error, params: { max: PLAYER_NAME_MAX_LENGTH } });
-        }
-        return reply.code(status).send({ code: result.error });
+        return reply.code(JOIN_ERROR_STATUS[result.error] ?? 400).send(errorBody(result.error));
       },
     );
   };

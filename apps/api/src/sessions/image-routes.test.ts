@@ -10,12 +10,11 @@ import { describe, expect, it } from "vitest";
 import { buildApp } from "../app.js";
 import type { ImageStore } from "../media/image-store.js";
 import { createMemoryImageStore, type MemoryImageStore } from "../media/memory-image-store.js";
-import type { RedisHealth } from "../redis.js";
+import { healthyRedis } from "../test-app.js";
 import { createMemorySessionStore } from "./memory-store.js";
 import { createSessionService } from "./service.js";
 
 const fixture = (name: string) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url));
-const redis = { ping: async () => "PONG", isReady: true } as unknown as RedisHealth;
 
 type SetupOptions = {
   images?: ImageStore;
@@ -26,7 +25,7 @@ type SetupOptions = {
 const setup = async ({ images = createMemoryImageStore(), withImages = true, maxActiveImages }: SetupOptions = {}) => {
   const store = createMemorySessionStore();
   const sessions = createSessionService({ store, images: withImages ? images : undefined, maxActiveImages });
-  const app = buildApp({ redis, sessions, rateLimit: false });
+  const app = buildApp({ redis: healthyRedis, sessions, rateLimit: false });
   const session = (await app.inject({ method: "POST", url: "/api/sessions" })).json<CreateSessionResponse>();
   const url = `/api/sessions/${session.sessionId}/images`;
   const auth = (token: string | null) => (token ? { authorization: `Bearer ${token}` } : {});
@@ -104,6 +103,7 @@ describe("question image upload", () => {
       await store.addImage(session.sessionId, `image-${index}`, {
         maxPerSession: QUESTION_IMAGES_MAX_PER_SESSION,
         maxActive: 1000,
+        uploadedAt: Date.now(),
         expiresAt: Date.now() + 60_000,
         leaseUntil: Date.now() + 60_000,
       });

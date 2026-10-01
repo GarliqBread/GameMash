@@ -13,7 +13,7 @@ import { type FormEvent, useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { saveCredentials } from "../../lib/credentials";
 import { toApiError, useErrorMessage } from "../../lib/errors";
-import { DESKTOP_QUERY, useMediaQuery } from "../../lib/use-media-query";
+import { DESKTOP_QUERY, useMediaQuery } from "../../lib/useMediaQuery";
 import { JoinDesktop } from "./JoinDesktop";
 import { type JoinFieldErrors, JoinFields } from "./JoinFields";
 import { JoinPhone } from "./JoinPhone";

@@ -10,7 +10,8 @@ import {
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 import { type ComponentProps, type ReactNode, useEffect, useMemo, useRef } from "react";
 import { cn } from "../lib/cn.js";
-import { type GameAccent, GameCartridge } from "./GameCartridge.js";
+import type { GameAccent } from "../lib/game-accent.js";
+import { GameCartridge } from "./GameCartridge.js";
 import { LineupConnector } from "./LineupConnector.js";
 
 export type LineupGame = {

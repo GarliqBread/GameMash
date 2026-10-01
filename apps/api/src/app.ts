@@ -1,11 +1,12 @@
 import rateLimit from "@fastify/rate-limit";
-import type { ApiError, HealthResponse } from "@gamemash/shared";
+import type { HealthResponse } from "@gamemash/shared";
 import Fastify, { type FastifyError, type FastifyReply, type FastifyRequest, type FastifyServerOptions } from "fastify";
 import { type GameUploads, uploadRoutes } from "./game/upload-routes.js";
-import type { DiskImageStore } from "./media/disk-image-store.js";
 import { imageFileRoutes } from "./media/image-file-routes.js";
+import type { ImageStore } from "./media/image-store.js";
 import type { RedisHealth } from "./redis.js";
 import { avatarRoutes } from "./sessions/avatar-routes.js";
+import { errorBody } from "./sessions/error-body.js";
 import { imageRoutes } from "./sessions/image-routes.js";
 import { DEFAULT_SESSION_ROUTE_LIMITS, type SessionRouteLimits, sessionRoutes } from "./sessions/routes.js";
 import type { SessionService } from "./sessions/service.js";
@@ -16,7 +17,7 @@ export type AppDeps = {
   sessions: SessionService;
   rateLimit?: boolean | undefined;
   limits?: Partial<SessionRouteLimits> | undefined;
-  imageFiles?: DiskImageStore | undefined;
+  imageFiles?: ImageStore | undefined;
   uploads?: GameUploads | undefined;
 };
 
@@ -43,12 +44,12 @@ const isRedisUp = async (redis: RedisHealth) => {
   }
 };
 
-const badRequest: ApiError = { code: "bad_request" };
-const rateLimited: ApiError = { code: "rate_limited" };
-const payloadTooLarge: ApiError = { code: "payload_too_large" };
-const unsupportedMediaType: ApiError = { code: "unsupported_media_type" };
-const notFound: ApiError = { code: "not_found" };
-const internalError: ApiError = { code: "internal_error" };
+const badRequest = errorBody("bad_request");
+const rateLimited = errorBody("rate_limited");
+const payloadTooLarge = errorBody("payload_too_large");
+const unsupportedMediaType = errorBody("unsupported_media_type");
+const notFound = errorBody("not_found");
+const internalError = errorBody("internal_error");
 
 const rejectMalformedRequest = (error: FastifyError, request: FastifyRequest, reply: FastifyReply) => {
   request.log.info({ err: error }, "rejected malformed request");

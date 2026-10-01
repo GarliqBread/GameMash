@@ -1,15 +1,18 @@
 import type { CreateSessionResponse } from "@gamemash/shared";
 import { describe, expect, it } from "vitest";
 import { buildApp } from "../app.js";
-import type { RedisHealth } from "../redis.js";
+import { healthyRedis } from "../test-app.js";
 import { createMemorySessionStore } from "./memory-store.js";
 import type { SessionRouteLimits } from "./routes.js";
 import { createSessionService } from "./service.js";
 
-const redis = { ping: async () => "PONG", isReady: true } as unknown as RedisHealth;
-
 const setup = (rateLimit = false, limits: Partial<SessionRouteLimits> = {}) =>
-  buildApp({ redis, rateLimit, limits, sessions: createSessionService({ store: createMemorySessionStore() }) });
+  buildApp({
+    redis: healthyRedis,
+    rateLimit,
+    limits,
+    sessions: createSessionService({ store: createMemorySessionStore() }),
+  });
 
 const createSession = async (app: ReturnType<typeof setup>) =>
   (await app.inject({ method: "POST", url: "/api/sessions" })).json<CreateSessionResponse>();

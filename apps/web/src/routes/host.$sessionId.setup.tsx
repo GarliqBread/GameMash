@@ -5,12 +5,13 @@ import { FormattedMessage } from "react-intl";
 import { useHostCredentials } from "../features/host/host-credentials";
 import { StageMessage } from "../features/session/StageMessage";
 import { SetupWorkshop } from "../features/setup/SetupWorkshop";
+import { sessionSetupKey } from "../lib/query-keys";
 import { fetchSetup } from "../lib/setup";
 
 const SetupPage = () => {
   const credentials = useHostCredentials();
   const setup = useQuery({
-    queryKey: ["session-setup", credentials.sessionId],
+    queryKey: sessionSetupKey(credentials.sessionId),
     queryFn: () => fetchSetup(credentials),
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: 0,

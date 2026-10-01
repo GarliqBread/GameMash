@@ -2,12 +2,10 @@ import { DRAW_IT_UPLOAD_MAX_BYTES, type SessionSetup } from "@gamemash/games/con
 import { drawItRules } from "@gamemash/games/server";
 import { describe, expect, it, vi } from "vitest";
 import { buildApp } from "../app.js";
-import type { RedisHealth } from "../redis.js";
 import { createMemorySessionStore } from "../sessions/memory-store.js";
 import { createSessionService } from "../sessions/service.js";
+import { healthyRedis } from "../test-app.js";
 import { createGameRunner } from "./runner.js";
-
-const redis = { ping: async () => "PONG", isReady: true } as unknown as RedisHealth;
 
 const drawItSetup: SessionSetup = {
   name: "Friday team mash",
@@ -42,7 +40,7 @@ const setup = async () => {
 
   const connected = new Set([priya.playerId, daan.playerId]);
   const app = buildApp({
-    redis,
+    redis: healthyRedis,
     sessions,
     rateLimit: false,
     uploads: { upload: runner.upload, readUpload: runner.readUpload, connectedPlayers: () => connected },
