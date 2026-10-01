@@ -1,6 +1,50 @@
-# GameMash
+<p align="center">
+  <img src="apps/web/public/favicon.svg" width="72" height="72" alt="">
+</p>
 
-Team games for company get-togethers: one shared big screen, players use their phones as controllers.
+<h1 align="center">GameMash</h1>
+
+<p align="center">
+  Quiz and drawing games for team meetings.<br>
+  The questions go up on the meeting-room TV, everyone answers on their own phone.
+</p>
+
+<p align="center">
+  <a href="https://gamemash.io">gamemash.io</a> ·
+  <a href="#self-hosting">Self-hosting</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/GarliqBread/GameMash/actions/workflows/ci.yml"><img src="https://github.com/GarliqBread/GameMash/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-1A1726" alt="Licence: AGPL-3.0"></a>
+</p>
+
+<table align="center">
+  <tr>
+    <td align="center" valign="top"><img src="docs/screenshots/phone-join.png" width="190" alt="Joining a session with a four-letter room code"></td>
+    <td align="center" valign="top"><img src="docs/screenshots/phone-quiz.png" width="190" alt="A pop quiz question with four coloured answer shapes"></td>
+    <td align="center" valign="top"><img src="docs/screenshots/phone-correct.png" width="190" alt="The phone showing a correct answer and points"></td>
+    <td align="center" valign="top"><img src="docs/screenshots/phone-draw.png" width="190" alt="Drawing a coffee mug in Draw it"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Join with the code on the TV</sub></td>
+    <td align="center"><sub>Answer before time runs out</sub></td>
+    <td align="center"><sub>See how you did</sub></td>
+    <td align="center"><sub>Draw the word, then rate</sub></td>
+  </tr>
+</table>
+
+## How it works
+
+The host opens GameMash on the big screen and lines up a few short games. Players scan the QR code or type the four-letter code on their phones and pick a name. There are no accounts and nothing to install. Points carry across every game, and one podium at the end covers them all.
+
+- **Pop quiz.** Your own questions, multiple choice or true or false, with pictures if you want them. Every answer has a shape as well as a colour, so colour-blind players aren't guessing.
+- **Draw it.** Everyone draws the same word against the clock. The drawings show up on the TV without names, and players rate each other's from 1 to 10.
+
+Up to 100 players can join one session. Names, photos, answers and drawings only exist while the session runs: ending it deletes them, and a session nobody uses for 30 minutes deletes itself.
+
+Use the hosted version at [gamemash.io](https://gamemash.io) for free, or [run your own](#self-hosting) on a single server.
 
 Product decisions, progress and open questions live in [docs/spec.md](docs/spec.md). To contribute, start with [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -31,6 +75,9 @@ The web app runs on http://localhost:5173 and proxies `/api` and `/socket.io` to
 Phones can't open `localhost`. Set `VITE_PUBLIC_URL` in `apps/web/.env` (see `apps/web/.env.example`) to an address the phone can reach, such as your machine's LAN address (`http://192.168.1.20:5173`) or an ngrok URL (`ngrok http 5173`), then restart `pnpm dev`. The lobby shows that address and puts it in the QR code, and Vite accepts it as a host. Without it the lobby uses the page's own address.
 
 ### Environment
+
+<details>
+<summary>Environment variables for the API, web app and landing page</summary>
 
 `apps/api/.env`:
 
@@ -72,6 +119,8 @@ Set `PUBLIC_PLAY_URL=http://localhost:5173` (as in `apps/landing/.env.example`) 
 To try the S3 image store in development, point the API at the MinIO container that `pnpm services` starts: `S3_ENDPOINT=http://localhost:9000`, `S3_BUCKET=gamemash-dev`, `S3_ACCESS_KEY_ID=minioadmin` and `S3_SECRET_ACCESS_KEY=minioadmin`.
 
 Tests that need Redis use `TEST_REDIS_URL` (default `redis://localhost:6380`). The S3 image store tests use `TEST_S3_ENDPOINT` (default `http://localhost:9000`), `TEST_S3_BUCKET` (default `gamemash-test`, created on the fly), `TEST_S3_ACCESS_KEY_ID` and `TEST_S3_SECRET_ACCESS_KEY` (default `minioadmin`). Without Redis or MinIO those tests are skipped locally; in CI they fail. `pnpm services` starts both.
+
+</details>
 
 ## Self-hosting
 
