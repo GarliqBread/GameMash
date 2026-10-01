@@ -434,7 +434,8 @@ describe("pop quiz on the game runner", () => {
 
     expect(playing(await host())).toMatchObject({
       phase: "reveal",
-      waitsForHost: true,
+      waitsForHost: false,
+      canSkip: true,
       view: { correct: "triangle", correctCount: 1, counts: { triangle: 1, dome: 1 } },
     });
     expect(playing(await player(priya)).view).toMatchObject({ result: { isCorrect: true, points: 1000 }, rank: 1 });

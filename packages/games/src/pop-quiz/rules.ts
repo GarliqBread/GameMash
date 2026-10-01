@@ -10,7 +10,7 @@ import {
   type QuizQuestion,
   questionTimeLimit,
 } from "./config.js";
-import { buildLeaderboard, POP_QUIZ_READ_MS, quizPoints } from "./scoring.js";
+import { buildLeaderboard, POP_QUIZ_AUTO_NEXT_MS, POP_QUIZ_READ_MS, quizPoints } from "./scoring.js";
 import type { QuizAnswerOption, QuizFastest, QuizPlayerView, QuizStageView } from "./views.js";
 
 type QuizResult = {
@@ -28,7 +28,10 @@ export type QuizState = {
 };
 
 const questionPhase: Phase = { name: "question", durationMs: POP_QUIZ_READ_MS, input: null };
-const revealPhase: Phase = { name: "reveal", durationMs: null, input: null };
+const revealPhase = (config: PopQuizConfig): Phase =>
+  config.autoNextQuestion !== false
+    ? { name: "reveal", durationMs: POP_QUIZ_AUTO_NEXT_MS, input: null, skippable: true }
+    : { name: "reveal", durationMs: null, input: null };
 
 const answeringPhase = (config: PopQuizConfig, question: QuizQuestion, playerIds: string[]): Phase => ({
   name: "answering",
@@ -123,7 +126,7 @@ export const popQuizRules: GameRules<PopQuizConfig, QuizState, QuizAnswerKey> = 
     }
     if (phase.name === "answering") {
       const results = scoreAnswers(config, state, submissions, phaseStartedAt);
-      return { phase: revealPhase, state: { ...state, results }, points: pointsOf(results) };
+      return { phase: revealPhase(config), state: { ...state, results }, points: pointsOf(results) };
     }
     const nextIndex = state.questionIndex + 1;
     if (nextIndex >= config.questions.length) return { phase: null };

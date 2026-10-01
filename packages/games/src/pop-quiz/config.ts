@@ -39,6 +39,7 @@ export const defaultPopQuizConfig = (firstQuestionId: string): PopQuizConfig => 
   timeLimitSeconds: 20,
   speedBonus: true,
   leaderboardAfterEachQuestion: true,
+  autoNextQuestion: true,
   shuffleAnswers: false,
 });
 
