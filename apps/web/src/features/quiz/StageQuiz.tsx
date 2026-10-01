@@ -11,6 +11,11 @@ const nextLabelId = (snapshot: PlayingSnapshot, view: QuizStageView) => {
   return snapshot.gameIndex + 1 < snapshot.gameCount ? "game.nextGame" : "game.showFinalScores";
 };
 
+const countdownLabelId = (snapshot: PlayingSnapshot, view: QuizStageView) => {
+  if (view.questionIndex + 1 < view.questionCount) return "quiz.nextQuestionIn";
+  return snapshot.gameIndex + 1 < snapshot.gameCount ? "quiz.nextGameIn" : "quiz.finalScoresIn";
+};
+
 export const StageQuiz = ({ snapshot, view, players, status }: StageGameProps<QuizStageView>) => {
   if (view.kind !== "reveal") {
     return <StageQuizQuestion view={view} phaseEndsAt={snapshot.phaseEndsAt} status={status} />;
@@ -20,8 +25,10 @@ export const StageQuiz = ({ snapshot, view, players, status }: StageGameProps<Qu
       view={view}
       players={players}
       status={status}
+      phaseEndsAt={snapshot.phaseEndsAt}
+      countdownLabelId={countdownLabelId(snapshot, view)}
       next={
-        snapshot.waitsForHost && (
+        (snapshot.waitsForHost || snapshot.canSkip) && (
           <HostNextButton
             key={snapshot.phaseId}
             phaseId={snapshot.phaseId}

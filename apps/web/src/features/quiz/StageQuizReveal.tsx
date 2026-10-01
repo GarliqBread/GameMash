@@ -16,6 +16,7 @@ import type { ReactNode } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import type { LobbyStatus } from "../../lib/lobby";
 import { avatarSrc } from "../../lib/players";
+import { useSecondsLeft } from "../game/useSecondsLeft";
 import { useHostCredentials } from "../host/host-credentials";
 import { ReconnectingNote } from "../session/ReconnectingNote";
 import { QuizStageHeader } from "./QuizStageHeader";
@@ -57,10 +58,19 @@ export type StageQuizRevealProps = {
   view: RevealView;
   players: Map<string, LobbyPlayer>;
   status: LobbyStatus;
+  phaseEndsAt: number | null;
+  countdownLabelId: string;
   next: ReactNode;
 };
 
-export const StageQuizReveal = ({ view, players, status, next }: StageQuizRevealProps) => {
+export const StageQuizReveal = ({
+  view,
+  players,
+  status,
+  phaseEndsAt,
+  countdownLabelId,
+  next,
+}: StageQuizRevealProps) => {
   const { sessionId } = useHostCredentials();
   const intl = useIntl();
   const toOptions = useAnswerOptions();
@@ -68,6 +78,7 @@ export const StageQuizReveal = ({ view, players, status, next }: StageQuizReveal
   const correct = options.find((option) => option.shape === view.correct);
   const fastest = fastestOf(view, players);
   const formatNumber = (value: number) => intl.formatNumber(value);
+  const seconds = useSecondsLeft(phaseEndsAt);
   usePreloadImages(view.nextImages);
 
   return (
@@ -102,6 +113,11 @@ export const StageQuizReveal = ({ view, players, status, next }: StageQuizReveal
             )}
             <div className="ml-auto flex shrink-0 items-center gap-6">
               <ReconnectingNote status={status} />
+              {phaseEndsAt !== null && (
+                <span className="text-stage-caption text-fg-subtle">
+                  <FormattedMessage id={countdownLabelId} values={{ seconds }} />
+                </span>
+              )}
               {next}
             </div>
           </>

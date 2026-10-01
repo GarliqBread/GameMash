@@ -8,7 +8,7 @@ import {
   type QuizQuestion,
 } from "./config.js";
 import { type QuizState, popQuizRules as rules } from "./rules.js";
-import { buildLeaderboard, POP_QUIZ_READ_MS, quizPoints } from "./scoring.js";
+import { buildLeaderboard, POP_QUIZ_AUTO_NEXT_MS, POP_QUIZ_READ_MS, quizPoints } from "./scoring.js";
 
 const moons: QuizQuestion = {
   ...emptyQuestion("q1"),
@@ -115,7 +115,7 @@ describe("pop quiz rules", () => {
   });
 
   it("scores right answers by speed and leaves wrong ones at zero", () => {
-    const config = quizConfig();
+    const config = quizConfig({ autoNextQuestion: false });
     const { answering } = toAnswering(config);
 
     const reveal = expectPhase(
@@ -206,6 +206,25 @@ describe("pop quiz rules", () => {
     const lastAnswering = expectPhase(advance(config, next.state, next.phase));
     const lastReveal = expectPhase(advance(config, lastAnswering.state, lastAnswering.phase));
     expect(advance(config, lastReveal.state, lastReveal.phase)).toEqual({ phase: null });
+  });
+
+  it("times the reveal and lets the host skip it when the quiz moves on automatically", () => {
+    const config = quizConfig();
+    const { answering } = toAnswering(config);
+
+    const reveal = expectPhase(advance(config, answering.state, answering.phase));
+
+    expect(reveal.phase).toEqual({ name: "reveal", durationMs: POP_QUIZ_AUTO_NEXT_MS, input: null, skippable: true });
+    expect(expectPhase(advance(config, reveal.state, reveal.phase)).phase.name).toBe("question");
+  });
+
+  it("moves on automatically when a saved quiz has no auto next setting", () => {
+    const { autoNextQuestion: _, ...config } = quizConfig();
+    const { answering } = toAnswering(config);
+
+    const reveal = expectPhase(advance(config, answering.state, answering.phase));
+
+    expect(reveal.phase.durationMs).toBe(POP_QUIZ_AUTO_NEXT_MS);
   });
 
   it("only takes an answer shape while answering", () => {
