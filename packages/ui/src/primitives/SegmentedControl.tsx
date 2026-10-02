@@ -8,6 +8,7 @@ export type SegmentedOption<Value extends string> = {
   value: Value;
   label: ReactNode;
   ariaLabel?: string | undefined;
+  disabled?: boolean | undefined;
 };
 
 export type SegmentedControlProps<Value extends string> = Omit<
@@ -47,6 +48,7 @@ export const SegmentedControl = <Value extends string>({
         key={option.value}
         value={option.value}
         aria-label={option.ariaLabel}
+        disabled={option.disabled}
         className={cn(
           "focus-ring flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-control px-3 py-1.5 text-center text-control/tight font-bold text-fg-muted",
           "transition-colors duration-100 not-data-[disabled]:hover:text-fg data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",

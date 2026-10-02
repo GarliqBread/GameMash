@@ -26,7 +26,7 @@ const PointsControl = () => {
       aria-label="Points for a right answer"
       value={value}
       onValueChange={setValue}
-      options={["500", "1000", "2000"].map((points) => ({ value: points, label: points }))}
+      options={["500", "1000", "2000"].map((points) => ({ value: points, label: points, disabled: points === "500" }))}
     />
   );
 };

@@ -326,6 +326,19 @@ describe("pop quiz rules", () => {
     ).not.toContain("Saturn");
   });
 
+  it("never sends a question's image hint to any screen", () => {
+    const config = quizConfig({ questions: [{ ...moons, imageHint: "Saturn rings close-up" }, capital] });
+    const { question, answering } = toAnswering(config);
+    const reveal = expectPhase(advance(config, answering.state, answering.phase));
+
+    const views = [question, answering, reveal].flatMap(({ state, phase }) => {
+      const context = viewContext(config, state, phase);
+      return [rules.stageView(context), rules.playerView({ ...context, playerId: "daan", isParticipant: true })];
+    });
+
+    for (const view of views) expect(JSON.stringify(view)).not.toMatch(/imageHint|rings close-up/);
+  });
+
   it("shows only a player's own answer while answering", () => {
     const config = quizConfig();
     const { answering } = toAnswering(config);

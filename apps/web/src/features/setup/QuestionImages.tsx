@@ -1,6 +1,6 @@
 import { POP_QUIZ_MAX_IMAGES_PER_QUESTION, type QuizQuestion } from "@gamemash/games/config";
 import { QUESTION_IMAGE_CONTENT_TYPES } from "@gamemash/shared";
-import { ImageIcon, QuestionImageStrip, ToolButton } from "@gamemash/ui";
+import { ImageHint, ImageIcon, QuestionImageStrip, ToolButton } from "@gamemash/ui";
 import { type ChangeEvent, type ReactNode, useRef } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { useErrorMessage } from "../../lib/errors";
@@ -39,6 +39,8 @@ export const QuestionImages = ({ question, onChange, uploads, isEnabled, childre
     if (files.length > 0) void uploads.upload(question.id, files, attach);
   };
 
+  const removeHint = () => onChange(({ imageHint: _, ...current }) => current);
+
   const remove = (imageId: string) =>
     onChange((current) => ({ ...current, images: current.images.filter((id) => id !== imageId) }));
 
@@ -56,6 +58,14 @@ export const QuestionImages = ({ question, onChange, uploads, isEnabled, childre
           removeLabel={(position) => intl.formatMessage({ id: "setup.removeImage" }, { position })}
           pendingLabel={intl.formatMessage({ id: "setup.uploadingImage" })}
           error={error && formatError(error)}
+        />
+      )}
+      {isEnabled && question.imageHint && (
+        <ImageHint
+          label={<FormattedMessage id="setup.imageHint" />}
+          hint={question.imageHint}
+          removeLabel={intl.formatMessage({ id: "setup.removeImageHint" })}
+          onRemove={removeHint}
         />
       )}
       <div className="mt-1 flex flex-wrap gap-3">

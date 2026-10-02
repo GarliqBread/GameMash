@@ -1,5 +1,5 @@
 import { GAMES } from "@gamemash/games";
-import type { GamePickerOption } from "@gamemash/ui";
+import { type GamePickerOption, SparkleIcon } from "@gamemash/ui";
 import { useIntl } from "react-intl";
 
 export const useGamePickerOptions = (): GamePickerOption[] => {
@@ -14,4 +14,19 @@ export const useGamePickerOptions = (): GamePickerOption[] => {
       icon: <Icon />,
     };
   });
+};
+
+export const AI_PICKER_OPTION_ID = "ai";
+
+export const useAiPickerOptions = (): GamePickerOption[] => {
+  const intl = useIntl();
+  return [
+    {
+      id: AI_PICKER_OPTION_ID,
+      title: intl.formatMessage({ id: "ai.create" }),
+      description: intl.formatMessage({ id: "ai.createDescription" }),
+      accent: "brand-violet-light",
+      icon: <SparkleIcon size={28} strokeWidth={2.2} className="text-ink-950" />,
+    },
+  ];
 };

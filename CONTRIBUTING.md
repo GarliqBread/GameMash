@@ -49,10 +49,11 @@ Each game lives in its own folder in `packages/games/src`, next to `pop-quiz` an
 | `rules.ts`       | The server-side game: its phases, how inputs are validated and scored, and what each screen may see |
 | `views.ts`       | The types of what the big screen and the phones receive                                             |
 | `scoring.ts`     | Scoring helpers, kept pure so they're easy to test                                                  |
+| `ai.ts`          | The "Create with AI" prompt and the parser that turns a chatbot's reply into the game's setup       |
 
 Then register it:
 
-1. Add its setup schema to the union in `packages/games/src/setup-schema.ts`, its config rules in `setup.ts` and its definition in `index.ts`.
+1. Add its setup schema to the union in `packages/games/src/setup-schema.ts`, its config rules in `setup.ts`, its definition in `index.ts` and its prompt and parser in `ai.ts`.
 2. Add its rules to `gameRules` in `packages/games/src/server.ts`.
 3. Add the big-screen and phone screens and the workshop editor and settings in `apps/web/src/features`, then register them in `apps/web/src/features/games`: the view types in `game-views.ts`, the big screen in `stage-games.tsx`, the phone screen in `phone-games.tsx` and the workshop (editor, settings, default setup and readiness hints) in `workshop-games.tsx`. Each registry is keyed by game type, so the web app won't typecheck until the new game is in all of them.
 4. Add its messages to `packages/messages/src/locales`.

@@ -1,39 +1,25 @@
 import { Field } from "@base-ui/react/field";
-import { cva } from "class-variance-authority";
 import type { ComponentProps } from "react";
 import { cn } from "../lib/cn.js";
 import { FieldFrame, type FieldFrameProps } from "./FieldFrame.js";
 import { fieldControlClassName } from "./field-control.js";
 
-const textFieldControlVariants = cva(fieldControlClassName, {
-  variants: {
-    size: {
-      phone: "h-[60px] rounded-field px-4 text-lead",
-      host: "h-12 rounded-control px-3.5 text-control-lg",
-    },
-  },
-  defaultVariants: {
-    size: "phone",
-  },
-});
-
-export type TextFieldProps = Omit<ComponentProps<typeof Field.Control>, "className" | "size"> &
+export type TextAreaProps = Omit<ComponentProps<"textarea">, "className" | "children"> &
   Omit<FieldFrameProps, "children"> & {
-    size?: "phone" | "host" | undefined;
     controlClassName?: string | undefined;
   };
 
-export const TextField = ({
+export const TextArea = ({
   label,
   hideLabel,
   description,
   error,
   disabled,
-  size = "phone",
   className,
   controlClassName,
+  rows = 6,
   ...props
-}: TextFieldProps) => (
+}: TextAreaProps) => (
   <FieldFrame
     label={label}
     hideLabel={hideLabel}
@@ -42,6 +28,9 @@ export const TextField = ({
     disabled={disabled}
     className={className}
   >
-    <Field.Control className={cn(textFieldControlVariants({ size }), controlClassName)} {...props} />
+    <Field.Control
+      render={<textarea rows={rows} {...props} />}
+      className={cn(fieldControlClassName, "resize-y rounded-control px-3.5 py-3 text-body", controlClassName)}
+    />
   </FieldFrame>
 );

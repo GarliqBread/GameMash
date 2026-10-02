@@ -186,3 +186,11 @@ export const UploadIcon = (props: IconProps) => (
     <path d="M4 17 V20 H20 V17" />
   </Icon>
 );
+
+export const SparkleIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M12 3 L13.8 10.2 L21 12 L13.8 13.8 L12 21 L10.2 13.8 L3 12 L10.2 10.2 Z" />
+    <path d="M19 3 V6" />
+    <path d="M17.5 4.5 H20.5" />
+  </Icon>
+);

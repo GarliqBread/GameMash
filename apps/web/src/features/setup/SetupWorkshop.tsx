@@ -1,5 +1,5 @@
 import { isGameId } from "@gamemash/games";
-import { MAX_GAMES, SESSION_NAME_MAX_LENGTH, type SessionSetup } from "@gamemash/games/config";
+import { type GameSetup, MAX_GAMES, SESSION_NAME_MAX_LENGTH, type SessionSetup } from "@gamemash/games/config";
 import {
   Button,
   GamePicker,
@@ -16,11 +16,12 @@ import { useRef, useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { GameSettings, newGame } from "../games/workshop-games";
 import { useHostCredentials } from "../host/host-credentials";
+import { AiCreateDialog } from "./AiCreateDialog";
 import { SetupLineup } from "./SetupLineup";
 import { SetupTransferButtons } from "./SetupTransfer";
 import { addGame, removeGame, reorderGames } from "./setup-changes";
 import { firstUnready, setupProblemId } from "./setup-readiness";
-import { useGamePickerOptions } from "./useGamePickerOptions";
+import { AI_PICKER_OPTION_ID, useAiPickerOptions, useGamePickerOptions } from "./useGamePickerOptions";
 import { useImageUploads } from "./useImageUploads";
 import { useSetupEditor } from "./useSetupEditor";
 import { useSetupTransfer } from "./useSetupTransfer";
@@ -39,8 +40,10 @@ export const SetupWorkshop = ({ initialSetup, imagesEnabled }: SetupWorkshopProp
   const { setup, status, saveError, update, flush, replace } = useSetupEditor(initialSetup);
   const uploads = useImageUploads();
   const pickerOptions = useGamePickerOptions();
+  const aiPickerOptions = useAiPickerOptions();
   const { game, selectedItemId, selectGame, selectItem } = useWorkshopSelection(setup);
   const [hasTriedToOpen, setHasTriedToOpen] = useState(false);
+  const [isAiOpen, setIsAiOpen] = useState(false);
   const insertSlotRef = useRef<HTMLButtonElement>(null);
   const transfer = useSetupTransfer({
     setup,
@@ -51,7 +54,20 @@ export const SetupWorkshop = ({ initialSetup, imagesEnabled }: SetupWorkshopProp
     },
   });
 
+  const freeSlots = MAX_GAMES - setup.games.length;
+
+  const handleAiCreate = (created: GameSetup[]) => {
+    if (created.length > freeSlots) return;
+    update((current) => created.reduce(addGame, current));
+    selectGame(created[0]?.id);
+    setIsAiOpen(false);
+  };
+
   const handleInsert = (type: string) => {
+    if (type === AI_PICKER_OPTION_ID) {
+      setIsAiOpen(true);
+      return;
+    }
     if (!isGameId(type)) return;
     const added = newGame(type);
     update((current) => addGame(current, added));
@@ -79,78 +95,90 @@ export const SetupWorkshop = ({ initialSetup, imagesEnabled }: SetupWorkshopProp
   };
 
   return (
-    <WorkshopShell
-      lineupLabel={intl.formatMessage({ id: "setup.lineupTitle" })}
-      settingsLabel={intl.formatMessage({ id: "setup.rulesTitle" })}
-      header={
-        <>
-          <Logo size="md" />
-          <SessionNameSticker
-            label={<FormattedMessage id="setup.sessionLabel" />}
-            value={setup.name}
-            onValueChange={(name: string) => update((current) => ({ ...current, name }))}
-            maxLength={SESSION_NAME_MAX_LENGTH}
-            placeholder={intl.formatMessage({ id: "setup.sessionPlaceholder" })}
+    <>
+      <WorkshopShell
+        lineupLabel={intl.formatMessage({ id: "setup.lineupTitle" })}
+        settingsLabel={intl.formatMessage({ id: "setup.rulesTitle" })}
+        header={
+          <>
+            <Logo size="md" />
+            <SessionNameSticker
+              label={<FormattedMessage id="setup.sessionLabel" />}
+              value={setup.name}
+              onValueChange={(name: string) => update((current) => ({ ...current, name }))}
+              maxLength={SESSION_NAME_MAX_LENGTH}
+              placeholder={intl.formatMessage({ id: "setup.sessionPlaceholder" })}
+            />
+            <div className="flex-1" />
+            <SetupTransferButtons transfer={transfer} canExport={setup.games.length > 0} />
+            <Button
+              size="lg"
+              icon={<PlayIcon size={22} />}
+              className="workshop:shadow-brutal-lg"
+              onClick={handleOpenLobby}
+            >
+              <FormattedMessage id="setup.openLobby" />
+            </Button>
+          </>
+        }
+        lineup={
+          <>
+            <SectionTab>
+              <FormattedMessage id="setup.lineupTitle" />
+            </SectionTab>
+            <SetupLineup
+              games={setup.games}
+              selectedId={game?.id}
+              onSelect={selectGame}
+              onReorder={(ids) => update((current) => reorderGames(current, ids))}
+            />
+            <GamePicker
+              options={pickerOptions}
+              extraOptions={aiPickerOptions}
+              onPick={handleInsert}
+              disabled={setup.games.length >= MAX_GAMES}
+              trigger={
+                <InsertGameSlot ref={insertSlotRef} className="mt-3">
+                  <FormattedMessage id="setup.insertGame" />
+                </InsertGameSlot>
+              }
+            />
+            <div className="flex-1" />
+            <TrustNote>
+              <FormattedMessage id="setup.trust" />
+            </TrustNote>
+          </>
+        }
+        editor={
+          <WorkshopEditor
+            game={game}
+            update={update}
+            selectedItemId={selectedItemId}
+            onSelectItem={selectItem}
+            saveStatus={status}
+            saveError={saveError}
+            onRetrySave={() => void flush()}
+            problemId={hasTriedToOpen ? setupProblemId(setup) : null}
+            transfer={transfer}
+            uploads={uploads}
+            imagesEnabled={imagesEnabled}
+            pickerOptions={pickerOptions}
+            pickerExtraOptions={aiPickerOptions}
+            onInsert={handleInsert}
+            onRemove={handleRemove}
+            removeFocusRef={insertSlotRef}
           />
-          <div className="flex-1" />
-          <SetupTransferButtons transfer={transfer} canExport={setup.games.length > 0} />
-          <Button
-            size="lg"
-            icon={<PlayIcon size={22} />}
-            className="workshop:shadow-brutal-lg"
-            onClick={handleOpenLobby}
-          >
-            <FormattedMessage id="setup.openLobby" />
-          </Button>
-        </>
-      }
-      lineup={
-        <>
-          <SectionTab>
-            <FormattedMessage id="setup.lineupTitle" />
-          </SectionTab>
-          <SetupLineup
-            games={setup.games}
-            selectedId={game?.id}
-            onSelect={selectGame}
-            onReorder={(ids) => update((current) => reorderGames(current, ids))}
-          />
-          <GamePicker
-            options={pickerOptions}
-            onPick={handleInsert}
-            disabled={setup.games.length >= MAX_GAMES}
-            trigger={
-              <InsertGameSlot ref={insertSlotRef} className="mt-3">
-                <FormattedMessage id="setup.insertGame" />
-              </InsertGameSlot>
-            }
-          />
-          <div className="flex-1" />
-          <TrustNote>
-            <FormattedMessage id="setup.trust" />
-          </TrustNote>
-        </>
-      }
-      editor={
-        <WorkshopEditor
-          game={game}
-          update={update}
-          selectedItemId={selectedItemId}
-          onSelectItem={selectItem}
-          saveStatus={status}
-          saveError={saveError}
-          onRetrySave={() => void flush()}
-          problemId={hasTriedToOpen ? setupProblemId(setup) : null}
-          transfer={transfer}
-          uploads={uploads}
-          imagesEnabled={imagesEnabled}
-          pickerOptions={pickerOptions}
-          onInsert={handleInsert}
-          onRemove={handleRemove}
-          removeFocusRef={insertSlotRef}
-        />
-      }
-      settings={game ? <GameSettings game={game} update={update} /> : null}
-    />
+        }
+        settings={game ? <GameSettings game={game} update={update} /> : null}
+      />
+      <AiCreateDialog
+        open={isAiOpen}
+        onOpenChange={setIsAiOpen}
+        finalFocus={insertSlotRef}
+        imagesEnabled={imagesEnabled}
+        freeSlots={freeSlots}
+        onCreate={handleAiCreate}
+      />
+    </>
   );
 };
