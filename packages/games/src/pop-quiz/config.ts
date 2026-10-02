@@ -10,6 +10,7 @@ export const POP_QUIZ_TEXT_MAX_RUNS = 40;
 export const POP_QUIZ_ANSWER_MAX_LENGTH = 40;
 export const POP_QUIZ_MAX_QUESTIONS = 50;
 export const POP_QUIZ_MAX_IMAGES_PER_QUESTION = 9;
+export const POP_QUIZ_IMAGE_HINT_MAX_LENGTH = 60;
 export const POP_QUIZ_TIME_LIMITS = [10, 20, 30, 60, 120];
 
 export type QuizPointLevel = "standard" | "double";
@@ -59,6 +60,8 @@ const isQuestionTextValid = (text: QuizText) => {
   return plain.length <= POP_QUIZ_QUESTION_MAX_LENGTH && !hasHiddenCharacters(plain);
 };
 
+const isImageHintValid = (hint: string | undefined) => hint === undefined || !hasHiddenCharacters(hint);
+
 export const answerKeysOf = (question: QuizQuestion) =>
   question.kind === "trueFalse" ? TRUE_FALSE_ANSWER_KEYS : QUIZ_ANSWER_KEYS;
 
@@ -81,7 +84,10 @@ export const isQuestionComplete = (question: QuizQuestion) =>
 export const popQuizConfigRules: GameConfigRules<PopQuizConfig> = {
   isValid: (config) =>
     hasUniqueIds(config.questions) &&
-    config.questions.every((question) => isQuestionTextValid(question.text) && hasOnlyActiveAnswers(question)),
+    config.questions.every(
+      (question) =>
+        isQuestionTextValid(question.text) && hasOnlyActiveAnswers(question) && isImageHintValid(question.imageHint),
+    ),
   isReady: (config) => config.questions.length > 0 && config.questions.every(isQuestionComplete),
   imageIds: (config) => config.questions.flatMap((question) => question.images),
   mapImages: (config, map) => ({

@@ -40,6 +40,8 @@ type WorkshopGame<Type extends GameType> = {
   Editor: ComponentType<GameEditorProps<ConfigOf<Type>>>;
   Settings: ComponentType<GameSettingsProps<ConfigOf<Type>>>;
   newGame: () => GameOf<Type>;
+  newGameId: () => string;
+  newItemId: () => string;
   editTitleId: string;
   unreadyMessageId: string;
   firstIncompleteItemId: (config: ConfigOf<Type>) => string | undefined;
@@ -50,11 +52,17 @@ type WorkshopGame<Type extends GameType> = {
   ) => SessionSetup;
 };
 
+const newQuizId = () => createLocalId("quiz");
+
+const newDrawItId = () => createLocalId("draw");
+
 const WORKSHOP_GAMES: { [Type in GameType]: WorkshopGame<Type> } = {
   "pop-quiz": {
     Editor: QuizEditor,
     Settings: QuizRules,
-    newGame: () => ({ id: createLocalId("quiz"), type: "pop-quiz", config: defaultPopQuizConfig(newQuestionId()) }),
+    newGame: () => ({ id: newQuizId(), type: "pop-quiz", config: defaultPopQuizConfig(newQuestionId()) }),
+    newGameId: newQuizId,
+    newItemId: newQuestionId,
     editTitleId: "setup.editQuestions",
     unreadyMessageId: "setup.needComplete",
     firstIncompleteItemId: (config) => config.questions.find((question) => !isQuestionComplete(question))?.id,
@@ -63,7 +71,9 @@ const WORKSHOP_GAMES: { [Type in GameType]: WorkshopGame<Type> } = {
   "draw-it": {
     Editor: DrawItEditor,
     Settings: DrawItRules,
-    newGame: () => ({ id: createLocalId("draw"), type: "draw-it", config: defaultDrawItConfig(newWordId()) }),
+    newGame: () => ({ id: newDrawItId(), type: "draw-it", config: defaultDrawItConfig(newWordId()) }),
+    newGameId: newDrawItId,
+    newItemId: newWordId,
     editTitleId: "setup.editWords",
     unreadyMessageId: "setup.needWords",
     firstIncompleteItemId: () => undefined,
@@ -74,6 +84,11 @@ const WORKSHOP_GAMES: { [Type in GameType]: WorkshopGame<Type> } = {
 const workshopGameOf = <Type extends GameType>(game: GameOf<Type>): WorkshopGame<Type> => WORKSHOP_GAMES[game.type];
 
 export const newGame = (type: GameType): GameSetup => WORKSHOP_GAMES[type].newGame();
+
+export const newIdsOf = (type: GameType) => ({
+  newGameId: WORKSHOP_GAMES[type].newGameId,
+  newItemId: WORKSHOP_GAMES[type].newItemId,
+});
 
 export const editTitleIdOf = (game: GameSetup) => WORKSHOP_GAMES[game.type].editTitleId;
 

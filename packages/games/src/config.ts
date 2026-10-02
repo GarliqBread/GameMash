@@ -1,3 +1,4 @@
+export * from "./ai.js";
 export * from "./draw-it/config.js";
 export * from "./draw-it/scoring.js";
 export type * from "./draw-it/views.js";

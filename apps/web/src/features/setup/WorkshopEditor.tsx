@@ -34,6 +34,7 @@ export type WorkshopEditorProps = {
   uploads: ImageUploads;
   imagesEnabled: boolean;
   pickerOptions: GamePickerOption[];
+  pickerExtraOptions: GamePickerOption[];
   onInsert: (type: string) => void;
   onRemove: () => void;
   removeFocusRef: RefObject<HTMLButtonElement | null>;
@@ -52,6 +53,7 @@ export const WorkshopEditor = ({
   uploads,
   imagesEnabled,
   pickerOptions,
+  pickerExtraOptions,
   onInsert,
   onRemove,
   removeFocusRef,
@@ -117,6 +119,7 @@ export const WorkshopEditor = ({
           </p>
           <GamePicker
             options={pickerOptions}
+            extraOptions={pickerExtraOptions}
             onPick={onInsert}
             trigger={
               <Button size="lg">

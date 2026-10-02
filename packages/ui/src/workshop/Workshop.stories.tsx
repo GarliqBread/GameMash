@@ -3,12 +3,16 @@ import { useCopy } from "../../.ladle/pseudo";
 import type { Story, StoryDefault } from "../../.ladle/types";
 import { GameCartridge } from "../host/GameCartridge";
 import { GamePicker } from "../host/GamePicker";
+import { ImageHint } from "../host/ImageHint";
 import { InsertGameSlot } from "../host/InsertGameSlot";
 import { WordListEditor } from "../host/WordListEditor";
 import { AnswerShape } from "../icons/AnswerShape";
-import { CheckIcon, CopyIcon, ImageIcon, PencilIcon, TrashIcon } from "../icons/icons";
+import { CheckIcon, CopyIcon, ImageIcon, PencilIcon, SparkleIcon, TrashIcon } from "../icons/icons";
 import { ANSWER_SHAPES } from "../lib/answers";
+import { SegmentedControl } from "../primitives/SegmentedControl";
 import { Switch } from "../primitives/Switch";
+import { TextArea } from "../primitives/TextArea";
+import { TextField } from "../primitives/TextField";
 import { AutosaveIndicator, type AutosaveStatus } from "./AutosaveIndicator";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { KeyButton } from "./KeyButton";
@@ -16,6 +20,7 @@ import { SectionTab } from "./SectionTab";
 import { Sticker } from "./Sticker";
 import { ToolButton } from "./ToolButton";
 import { WorkingDialog } from "./WorkingDialog";
+import { WorkshopDialog } from "./WorkshopDialog";
 
 export default { title: "Workshop" } satisfies StoryDefault;
 
@@ -181,6 +186,15 @@ export const Picker: Story = () => {
               icon: <PencilIcon size={28} strokeWidth={2.2} className="text-ink-950" />,
             },
           ]}
+          extraOptions={[
+            {
+              id: "ai",
+              title: t("Create with AI"),
+              description: t("Use your own chatbot, free"),
+              accent: "brand-violet-light",
+              icon: <SparkleIcon size={28} strokeWidth={2.2} className="text-ink-950" />,
+            },
+          ]}
         />
         <p>{picked ? `Picked ${picked}` : "Nothing picked"}</p>
       </div>
@@ -263,6 +277,66 @@ export const Autosave: Story = () => {
           cancelLabel={t("Keep it")}
           onConfirm={() => setConfirming(false)}
         />
+      </Row>
+    </Bench>
+  );
+};
+
+export const AiCreate: Story = () => {
+  const t = useCopy();
+  const [open, setOpen] = useState(false);
+  const [difficulty, setDifficulty] = useState("medium");
+  const [hint, setHint] = useState<string | null>("Eiffel Tower at night");
+  return (
+    <Bench>
+      <Row label="ImageHint">
+        {hint ? (
+          <ImageHint
+            label={t("Image idea:")}
+            hint={hint}
+            removeLabel={t("Remove image idea")}
+            onRemove={() => setHint(null)}
+          />
+        ) : (
+          <KeyButton size="sm" onClick={() => setHint("Eiffel Tower at night")}>
+            {t("Reset")}
+          </KeyButton>
+        )}
+      </Row>
+      <Row label="WorkshopDialog">
+        <ToolButton icon={<SparkleIcon size={18} strokeWidth={2.2} />} onClick={() => setOpen(true)}>
+          {t("Create with AI")}
+        </ToolButton>
+        <WorkshopDialog
+          open={open}
+          onOpenChange={setOpen}
+          title={t("Create with AI")}
+          description={t(
+            "Ask any chatbot you already use, then paste its reply here. AI can get facts wrong, so check the game before you play.",
+          )}
+          closeLabel={t("Close")}
+          footer={
+            <KeyButton size="md" className="workshop:bg-sun" onClick={() => setOpen(false)}>
+              {t("Add game")}
+            </KeyButton>
+          }
+        >
+          <SectionTab as="h3">{t("1. Ask your chatbot")}</SectionTab>
+          <TextField size="host" label={t("Topic")} defaultValue="Space and planets" />
+          <SegmentedControl
+            aria-label={t("Difficulty")}
+            value={difficulty}
+            onValueChange={setDifficulty}
+            options={["easy", "medium", "hard"].map((value) => ({ value, label: t(value) }))}
+          />
+          <SectionTab as="h3">{t("2. Paste the reply")}</SectionTab>
+          <TextArea
+            label={t("Chatbot reply")}
+            hideLabel
+            error={t("Question 3: the correct answer must be one of the answers")}
+            defaultValue="{}"
+          />
+        </WorkshopDialog>
       </Row>
     </Bench>
   );

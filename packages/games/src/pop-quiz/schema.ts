@@ -2,6 +2,7 @@ import { type Static, Type } from "typebox";
 import { ItemIdSchema } from "../item-id.js";
 import {
   POP_QUIZ_ANSWER_MAX_LENGTH,
+  POP_QUIZ_IMAGE_HINT_MAX_LENGTH,
   POP_QUIZ_MAX_IMAGES_PER_QUESTION,
   POP_QUIZ_MAX_QUESTIONS,
   POP_QUIZ_POINT_LEVELS,
@@ -34,6 +35,7 @@ const QuizQuestionSchema = Type.Object(
     kind: Type.Enum(POP_QUIZ_QUESTION_KINDS),
     text: QuizTextSchema,
     images: Type.Array(ItemIdSchema, { maxItems: POP_QUIZ_MAX_IMAGES_PER_QUESTION }),
+    imageHint: Type.Optional(Type.String({ minLength: 1, maxLength: POP_QUIZ_IMAGE_HINT_MAX_LENGTH })),
     answers: Type.Object(
       {
         squircle: AnswerTextSchema,
