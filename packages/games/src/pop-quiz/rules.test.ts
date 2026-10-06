@@ -228,6 +228,34 @@ describe("pop quiz rules", () => {
     expect(reveal.phase.durationMs).toBe(POP_QUIZ_AUTO_NEXT_MS);
   });
 
+  it("waits for the host before showing the answers when auto show is off", () => {
+    const config = quizConfig({ autoShowAnswers: false });
+    const { question, answering } = toAnswering(config);
+    const reveal = expectPhase(advance(config, answering.state, answering.phase));
+    const next = expectPhase(advance(config, reveal.state, reveal.phase));
+
+    expect(question.phase).toEqual({ name: "question", durationMs: null, input: null });
+    expect(answering.phase.name).toBe("answering");
+    expect(next.phase).toEqual({ name: "question", durationMs: null, input: null });
+  });
+
+  it("shows the answers by itself when a saved quiz has no auto show setting", () => {
+    const { autoShowAnswers: _, ...config } = quizConfig();
+
+    expect(toAnswering(config).question.phase.durationMs).toBe(POP_QUIZ_READ_MS);
+  });
+
+  it("remembers who was asked when revealing", () => {
+    const config = quizConfig();
+    const { answering } = toAnswering(config);
+    const reveal = expectPhase(advance(config, answering.state, answering.phase));
+    const phoneOf = (playerId: string) =>
+      rules.playerView({ ...viewContext(config, reveal.state, reveal.phase), playerId, isParticipant: false });
+
+    expect(phoneOf("daan")).toMatchObject({ kind: "reveal", result: null, isParticipant: true });
+    expect(phoneOf("newcomer")).toMatchObject({ isParticipant: false });
+  });
+
   it("only takes an answer shape while answering", () => {
     const config = quizConfig();
     const { question, answering } = toAnswering(config);

@@ -24,10 +24,17 @@ export type QuizState = {
   questionIndex: number;
   layout: QuizAnswerKey[];
   participantCount: number;
+  participants?: string[];
   results: Record<string, QuizResult>;
 };
 
-const questionPhase: Phase = { name: "question", durationMs: POP_QUIZ_READ_MS, input: null };
+const isAutoShowAnswers = (config: PopQuizConfig) => config.autoShowAnswers !== false;
+
+const questionPhase = (config: PopQuizConfig): Phase => ({
+  name: "question",
+  durationMs: isAutoShowAnswers(config) ? POP_QUIZ_READ_MS : null,
+  input: null,
+});
 
 const isAutoNext = (config: PopQuizConfig) => config.autoNextQuestion !== false;
 
@@ -120,13 +127,13 @@ export const popQuizRules: GameRules<PopQuizConfig, QuizState, QuizAnswerKey> = 
   parseInput: ({ config, state, phase, input }) =>
     phase.name === "answering" && isShownShape(questionAt(config, state.questionIndex), input) ? input : null,
 
-  begin: ({ config, random }) => ({ phase: questionPhase, state: startQuestion(config, 0, random) }),
+  begin: ({ config, random }) => ({ phase: questionPhase(config), state: startQuestion(config, 0, random) }),
 
   advance: ({ config, state, phase, phaseStartedAt, submissions, playerIds, random }) => {
     if (phase.name === "question") {
       return {
         phase: answeringPhase(config, questionAt(config, state.questionIndex), playerIds),
-        state: { ...state, participantCount: playerIds.length },
+        state: { ...state, participantCount: playerIds.length, participants: playerIds },
       };
     }
     if (phase.name === "answering") {
@@ -136,7 +143,7 @@ export const popQuizRules: GameRules<PopQuizConfig, QuizState, QuizAnswerKey> = 
     }
     const nextIndex = state.questionIndex + 1;
     if (nextIndex >= config.questions.length) return { phase: null };
-    return { phase: questionPhase, state: startQuestion(config, nextIndex, random) };
+    return { phase: questionPhase(config), state: startQuestion(config, nextIndex, random) };
   },
 
   stageView: ({ config, state, phase, submissions, totals }): QuizStageView => {
@@ -179,6 +186,7 @@ export const popQuizRules: GameRules<PopQuizConfig, QuizState, QuizAnswerKey> = 
 
   playerView: ({ config, state, phase, submissions, totals, playerId, isParticipant }): QuizPlayerView => {
     const question = questionAt(config, state.questionIndex);
+    const wasParticipant = state.participants?.includes(playerId) ?? isParticipant;
     const progress = progressOf(config, state);
     const total = totals[playerId] ?? 0;
     if (phase.name === "question") return { ...progress, kind: "question", total };
@@ -206,7 +214,7 @@ export const popQuizRules: GameRules<PopQuizConfig, QuizState, QuizAnswerKey> = 
       total,
       rank: rankOf(totals, playerId),
       leaderboard: config.leaderboardAfterEachQuestion ? buildLeaderboard(totals, gains) : null,
-      isParticipant,
+      isParticipant: wasParticipant,
     };
   },
 };

@@ -145,7 +145,7 @@ describe("quiz readiness", () => {
     expect(
       isSetupValid({
         name: "",
-        games: [quiz([{ ...complete, text: [{ text: "x".repeat(60) }, { text: "y".repeat(31) }] }])],
+        games: [quiz([{ ...complete, text: [{ text: "x".repeat(100) }, { text: "y".repeat(101) }] }])],
       }),
     ).toBe(false);
     expect(isSetupValid({ name: "", games: [quiz([{ ...complete, text: [{ text: "a\u200bb" }] }])] })).toBe(false);

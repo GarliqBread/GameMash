@@ -58,7 +58,7 @@ const ProofMedia = ({ proof, urlOf, onVideoEnded }: Omit<MediaProps, "autoNext">
           key={photo.assetId}
           src={urlOf(photo.assetId)}
           alt={photo.alt}
-          className="size-full min-h-0 min-w-0 bg-ink-950 object-cover"
+          className="size-full min-h-0 min-w-0 bg-ink-950 object-contain"
         />
       ))}
     </div>

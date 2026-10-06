@@ -113,6 +113,7 @@ export const PopQuizConfigSchema = Type.Object(
     timeLimitSeconds: Type.Enum(POP_QUIZ_TIME_LIMITS),
     speedBonus: Type.Boolean(),
     leaderboardAfterEachQuestion: Type.Boolean(),
+    autoShowAnswers: Type.Optional(Type.Boolean()),
     autoNextQuestion: Type.Optional(Type.Boolean()),
     shuffleAnswers: Type.Boolean(),
   },

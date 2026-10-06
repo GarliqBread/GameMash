@@ -223,7 +223,7 @@ describe("session setup", () => {
     const [game] = base.games;
     const [question] = game?.config.questions ?? [];
     if (!game || !question) throw new Error("fixture is missing a question");
-    const text = [{ text: "x".repeat(60), bold: true }, { text: "y".repeat(31) }];
+    const text = [{ text: "x".repeat(100), bold: true }, { text: "y".repeat(101) }];
 
     const response = await save({
       ...base,

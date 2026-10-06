@@ -4,9 +4,16 @@ import type { MediaRef } from "../media.js";
 import { hasUniqueIds } from "../unique.js";
 import type { PopQuizConfig, QuizProof, QuizProofPhoto, QuizQuestion, QuizText } from "./schema.js";
 
-export type { PopQuizConfig, QuizProof, QuizProofPhoto, QuizQuestion, QuizText, QuizTextRun } from "./schema.js";
+export type {
+  PopQuizConfig,
+  QuizProof,
+  QuizProofPhoto,
+  QuizQuestion,
+  QuizText,
+  QuizTextRun,
+} from "./schema.js";
 
-export const POP_QUIZ_QUESTION_MAX_LENGTH = 90;
+export const POP_QUIZ_QUESTION_MAX_LENGTH = 200;
 export const POP_QUIZ_TEXT_MAX_RUNS = 40;
 export const POP_QUIZ_ANSWER_MAX_LENGTH = 40;
 export const POP_QUIZ_MAX_QUESTIONS = 50;
@@ -21,7 +28,10 @@ export const POP_QUIZ_PROOF_LAYOUTS: QuizProofLayout[] = ["side", "big"];
 
 export type QuizPointLevel = "standard" | "double";
 export const POP_QUIZ_POINT_LEVELS: QuizPointLevel[] = ["standard", "double"];
-export const POP_QUIZ_POINTS: Record<QuizPointLevel, number> = { standard: 1000, double: 2000 };
+export const POP_QUIZ_POINTS: Record<QuizPointLevel, number> = {
+  standard: 1000,
+  double: 2000,
+};
 
 export type QuizAnswerKey = "squircle" | "triangle" | "plus" | "dome";
 export const QUIZ_ANSWER_KEYS: QuizAnswerKey[] = ["squircle", "triangle", "plus", "dome"];
@@ -46,6 +56,7 @@ export const defaultPopQuizConfig = (firstQuestionId: string): PopQuizConfig => 
   timeLimitSeconds: 20,
   speedBonus: true,
   leaderboardAfterEachQuestion: true,
+  autoShowAnswers: true,
   autoNextQuestion: true,
   shuffleAnswers: false,
 });
@@ -81,7 +92,11 @@ const isProofValid = (proof: QuizProof | undefined) =>
 
 const proofMediaRefs = (proof: QuizProof | undefined): MediaRef[] => {
   if (!proof) return [];
-  if (proof.kind === "image") return proof.photos.map((photo) => ({ id: photo.assetId, role: "proofPhoto" }));
+  if (proof.kind === "image")
+    return proof.photos.map((photo) => ({
+      id: photo.assetId,
+      role: "proofPhoto",
+    }));
   return [
     { id: proof.assetId, role: "proofVideo" },
     { id: proof.posterAssetId, role: "proofPoster" },
@@ -155,7 +170,10 @@ export const popQuizConfigRules: GameConfigRules<PopQuizConfig> = {
   }),
   withNewIds: (config, newId) => ({
     ...config,
-    questions: config.questions.map((question) => ({ ...question, id: newId() })),
+    questions: config.questions.map((question) => ({
+      ...question,
+      id: newId(),
+    })),
   }),
   roundCount: (config) => config.questions.length,
   roundSeconds: quizTimeRange,

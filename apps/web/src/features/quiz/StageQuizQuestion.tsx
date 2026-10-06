@@ -12,6 +12,7 @@ import {
 } from "@gamemash/ui";
 import { FormattedMessage, useIntl } from "react-intl";
 import type { LobbyStatus } from "../../lib/lobby";
+import { HostNextButton } from "../game/HostNextButton";
 import { useSecondsLabel } from "../game/useSecondsLabel";
 import { useSecondsLeft } from "../game/useSecondsLeft";
 import { ReconnectingNote } from "../session/ReconnectingNote";
@@ -20,21 +21,34 @@ import { QuizStageHeader } from "./QuizStageHeader";
 import { useAnswerOptions } from "./useAnswerOptions";
 import { useQuestionImages } from "./useQuestionImages";
 
+const LONG_QUESTION_LENGTH = 90;
+
 type AskingView = Extract<QuizStageView, { kind: "question" | "answering" }>;
 
 export type StageQuizQuestionProps = {
   view: AskingView;
+  phaseId: number;
   phaseEndsAt: number | null;
+  waitsForHost: boolean;
   status: LobbyStatus;
 };
 
-export const StageQuizQuestion = ({ view, phaseEndsAt, status }: StageQuizQuestionProps) => {
+const ShowAnswersFooter = ({ phaseId, status }: { phaseId: number; status: LobbyStatus }) => (
+  <div className="ml-auto flex shrink-0 items-center gap-6">
+    <ReconnectingNote status={status} />
+    <HostNextButton key={phaseId} phaseId={phaseId} label={<FormattedMessage id="quiz.showAnswers" />} />
+  </div>
+);
+
+export const StageQuizQuestion = ({ view, phaseId, phaseEndsAt, waitsForHost, status }: StageQuizQuestionProps) => {
   const intl = useIntl();
   const toOptions = useAnswerOptions();
   const seconds = useSecondsLeft(phaseEndsAt);
   const images = useQuestionImages(view.images);
   useProofPreload(view.proof);
   const hasImages = view.images.length > 0;
+  const isLong = view.text.reduce((length, run) => length + run.text.length, 0) > LONG_QUESTION_LENGTH;
+  const headingSize = hasImages ? (isLong ? "stage-section" : "stage-sub") : isLong ? "stage-sub" : "stage-hero";
   const secondsLabel = useSecondsLabel();
 
   return (
@@ -64,13 +78,16 @@ export const StageQuizQuestion = ({ view, phaseEndsAt, status }: StageQuizQuesti
             }
           />
         }
-        footer={status === "reconnecting" ? <ReconnectingNote status={status} /> : undefined}
+        footer={
+          view.kind === "question" && waitsForHost ? (
+            <ShowAnswersFooter phaseId={phaseId} status={status} />
+          ) : status === "reconnecting" ? (
+            <ReconnectingNote status={status} />
+          ) : undefined
+        }
       >
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-8">
-          <Heading
-            size={hasImages ? "stage-sub" : "stage-hero"}
-            className="max-w-[1500px] text-center font-medium hyphens-auto wrap-break-word"
-          >
+          <Heading size={headingSize} className="max-w-[1500px] text-center font-medium hyphens-auto wrap-break-word">
             <RichText runs={view.text} />
           </Heading>
           {hasImages && (
@@ -78,7 +95,7 @@ export const StageQuizQuestion = ({ view, phaseEndsAt, status }: StageQuizQuesti
               <QuestionImageGrid images={images} />
             </div>
           )}
-          {view.kind === "question" && (
+          {view.kind === "question" && !waitsForHost && (
             <p className="text-stage-lg text-fg-subtle">
               <FormattedMessage id="quiz.getReady" />
             </p>
