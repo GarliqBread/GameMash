@@ -59,6 +59,7 @@ export const WorkshopEditor = ({
   removeFocusRef,
 }: WorkshopEditorProps) => {
   const formatError = useErrorMessage();
+
   const [isConfirmingRemove, setIsConfirmingRemove] = useState(false);
 
   return (

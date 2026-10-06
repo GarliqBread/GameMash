@@ -60,7 +60,11 @@ const WORKSHOP_GAMES: { [Type in GameType]: WorkshopGame<Type> } = {
   "pop-quiz": {
     Editor: QuizEditor,
     Settings: QuizRules,
-    newGame: () => ({ id: newQuizId(), type: "pop-quiz", config: defaultPopQuizConfig(newQuestionId()) }),
+    newGame: () => ({
+      id: newQuizId(),
+      type: "pop-quiz",
+      config: defaultPopQuizConfig(newQuestionId()),
+    }),
     newGameId: newQuizId,
     newItemId: newQuestionId,
     editTitleId: "setup.editQuestions",
@@ -71,7 +75,11 @@ const WORKSHOP_GAMES: { [Type in GameType]: WorkshopGame<Type> } = {
   "draw-it": {
     Editor: DrawItEditor,
     Settings: DrawItRules,
-    newGame: () => ({ id: newDrawItId(), type: "draw-it", config: defaultDrawItConfig(newWordId()) }),
+    newGame: () => ({
+      id: newDrawItId(),
+      type: "draw-it",
+      config: defaultDrawItConfig(newWordId()),
+    }),
     newGameId: newDrawItId,
     newItemId: newWordId,
     editTitleId: "setup.editWords",
@@ -106,6 +114,7 @@ type GameEditorSlotProps<Type extends GameType> = Omit<GameEditorProps<unknown>,
 
 export const GameEditor = <Type extends GameType>({ game, update, ...props }: GameEditorSlotProps<Type>) => {
   const { Editor, updateConfig } = workshopGameOf(game);
+
   return (
     <Editor
       config={game.config}
@@ -122,6 +131,7 @@ type GameSettingsSlotProps<Type extends GameType> = {
 
 export const GameSettings = <Type extends GameType>({ game, update }: GameSettingsSlotProps<Type>) => {
   const { Settings, updateConfig } = workshopGameOf(game);
+
   return (
     <Settings config={game.config} onChange={(change) => update((current) => updateConfig(current, game.id, change))} />
   );

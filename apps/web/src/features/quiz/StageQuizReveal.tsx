@@ -92,7 +92,10 @@ export const StageQuizReveal = ({
               <span className="text-stage-body text-fg-subtle">
                 <FormattedMessage
                   id="quiz.gotItRight"
-                  values={{ correct: view.correctCount, total: view.participantCount }}
+                  values={{
+                    correct: view.correctCount,
+                    total: view.participantCount,
+                  }}
                 />
               </span>
             }
@@ -139,13 +142,18 @@ export const StageQuizReveal = ({
             className="mt-2"
             total={view.participantCount}
             correct={view.correct}
-            correctLabel={intl.formatMessage({ id: "quiz.correctAnswerHidden" })}
-            rows={options.map((option) => ({ ...option, count: view.counts[option.shape] }))}
+            correctLabel={intl.formatMessage({
+              id: "quiz.correctAnswerHidden",
+            })}
+            rows={options.map((option) => ({
+              ...option,
+              count: view.counts[option.shape],
+            }))}
           />
         </section>
         {view.leaderboard && (
           <Leaderboard
-            className="w-[700px] shrink-0"
+            className="w-175 shrink-0"
             title={<FormattedMessage id="quiz.leaderboard" />}
             subtitle={<FormattedMessage id="quiz.afterQuestion" values={{ number: view.questionIndex + 1 }} />}
             entries={toEntries(sessionId, view.leaderboard, players)}
