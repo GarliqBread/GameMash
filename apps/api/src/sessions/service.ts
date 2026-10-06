@@ -4,11 +4,13 @@ import {
   isSetupValid,
   type SessionSetup,
   setupImageIds,
+  setupMediaRefs,
   summarizeGame,
   withoutImages,
 } from "@gamemash/games/config";
 import { SessionSetupSchema } from "@gamemash/games/schemas";
 import {
+  AVATAR_CONTENT_TYPES,
   AVATAR_MAX_BYTES,
   AVATAR_MAX_DIMENSION,
   type Character,
@@ -197,19 +199,21 @@ export const createSessionService = ({
     bytes: Buffer,
   ): Promise<Result<{ version: number }>> => {
     const image = bytes.length <= AVATAR_MAX_BYTES ? inspectImage(bytes) : null;
+    const type = AVATAR_CONTENT_TYPES.find((avatarType) => avatarType === image?.type);
     const isAllowed =
       image !== null &&
+      type !== undefined &&
       image.width > 0 &&
       image.height > 0 &&
       image.width <= AVATAR_MAX_DIMENSION &&
       image.height <= AVATAR_MAX_DIMENSION;
-    if (!image || !isAllowed) return fail("invalid_image");
+    if (!image || !type || !isAllowed) return fail("invalid_image");
 
     const version = now();
     const result = await store.setAvatar(
       session.id,
       player.id,
-      { bytes, type: image.type, version },
+      { bytes, type, version },
       sessionExpiresAt(session.createdAt, now()),
     );
     return finishAvatarChange(session, result, { version });
@@ -249,7 +253,7 @@ export const createSessionService = ({
     const setup = media.imagesEnabled ? submitted : withoutImages(submitted);
     if (!isSetupValid(setup) || hasHiddenCharacters(setup.name)) return fail("bad_request");
     const imageIds = setupImageIds(setup);
-    if (!(await media.hasImages(session.id, imageIds))) return fail("bad_request");
+    if (!(await media.hasMedia(session.id, setupMediaRefs(setup)))) return fail("bad_request");
     const summary: LobbySummary = { name: setup.name, lineup: setup.games.map(summarizeGame) };
     const result = await store.saveSetup(
       session.id,
@@ -272,6 +276,7 @@ export const createSessionService = ({
     readImage: media.readImage,
     hasImageRoom: media.hasImageRoom,
     uploadImage: media.uploadImage,
+    uploadProofMedia: media.uploadProofMedia,
     discardImages: media.discardImages,
   });
 

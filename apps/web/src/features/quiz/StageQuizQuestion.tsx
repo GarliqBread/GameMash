@@ -15,6 +15,7 @@ import type { LobbyStatus } from "../../lib/lobby";
 import { useSecondsLabel } from "../game/useSecondsLabel";
 import { useSecondsLeft } from "../game/useSecondsLeft";
 import { ReconnectingNote } from "../session/ReconnectingNote";
+import { useProofPreload } from "./proof-media";
 import { QuizStageHeader } from "./QuizStageHeader";
 import { useAnswerOptions } from "./useAnswerOptions";
 import { useQuestionImages } from "./useQuestionImages";
@@ -32,6 +33,7 @@ export const StageQuizQuestion = ({ view, phaseEndsAt, status }: StageQuizQuesti
   const toOptions = useAnswerOptions();
   const seconds = useSecondsLeft(phaseEndsAt);
   const images = useQuestionImages(view.images);
+  useProofPreload(view.proof);
   const hasImages = view.images.length > 0;
   const secondsLabel = useSecondsLabel();
 

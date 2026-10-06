@@ -22,9 +22,11 @@ import { useRef, useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { QuestionImages } from "./QuestionImages";
 import { QuestionKindField } from "./QuestionKindField";
+import { QuestionProof } from "./QuestionProof";
 import { QuestionSettings } from "./QuestionSettings";
 import { addQuestion, deleteQuestion, insertQuestionAfter, newQuestionId, updateQuestion } from "./setup-changes";
 import type { ImageUploads } from "./useImageUploads";
+import type { ProofUploads } from "./useProofUploads";
 
 export type QuizEditorProps = {
   config: PopQuizConfig;
@@ -32,6 +34,7 @@ export type QuizEditorProps = {
   selectedItemId: string | undefined;
   onSelectItem: (id: string) => void;
   uploads: ImageUploads;
+  proofUploads: ProofUploads;
   imagesEnabled: boolean;
 };
 
@@ -41,6 +44,7 @@ export const QuizEditor = ({
   selectedItemId,
   onSelectItem,
   uploads,
+  proofUploads,
   imagesEnabled,
 }: QuizEditorProps) => {
   const intl = useIntl();
@@ -66,6 +70,7 @@ export const QuizEditor = ({
   };
 
   const handleDelete = () => {
+    proofUploads.cancelAll([question.id]);
     const neighbour = config.questions[position] ?? config.questions[position - 2];
     onChange((current) => deleteQuestion(current, question.id));
     if (neighbour) onSelectItem(neighbour.id);
@@ -106,6 +111,7 @@ export const QuizEditor = ({
               underline: intl.formatMessage({ id: "setup.underline" }),
             }}
           />
+          {imagesEnabled && <QuestionImages question={question} onChange={change} uploads={uploads} />}
           <QuestionKindField question={question} onChange={change} />
           <AnswerTileEditor
             legend={<FormattedMessage id="setup.answersLegend" />}
@@ -128,8 +134,9 @@ export const QuizEditor = ({
             maxLength={POP_QUIZ_ANSWER_MAX_LENGTH}
             placeholder={intl.formatMessage({ id: "setup.answerPlaceholder" })}
           />
+          {imagesEnabled && <QuestionProof question={question} onChange={change} proofUploads={proofUploads} />}
           <QuestionSettings config={config} question={question} onChange={change} />
-          <QuestionImages question={question} onChange={change} uploads={uploads} isEnabled={imagesEnabled}>
+          <div className="mt-1 flex flex-wrap gap-3">
             <ToolButton
               icon={<CopyIcon size={18} strokeWidth={2.2} />}
               onClick={handleDuplicate}
@@ -144,7 +151,7 @@ export const QuizEditor = ({
             >
               <FormattedMessage id="setup.deleteQuestion" />
             </ToolButton>
-          </QuestionImages>
+          </div>
         </div>
       </QuestionTabs>
       <ConfirmDialog

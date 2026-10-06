@@ -36,6 +36,7 @@ export * from "./host/GamePicker.js";
 export * from "./host/ImageHint.js";
 export * from "./host/InsertGameSlot.js";
 export * from "./host/LineupConnector.js";
+export * from "./host/ProofUpload.js";
 export * from "./host/QuestionImageStrip.js";
 export * from "./host/QuestionTabs.js";
 export * from "./host/RichTextField.js";

@@ -1,7 +1,7 @@
 import { POP_QUIZ_MAX_IMAGES_PER_QUESTION, type QuizQuestion } from "@gamemash/games/config";
 import { QUESTION_IMAGE_CONTENT_TYPES } from "@gamemash/shared";
 import { ImageHint, ImageIcon, QuestionImageStrip, ToolButton } from "@gamemash/ui";
-import { type ChangeEvent, type ReactNode, useRef } from "react";
+import { type ChangeEvent, useRef } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { useErrorMessage } from "../../lib/errors";
 import { useSessionImages } from "../quiz/useQuestionImages";
@@ -13,11 +13,9 @@ export type QuestionImagesProps = {
   question: QuizQuestion;
   onChange: (update: (current: QuizQuestion) => QuizQuestion) => void;
   uploads: ImageUploads;
-  isEnabled: boolean;
-  children: ReactNode;
 };
 
-export const QuestionImages = ({ question, onChange, uploads, isEnabled, children }: QuestionImagesProps) => {
+export const QuestionImages = ({ question, onChange, uploads }: QuestionImagesProps) => {
   const intl = useIntl();
   const formatError = useErrorMessage();
   const { data: urls } = useSessionImages(question.images.length > 0);
@@ -45,22 +43,21 @@ export const QuestionImages = ({ question, onChange, uploads, isEnabled, childre
     onChange((current) => ({ ...current, images: current.images.filter((id) => id !== imageId) }));
 
   return (
-    <>
-      {isEnabled && (
-        <QuestionImageStrip
-          images={question.images.map((id, index) => ({
-            id,
-            url: urls?.get(id),
-            alt: intl.formatMessage({ id: "quiz.imageAlt" }, { position: index + 1, count: question.images.length }),
-          }))}
-          pendingCount={pendingCount}
-          onRemove={remove}
-          removeLabel={(position) => intl.formatMessage({ id: "setup.removeImage" }, { position })}
-          pendingLabel={intl.formatMessage({ id: "setup.uploadingImage" })}
-          error={error && formatError(error)}
-        />
-      )}
-      {isEnabled && question.imageHint && (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap gap-3">
+        <ToolButton
+          icon={<ImageIcon size={18} strokeWidth={2.2} />}
+          onClick={() => inputRef.current?.click()}
+          disabled={room <= 0}
+        >
+          <FormattedMessage
+            id="setup.addImage"
+            values={{ count: question.images.length, max: POP_QUIZ_MAX_IMAGES_PER_QUESTION }}
+          />
+        </ToolButton>
+        <input ref={inputRef} type="file" accept={ACCEPT} multiple hidden onChange={handleFiles} />
+      </div>
+      {question.imageHint && (
         <ImageHint
           label={<FormattedMessage id="setup.imageHint" />}
           hint={question.imageHint}
@@ -68,24 +65,18 @@ export const QuestionImages = ({ question, onChange, uploads, isEnabled, childre
           onRemove={removeHint}
         />
       )}
-      <div className="mt-1 flex flex-wrap gap-3">
-        {isEnabled && (
-          <>
-            <ToolButton
-              icon={<ImageIcon size={18} strokeWidth={2.2} />}
-              onClick={() => inputRef.current?.click()}
-              disabled={room <= 0}
-            >
-              <FormattedMessage
-                id="setup.addImage"
-                values={{ count: question.images.length, max: POP_QUIZ_MAX_IMAGES_PER_QUESTION }}
-              />
-            </ToolButton>
-            <input ref={inputRef} type="file" accept={ACCEPT} multiple hidden onChange={handleFiles} />
-          </>
-        )}
-        {children}
-      </div>
-    </>
+      <QuestionImageStrip
+        images={question.images.map((id, index) => ({
+          id,
+          url: urls?.get(id),
+          alt: intl.formatMessage({ id: "quiz.imageAlt" }, { position: index + 1, count: question.images.length }),
+        }))}
+        pendingCount={pendingCount}
+        onRemove={remove}
+        removeLabel={(position) => intl.formatMessage({ id: "setup.removeImage" }, { position })}
+        pendingLabel={intl.formatMessage({ id: "setup.uploadingImage" })}
+        error={error && formatError(error)}
+      />
+    </div>
   );
 };

@@ -23,6 +23,7 @@ import { addGame, removeGame, reorderGames } from "./setup-changes";
 import { firstUnready, setupProblemId } from "./setup-readiness";
 import { AI_PICKER_OPTION_ID, useAiPickerOptions, useGamePickerOptions } from "./useGamePickerOptions";
 import { useImageUploads } from "./useImageUploads";
+import { useIsProofUploading, useProofUploads } from "./useProofUploads";
 import { useSetupEditor } from "./useSetupEditor";
 import { useSetupTransfer } from "./useSetupTransfer";
 import { useWorkshopSelection } from "./useWorkshopSelection";
@@ -39,6 +40,8 @@ export const SetupWorkshop = ({ initialSetup, imagesEnabled }: SetupWorkshopProp
   const { sessionId } = useHostCredentials();
   const { setup, status, saveError, update, flush, replace } = useSetupEditor(initialSetup);
   const uploads = useImageUploads();
+  const proofUploads = useProofUploads();
+  const isProofUploading = useIsProofUploading();
   const pickerOptions = useGamePickerOptions();
   const aiPickerOptions = useAiPickerOptions();
   const { game, selectedItemId, selectGame, selectItem } = useWorkshopSelection(setup);
@@ -76,6 +79,7 @@ export const SetupWorkshop = ({ initialSetup, imagesEnabled }: SetupWorkshopProp
 
   const handleRemove = () => {
     if (!game) return;
+    if (game.type === "pop-quiz") proofUploads.cancelAll(game.config.questions.map((question) => question.id));
     const index = setup.games.indexOf(game);
     const neighbour = setup.games[index + 1] ?? setup.games[index - 1];
     update((current) => removeGame(current, game.id));
@@ -84,6 +88,7 @@ export const SetupWorkshop = ({ initialSetup, imagesEnabled }: SetupWorkshopProp
 
   const handleOpenLobby = async () => {
     setHasTriedToOpen(true);
+    if (isProofUploading) return;
     const unready = firstUnready(setup);
     if (unready) {
       selectGame(unready.game.id);
@@ -158,9 +163,10 @@ export const SetupWorkshop = ({ initialSetup, imagesEnabled }: SetupWorkshopProp
             saveStatus={status}
             saveError={saveError}
             onRetrySave={() => void flush()}
-            problemId={hasTriedToOpen ? setupProblemId(setup) : null}
+            problemId={hasTriedToOpen ? (isProofUploading ? "setup.proofBusy" : setupProblemId(setup)) : null}
             transfer={transfer}
             uploads={uploads}
+            proofUploads={proofUploads}
             imagesEnabled={imagesEnabled}
             pickerOptions={pickerOptions}
             pickerExtraOptions={aiPickerOptions}

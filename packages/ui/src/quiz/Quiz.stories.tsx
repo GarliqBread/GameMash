@@ -141,6 +141,26 @@ const PhoneAnswer = ({ count, locked }: { count: 2 | 3 | 4; locked?: boolean }) 
   );
 };
 
+export const RevealSummaryCompact: Story = () => {
+  const t = useCopy();
+  const rows = useOptions(["Jupiter", "Saturn", "Uranus", "Neptune"]).map((option, index) => ({
+    ...option,
+    count: [3, 5, 0, 1][index] ?? 0,
+  }));
+  return (
+    <StageFrame width={600}>
+      <CorrectAnswerBanner
+        size="compact"
+        shape="triangle"
+        label={t("Saturn")}
+        shapeLabel={SHAPE_LABELS.triangle}
+        caption={t("Correct answer")}
+      />
+      <ResultBars size="compact" rows={rows} total={9} correct="triangle" correctLabel={t("correct")} />
+    </StageFrame>
+  );
+};
+
 export const PhoneButtons: Story = () => (
   <div data-theme="stage" className="flex flex-wrap gap-8 bg-bg p-8">
     <PhoneAnswer count={4} />

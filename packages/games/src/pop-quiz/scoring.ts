@@ -4,7 +4,7 @@ import type { Points } from "../rules.js";
 import type { QuizLeaderboard } from "./views.js";
 
 export const POP_QUIZ_READ_MS = 5000;
-export const POP_QUIZ_AUTO_NEXT_SECONDS = 7;
+export const POP_QUIZ_AUTO_NEXT_SECONDS = 10;
 export const POP_QUIZ_AUTO_NEXT_MS = POP_QUIZ_AUTO_NEXT_SECONDS * MS_PER_SECOND;
 const POP_QUIZ_LEADERBOARD_SIZE = 5;
 const MAX_SPEED_PENALTY = 0.5;

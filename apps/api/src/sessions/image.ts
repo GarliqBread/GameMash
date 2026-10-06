@@ -1,7 +1,7 @@
 import type { AvatarContentType } from "@gamemash/shared";
 
 export type ImageInfo = {
-  type: AvatarContentType;
+  type: AvatarContentType | "image/gif";
   width: number;
   height: number;
 };
@@ -12,6 +12,8 @@ const JPEG_NON_FRAME_MARKERS = new Set([0xc4, 0xc8, 0xcc]);
 const VP8_KEYFRAME_SIGNATURE = [0x9d, 0x01, 0x2a];
 const VP8L_SIGNATURE = 0x2f;
 const FOURTEEN_BITS = 0x3fff;
+const GIF_SIGNATURES = ["GIF87a", "GIF89a"];
+const GIF_HEADER_BYTES = 10;
 
 const startsWith = (bytes: Buffer, prefix: number[], offset = 0) =>
   prefix.every((value, index) => bytes[offset + index] === value);
@@ -60,8 +62,14 @@ const inspectWebp = (bytes: Buffer): ImageInfo | null => {
   return null;
 };
 
+const inspectGif = (bytes: Buffer): ImageInfo | null =>
+  bytes.length >= GIF_HEADER_BYTES
+    ? { type: "image/gif", width: bytes.readUInt16LE(6), height: bytes.readUInt16LE(8) }
+    : null;
+
 export const inspectImage = (bytes: Buffer): ImageInfo | null => {
   if (startsWith(bytes, JPEG_START)) return inspectJpeg(bytes);
+  if (GIF_SIGNATURES.includes(ascii(bytes, 0, 6))) return inspectGif(bytes);
   if (bytes.length >= 16 && ascii(bytes, 0, 4) === "RIFF" && ascii(bytes, 8, 4) === "WEBP") return inspectWebp(bytes);
   return null;
 };

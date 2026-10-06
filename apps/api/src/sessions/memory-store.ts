@@ -147,7 +147,11 @@ export const createMemorySessionStore = (now: () => number = Date.now): SessionS
       sessions.set(sessionId, { ...entry, setup, summary, expiresAt });
       return entry.summary === summary ? "unchanged" : "changed";
     },
-    addImage: async (sessionId, imageId, { maxPerSession, maxActive, expiresAt, leaseUntil, uploadedAt }) => {
+    addImage: async (
+      sessionId,
+      imageId,
+      { maxPerSession, maxActive, expiresAt, leaseUntil, uploadedAt, contentType },
+    ) => {
       const entry = live(sessionId);
       if (!entry) return "session_not_found";
       if (entry.session.status !== "lobby") return "setup_locked";
@@ -155,7 +159,11 @@ export const createMemorySessionStore = (now: () => number = Date.now): SessionS
       if (entry.images.length >= maxPerSession) return "limit_reached";
       if (activeImageCount() >= maxActive) return "storage_full";
       activeImages.set(`${sessionId}/${imageId}`, leaseUntil);
-      sessions.set(sessionId, { ...entry, images: [...entry.images, { id: imageId, uploadedAt }], expiresAt });
+      sessions.set(sessionId, {
+        ...entry,
+        images: [...entry.images, { id: imageId, uploadedAt, contentType }],
+        expiresAt,
+      });
       return "added";
     },
     removeImages: async (sessionId, imageIds) => {

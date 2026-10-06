@@ -1,7 +1,5 @@
 import type { QuizStageView } from "@gamemash/games/config";
 import type { PlayingSnapshot } from "@gamemash/shared";
-import { FormattedMessage } from "react-intl";
-import { HostNextButton } from "../game/HostNextButton";
 import type { StageGameProps } from "../games/game-views";
 import { StageQuizQuestion } from "./StageQuizQuestion";
 import { StageQuizReveal } from "./StageQuizReveal";
@@ -22,20 +20,15 @@ export const StageQuiz = ({ snapshot, view, players, status }: StageGameProps<Qu
   }
   return (
     <StageQuizReveal
+      key={snapshot.phaseId}
       view={view}
       players={players}
       status={status}
+      phaseId={snapshot.phaseId}
       phaseEndsAt={snapshot.phaseEndsAt}
+      canAdvance={snapshot.waitsForHost || snapshot.canSkip}
+      nextLabelId={nextLabelId(snapshot, view)}
       countdownLabelId={countdownLabelId(snapshot, view)}
-      next={
-        (snapshot.waitsForHost || snapshot.canSkip) && (
-          <HostNextButton
-            key={snapshot.phaseId}
-            phaseId={snapshot.phaseId}
-            label={<FormattedMessage id={nextLabelId(snapshot, view)} />}
-          />
-        )
-      }
     />
   );
 };

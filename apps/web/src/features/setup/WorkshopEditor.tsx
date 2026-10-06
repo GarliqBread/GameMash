@@ -19,6 +19,7 @@ import { useErrorMessage } from "../../lib/errors";
 import { editTitleIdOf, GameEditor } from "../games/workshop-games";
 import { SetupTransferStatus } from "./SetupTransfer";
 import type { ImageUploads } from "./useImageUploads";
+import type { ProofUploads } from "./useProofUploads";
 import type { SetupTransfer } from "./useSetupTransfer";
 
 export type WorkshopEditorProps = {
@@ -32,6 +33,7 @@ export type WorkshopEditorProps = {
   problemId: string | null;
   transfer: SetupTransfer;
   uploads: ImageUploads;
+  proofUploads: ProofUploads;
   imagesEnabled: boolean;
   pickerOptions: GamePickerOption[];
   pickerExtraOptions: GamePickerOption[];
@@ -51,6 +53,7 @@ export const WorkshopEditor = ({
   problemId,
   transfer,
   uploads,
+  proofUploads,
   imagesEnabled,
   pickerOptions,
   pickerExtraOptions,
@@ -59,6 +62,7 @@ export const WorkshopEditor = ({
   removeFocusRef,
 }: WorkshopEditorProps) => {
   const formatError = useErrorMessage();
+
   const [isConfirmingRemove, setIsConfirmingRemove] = useState(false);
 
   return (
@@ -110,6 +114,7 @@ export const WorkshopEditor = ({
           selectedItemId={selectedItemId}
           onSelectItem={(itemId) => onSelectItem(game.id, itemId)}
           uploads={uploads}
+          proofUploads={proofUploads}
           imagesEnabled={imagesEnabled}
         />
       ) : (

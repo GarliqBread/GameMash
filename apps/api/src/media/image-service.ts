@@ -1,16 +1,22 @@
+import { MEDIA_ROLE_TYPES, type MediaRef } from "@gamemash/games/config";
 import {
   MS_PER_MINUTE,
+  PROOF_GIF_MAX_BYTES,
+  PROOF_PHOTO_MAX_BYTES,
+  PROOF_PHOTO_MAX_DIMENSION,
+  PROOF_VIDEO_MAX_BYTES,
   QUESTION_IMAGE_MAX_BYTES,
   QUESTION_IMAGE_MAX_DIMENSION,
   QUESTION_IMAGES_MAX_PER_SESSION,
   type QuestionImage,
-  type QuestionImageContentType,
+  type StoredMediaContentType,
 } from "@gamemash/shared";
 import { sessionDeadline, sessionExpiresAt } from "../sessions/expiry.js";
 import { inspectImage } from "../sessions/image.js";
 import { fail, type Result } from "../sessions/result.js";
 import type { SessionRecord, SessionStore } from "../sessions/store.js";
 import { createImageId, type ImageStore } from "./image-store.js";
+import { inspectVideo } from "./video.js";
 
 const DEFAULT_MAX_ACTIVE_IMAGES = 3000;
 const LEASE_GRACE_MS = 30 * MS_PER_MINUTE;
@@ -30,17 +36,42 @@ export type ImageServiceDeps = {
   maxActiveImages?: number | undefined;
 };
 
-const isAllowedImage = (bytes: Buffer, contentType: QuestionImageContentType) => {
-  const image = bytes.length <= QUESTION_IMAGE_MAX_BYTES ? inspectImage(bytes) : null;
+type ImageLimits = { maxBytes: number; maxDimension: number };
+
+const QUESTION_IMAGE_LIMITS: ImageLimits = {
+  maxBytes: QUESTION_IMAGE_MAX_BYTES,
+  maxDimension: QUESTION_IMAGE_MAX_DIMENSION,
+};
+
+const PROOF_IMAGE_LIMITS: Record<Exclude<StoredMediaContentType, "video/mp4">, ImageLimits> = {
+  "image/webp": { maxBytes: PROOF_PHOTO_MAX_BYTES, maxDimension: PROOF_PHOTO_MAX_DIMENSION },
+  "image/jpeg": { maxBytes: PROOF_PHOTO_MAX_BYTES, maxDimension: PROOF_PHOTO_MAX_DIMENSION },
+  "image/gif": { maxBytes: PROOF_GIF_MAX_BYTES, maxDimension: PROOF_PHOTO_MAX_DIMENSION },
+};
+
+const isWithin = (bytes: Buffer, contentType: StoredMediaContentType, { maxBytes, maxDimension }: ImageLimits) => {
+  const image = bytes.length <= maxBytes ? inspectImage(bytes) : null;
   return (
     image !== null &&
     image.type === contentType &&
     image.width > 0 &&
     image.height > 0 &&
-    image.width <= QUESTION_IMAGE_MAX_DIMENSION &&
-    image.height <= QUESTION_IMAGE_MAX_DIMENSION
+    image.width <= maxDimension &&
+    image.height <= maxDimension
   );
 };
+
+const isAllowedQuestionImage = async (bytes: Buffer, contentType: StoredMediaContentType) =>
+  contentType !== "image/gif" && contentType !== "video/mp4" && isWithin(bytes, contentType, QUESTION_IMAGE_LIMITS);
+
+const isAllowedProofMedia = async (bytes: Buffer, contentType: StoredMediaContentType) => {
+  if (contentType !== "video/mp4") return isWithin(bytes, contentType, PROOF_IMAGE_LIMITS[contentType]);
+  return bytes.length <= PROOF_VIDEO_MAX_BYTES && (await inspectVideo(bytes)) !== null;
+};
+
+type UploadOptions = { checkRoom: boolean };
+
+const ALWAYS_CHECK_ROOM: UploadOptions = { checkRoom: true };
 
 export const createImageService = ({
   store,
@@ -53,18 +84,20 @@ export const createImageService = ({
       ids.map(async (id): Promise<QuestionImage> => ({ id, url: await imageStore.presignedUrl(sessionId, id) })),
     );
 
-  const uploadImage = async (
+  const storeMedia = async (
     session: SessionRecord,
     bytes: Buffer,
-    contentType: QuestionImageContentType,
-    { checkRoom }: { checkRoom: boolean } = { checkRoom: true },
+    contentType: StoredMediaContentType,
+    isAllowed: (bytes: Buffer, contentType: StoredMediaContentType) => Promise<boolean>,
+    { checkRoom }: UploadOptions,
   ): Promise<Result<QuestionImage>> => {
     if (!images) return fail("images_unavailable");
-    if (!isAllowedImage(bytes, contentType)) return fail("invalid_image");
+    if (!(await isAllowed(bytes, contentType))) return fail("invalid_image");
     if (checkRoom && !(await images.hasRoom())) return fail("image_storage_full");
     const id = createImageId();
     const expiresAt = sessionExpiresAt(session.createdAt, now());
     const added = await store.addImage(session.id, id, {
+      contentType,
       maxPerSession: QUESTION_IMAGES_MAX_PER_SESSION,
       maxActive: maxActiveImages,
       expiresAt,
@@ -83,17 +116,35 @@ export const createImageService = ({
     return { ok: true, value: { id, url: await images.presignedUrl(session.id, id) } };
   };
 
+  const uploadImage = (
+    session: SessionRecord,
+    bytes: Buffer,
+    contentType: StoredMediaContentType,
+    options: UploadOptions = ALWAYS_CHECK_ROOM,
+  ) => storeMedia(session, bytes, contentType, isAllowedQuestionImage, options);
+
+  const uploadProofMedia = (
+    session: SessionRecord,
+    bytes: Buffer,
+    contentType: StoredMediaContentType,
+    options: UploadOptions = ALWAYS_CHECK_ROOM,
+  ) => storeMedia(session, bytes, contentType, isAllowedProofMedia, options);
+
   const listImages = async (session: SessionRecord): Promise<Result<QuestionImage[]>> => {
     if (!images) return fail("images_unavailable");
     const ids = (await store.listImages(session.id)).map((image) => image.id);
     return { ok: true, value: await urlsFor(images, session.id, ids) };
   };
 
-  const hasImages = async (sessionId: string, ids: string[]) => {
-    if (ids.length === 0) return true;
+  const hasMedia = async (sessionId: string, refs: MediaRef[]) => {
+    if (refs.length === 0) return true;
     if (!images) return false;
-    const owned = new Set((await store.listImages(sessionId)).map((image) => image.id));
-    return ids.every((id) => owned.has(id));
+    const owned = new Map((await store.listImages(sessionId)).map((image) => [image.id, image.contentType]));
+    return refs.every((ref) => {
+      if (!owned.has(ref.id)) return false;
+      const contentType = owned.get(ref.id) ?? null;
+      return contentType === null ? ref.role === "questionImage" : MEDIA_ROLE_TYPES[ref.role].includes(contentType);
+    });
   };
 
   const pruneImages = async (sessionId: string, usedIds: string[]) => {
@@ -137,8 +188,9 @@ export const createImageService = ({
   return {
     imagesEnabled: images !== undefined,
     uploadImage,
+    uploadProofMedia,
     listImages,
-    hasImages,
+    hasMedia,
     pruneImages,
     readImage,
     hasImageRoom,

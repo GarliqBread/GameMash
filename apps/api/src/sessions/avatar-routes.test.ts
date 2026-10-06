@@ -141,6 +141,14 @@ describe("avatar upload", () => {
     expect(response.json()).toEqual({ code: "invalid_image" });
   });
 
+  it("rejects a GIF sent as an allowed type", async () => {
+    const { upload } = await setup();
+
+    const response = await upload(fixture("dot-1x1.gif"), "image/webp");
+
+    expect(response.json()).toEqual({ code: "invalid_image" });
+  });
+
   it("rejects images with oversized dimensions, even when the file is small", async () => {
     const { upload } = await setup();
 

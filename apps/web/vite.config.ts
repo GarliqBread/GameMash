@@ -17,6 +17,8 @@ const hostOf = (url: string | undefined) => {
 export default defineConfig(({ mode }) => {
   const publicHost = hostOf(loadEnv(mode, import.meta.dirname, "VITE_").VITE_PUBLIC_URL);
   return {
+    worker: { format: "es" },
+    optimizeDeps: { include: ["mediabunny", "@mediabunny/aac-encoder"] },
     plugins: [tanstackRouter({ target: "react", autoCodeSplitting: true }), react(), tailwindcss()],
     resolve: {
       dedupe: ["react", "react-dom", "@tanstack/react-query"],

@@ -28,8 +28,13 @@ export type QuizState = {
 };
 
 const questionPhase: Phase = { name: "question", durationMs: POP_QUIZ_READ_MS, input: null };
-const revealPhase = (config: PopQuizConfig): Phase =>
-  config.autoNextQuestion !== false
+
+const isAutoNext = (config: PopQuizConfig) => config.autoNextQuestion !== false;
+
+const playsVideoToTheEnd = (question: QuizQuestion) => question.proof?.kind === "video" && !question.proof.loop;
+
+const revealPhase = (config: PopQuizConfig, question: QuizQuestion): Phase =>
+  isAutoNext(config) && !playsVideoToTheEnd(question)
     ? { name: "reveal", durationMs: POP_QUIZ_AUTO_NEXT_MS, input: null, skippable: true }
     : { name: "reveal", durationMs: null, input: null };
 
@@ -126,7 +131,8 @@ export const popQuizRules: GameRules<PopQuizConfig, QuizState, QuizAnswerKey> = 
     }
     if (phase.name === "answering") {
       const results = scoreAnswers(config, state, submissions, phaseStartedAt);
-      return { phase: revealPhase(config), state: { ...state, results }, points: pointsOf(results) };
+      const question = questionAt(config, state.questionIndex);
+      return { phase: revealPhase(config, question), state: { ...state, results }, points: pointsOf(results) };
     }
     const nextIndex = state.questionIndex + 1;
     if (nextIndex >= config.questions.length) return { phase: null };
@@ -136,8 +142,9 @@ export const popQuizRules: GameRules<PopQuizConfig, QuizState, QuizAnswerKey> = 
   stageView: ({ config, state, phase, submissions, totals }): QuizStageView => {
     const question = questionAt(config, state.questionIndex);
     const progress = progressOf(config, state);
+    const proof = question.proof ?? null;
     if (phase.name === "question")
-      return { ...progress, kind: "question", text: question.text, images: question.images };
+      return { ...progress, kind: "question", text: question.text, images: question.images, proof };
     const answers = answersOf(question, state);
     if (phase.name === "answering") {
       return {
@@ -145,6 +152,7 @@ export const popQuizRules: GameRules<PopQuizConfig, QuizState, QuizAnswerKey> = 
         kind: "answering",
         text: question.text,
         images: question.images,
+        proof,
         answers,
         answeredCount: submissions.size,
         participantCount: state.participantCount,
@@ -162,7 +170,10 @@ export const popQuizRules: GameRules<PopQuizConfig, QuizState, QuizAnswerKey> = 
       correctCount: Object.values(state.results).filter((result) => result.isCorrect).length,
       participantCount: state.participantCount,
       fastest: fastestOf(state.results),
-      leaderboard: config.leaderboardAfterEachQuestion ? buildLeaderboard(totals, pointsOf(state.results)) : null,
+      leaderboard:
+        config.leaderboardAfterEachQuestion && !proof ? buildLeaderboard(totals, pointsOf(state.results)) : null,
+      proof,
+      autoNext: isAutoNext(config),
     };
   },
 
@@ -184,13 +195,18 @@ export const popQuizRules: GameRules<PopQuizConfig, QuizState, QuizAnswerKey> = 
     }
     const result = state.results[playerId];
     const correct = correctShape(question, state);
+    const gains = pointsOf(state.results);
     return {
       ...progress,
       kind: "reveal",
       correct: { shape: correct, text: question.answers[originalKey(question, state, correct)] },
-      result: result ? { shape: result.shape, isCorrect: result.isCorrect, points: result.points } : null,
+      result: result
+        ? { shape: result.shape, isCorrect: result.isCorrect, points: result.points, ms: result.ms }
+        : null,
       total,
       rank: rankOf(totals, playerId),
+      leaderboard: config.leaderboardAfterEachQuestion ? buildLeaderboard(totals, gains) : null,
+      isParticipant,
     };
   },
 };

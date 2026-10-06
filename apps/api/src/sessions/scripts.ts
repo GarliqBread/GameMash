@@ -114,7 +114,7 @@ redis.call('HSET', KEYS[1], 'summary', ARGV[2])
 return 'changed'`,
   ),
   addImage: luaScript<string>(
-    3,
+    4,
     `
 local status = redis.call('HGET', KEYS[1], 'status')
 if not status then return 'session_not_found' end
@@ -130,12 +130,14 @@ if not isKnown and redis.call('ZCARD', KEYS[3]) >= tonumber(ARGV[5]) then
   return 'storage_full'
 end
 redis.call('ZADD', KEYS[2], 'NX', ARGV[7], ARGV[1])
+redis.call('HSETNX', KEYS[4], ARGV[1], ARGV[8])
 redis.call('ZADD', KEYS[3], ARGV[6], ARGV[4])
 if redis.call('PEXPIRETIME', KEYS[3]) < tonumber(ARGV[6]) then
   redis.call('PEXPIREAT', KEYS[3], ARGV[6])
 end
 redis.call('PEXPIREAT', KEYS[1], ARGV[3])
 redis.call('PEXPIREAT', KEYS[2], ARGV[3])
+redis.call('PEXPIREAT', KEYS[4], ARGV[3])
 return 'added'`,
   ),
   saveGame: luaScript<string>(

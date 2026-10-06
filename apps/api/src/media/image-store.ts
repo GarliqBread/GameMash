@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
-import { QUESTION_IMAGE_CONTENT_TYPES, type QuestionImageContentType, SESSION_MAX_AGE_SECONDS } from "@gamemash/shared";
+import type { Readable } from "node:stream";
+import { SESSION_MAX_AGE_SECONDS, STORED_MEDIA_CONTENT_TYPES, type StoredMediaContentType } from "@gamemash/shared";
 
 export const PRESIGNED_URL_TTL_SECONDS = 60 * 60;
 export const IMAGE_CACHE_CONTROL = `private, max-age=${SESSION_MAX_AGE_SECONDS}, immutable`;
@@ -12,16 +13,18 @@ const SAFE_IMAGE_PATH_ID = new RegExp(`^${IMAGE_PATH_ID}$`);
 
 export const isSafeImagePathId = (value: string) => SAFE_IMAGE_PATH_ID.test(value);
 
-export const IMAGE_EXTENSIONS: Record<QuestionImageContentType, string> = {
+export const IMAGE_EXTENSIONS: Record<StoredMediaContentType, string> = {
   "image/webp": "webp",
   "image/jpeg": "jpg",
+  "image/gif": "gif",
+  "video/mp4": "mp4",
 };
 
 export const contentTypeForExtension = (extension: string) =>
-  QUESTION_IMAGE_CONTENT_TYPES.find((contentType) => IMAGE_EXTENSIONS[contentType] === extension);
+  STORED_MEDIA_CONTENT_TYPES.find((contentType) => IMAGE_EXTENSIONS[contentType] === extension);
 
 export type ImageStore = {
-  put: (sessionId: string, imageId: string, bytes: Buffer, contentType: QuestionImageContentType) => Promise<void>;
+  put: (sessionId: string, imageId: string, bytes: Buffer, contentType: StoredMediaContentType) => Promise<void>;
   get: (sessionId: string, imageId: string) => Promise<StoredImage | null>;
   presignedUrl: (sessionId: string, imageId: string) => Promise<string>;
   deleteImages: (sessionId: string, imageIds: string[]) => Promise<void>;
@@ -32,7 +35,19 @@ export type ImageStore = {
 
 export type StoredImage = {
   bytes: Buffer;
-  contentType: QuestionImageContentType;
+  contentType: StoredMediaContentType;
+};
+
+export type ByteRange = { start: number; end: number };
+
+export type OpenedImage = {
+  contentType: StoredMediaContentType;
+  size: number;
+  stream: (range?: ByteRange) => Readable;
+};
+
+export type ImageFileStore = ImageStore & {
+  open: (sessionId: string, imageId: string) => Promise<OpenedImage | null>;
 };
 
 export const IMAGE_SESSIONS_PREFIX = "sessions/";

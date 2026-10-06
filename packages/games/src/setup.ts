@@ -1,6 +1,7 @@
 import type { LineupEntry } from "@gamemash/shared";
 import { drawItConfigRules } from "./draw-it/config.js";
 import type { GameConfigRules, ImageIdMap } from "./game-config.js";
+import type { MediaRef } from "./media.js";
 import { popQuizConfigRules } from "./pop-quiz/config.js";
 import type { GameSetup, SessionSetup } from "./setup-schema.js";
 import { hasUniqueIds } from "./unique.js";
@@ -27,8 +28,17 @@ export const emptySetup = (): SessionSetup => ({ name: "", games: [] });
 export const isSetupValid = (setup: SessionSetup) =>
   hasUniqueIds(setup.games) && setup.games.every((game) => configRulesOf(game).isValid(game.config));
 
-export const setupImageIds = (setup: SessionSetup) => [
-  ...new Set(setup.games.flatMap((game) => configRulesOf(game).imageIds(game.config))),
+export const setupMediaRefs = (setup: SessionSetup): MediaRef[] =>
+  setup.games.flatMap((game) => configRulesOf(game).mediaRefs(game.config));
+
+export const setupImageIds = (setup: SessionSetup) => [...new Set(setupMediaRefs(setup).map((ref) => ref.id))];
+
+export const setupVideoIds = (setup: SessionSetup) => [
+  ...new Set(
+    setupMediaRefs(setup)
+      .filter((ref) => ref.role === "proofVideo")
+      .map((ref) => ref.id),
+  ),
 ];
 
 const gameWithImages = <Game extends GameSetup>(game: Game, map: ImageIdMap): Game => ({
@@ -42,6 +52,11 @@ export const mapImages = (setup: SessionSetup, map: ImageIdMap): SessionSetup =>
 });
 
 export const withoutImages = (setup: SessionSetup): SessionSetup => mapImages(setup, () => null);
+
+export const withoutVideos = (setup: SessionSetup): SessionSetup => {
+  const videoIds = new Set(setupVideoIds(setup));
+  return mapImages(setup, (imageId) => (videoIds.has(imageId) ? null : imageId));
+};
 
 export const withNewIds = <Game extends GameSetup>(game: Game, newId: () => string): Game => ({
   ...game,

@@ -101,6 +101,7 @@ describe("question image upload", () => {
     const { store, session, upload } = await setup();
     for (let index = 0; index < QUESTION_IMAGES_MAX_PER_SESSION; index += 1) {
       await store.addImage(session.sessionId, `image-${index}`, {
+        contentType: "image/webp",
         maxPerSession: QUESTION_IMAGES_MAX_PER_SESSION,
         maxActive: 1000,
         uploadedAt: Date.now(),
@@ -217,15 +218,44 @@ describe("server-wide image limits", () => {
 });
 
 describe("question image ownership", () => {
+  const asQuestionImages = (ids: string[]) => ids.map((id) => ({ id, role: "questionImage" as const }));
+
   it("confirms only images uploaded to the same session", async () => {
     const { sessions, session, upload } = await setup();
     const other = await setup();
     const { imageId } = (await upload(fixture("photo-256.jpg"), "image/jpeg")).json<UploadImageResponse>();
     const foreign = (await other.upload(fixture("photo-256.jpg"), "image/jpeg")).json<UploadImageResponse>();
 
-    expect(await sessions.hasImages(session.sessionId, [])).toBe(true);
-    expect(await sessions.hasImages(session.sessionId, [imageId])).toBe(true);
-    expect(await sessions.hasImages(session.sessionId, [imageId, foreign.imageId])).toBe(false);
-    expect(await sessions.hasImages(session.sessionId, ["made-up"])).toBe(false);
+    expect(await sessions.hasMedia(session.sessionId, [])).toBe(true);
+    expect(await sessions.hasMedia(session.sessionId, asQuestionImages([imageId]))).toBe(true);
+    expect(await sessions.hasMedia(session.sessionId, asQuestionImages([imageId, foreign.imageId]))).toBe(false);
+    expect(await sessions.hasMedia(session.sessionId, asQuestionImages(["made-up"]))).toBe(false);
+  });
+
+  it("only accepts each file in a role that fits what it is", async () => {
+    const { sessions, session, app } = await setup();
+    const send = async (name: string, contentType: string) =>
+      (
+        await app.inject({
+          method: "PUT",
+          url: `/api/sessions/${session.sessionId}/proof-media`,
+          payload: fixture(name),
+          headers: { "content-type": contentType, authorization: `Bearer ${session.hostToken}` },
+        })
+      ).json<UploadImageResponse>().imageId;
+    const video = await send("proof-320x180.mp4", "video/mp4");
+    const gif = await send("dot-1x1.gif", "image/gif");
+    const photo = await send("photo-256.jpg", "image/jpeg");
+    const has = (id: string, role: "questionImage" | "proofPhoto" | "proofVideo" | "proofPoster") =>
+      sessions.hasMedia(session.sessionId, [{ id, role }]);
+
+    expect(await has(video, "proofVideo")).toBe(true);
+    expect(await has(video, "questionImage")).toBe(false);
+    expect(await has(video, "proofPhoto")).toBe(false);
+    expect(await has(gif, "proofPhoto")).toBe(true);
+    expect(await has(gif, "questionImage")).toBe(false);
+    expect(await has(gif, "proofPoster")).toBe(false);
+    expect(await has(photo, "proofVideo")).toBe(false);
+    expect(await has(photo, "proofPoster")).toBe(true);
   });
 });

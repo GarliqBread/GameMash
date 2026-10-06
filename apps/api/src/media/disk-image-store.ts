@@ -1,7 +1,14 @@
-import { mkdir, readdir, readFile, rename, rm, statfs, writeFile } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { mkdir, readdir, readFile, rename, rm, stat, statfs, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { QUESTION_IMAGE_CONTENT_TYPES, type QuestionImageContentType } from "@gamemash/shared";
-import { IMAGE_EXTENSIONS, IMAGE_SESSIONS_PREFIX, type ImageStore, isSafeImagePathId } from "./image-store.js";
+import { STORED_MEDIA_CONTENT_TYPES, type StoredMediaContentType } from "@gamemash/shared";
+import {
+  IMAGE_EXTENSIONS,
+  IMAGE_SESSIONS_PREFIX,
+  type ImageFileStore,
+  isSafeImagePathId,
+  type OpenedImage,
+} from "./image-store.js";
 
 export const DISK_IMAGE_PATH = "/api/images";
 
@@ -17,13 +24,28 @@ const assertSafe = (...ids: string[]) => {
   if (!ids.every(isSafeImagePathId)) throw new Error("unsafe image path id");
 };
 
-export const createDiskImageStore = ({ directory, minFreeBytes }: DiskImageStoreOptions): ImageStore => {
+export const createDiskImageStore = ({ directory, minFreeBytes }: DiskImageStoreOptions): ImageFileStore => {
   const sessionsDir = join(directory, IMAGE_SESSIONS_PREFIX);
   const sessionDir = (sessionId: string) => join(sessionsDir, sessionId);
-  const imagePath = (sessionId: string, imageId: string, contentType: QuestionImageContentType) =>
+  const imagePath = (sessionId: string, imageId: string, contentType: StoredMediaContentType) =>
     join(sessionDir(sessionId), `${imageId}.${IMAGE_EXTENSIONS[contentType]}`);
 
-  const readVariant = async (sessionId: string, imageId: string, contentType: QuestionImageContentType) => {
+  const openVariant = async (
+    sessionId: string,
+    imageId: string,
+    contentType: StoredMediaContentType,
+  ): Promise<OpenedImage | null> => {
+    const path = imagePath(sessionId, imageId, contentType);
+    try {
+      const { size } = await stat(path);
+      return { contentType, size, stream: (range) => createReadStream(path, range) };
+    } catch (error) {
+      if (isMissing(error)) return null;
+      throw error;
+    }
+  };
+
+  const readVariant = async (sessionId: string, imageId: string, contentType: StoredMediaContentType) => {
     try {
       return { bytes: await readFile(imagePath(sessionId, imageId, contentType)), contentType };
     } catch (error) {
@@ -44,8 +66,16 @@ export const createDiskImageStore = ({ directory, minFreeBytes }: DiskImageStore
     presignedUrl: async (sessionId, imageId) => `${DISK_IMAGE_PATH}/${sessionId}/${imageId}`,
     get: async (sessionId, imageId) => {
       if (!isSafeImagePathId(sessionId) || !isSafeImagePathId(imageId)) return null;
-      for (const contentType of QUESTION_IMAGE_CONTENT_TYPES) {
+      for (const contentType of STORED_MEDIA_CONTENT_TYPES) {
         const image = await readVariant(sessionId, imageId, contentType);
+        if (image) return image;
+      }
+      return null;
+    },
+    open: async (sessionId, imageId) => {
+      if (!isSafeImagePathId(sessionId) || !isSafeImagePathId(imageId)) return null;
+      for (const contentType of STORED_MEDIA_CONTENT_TYPES) {
+        const image = await openVariant(sessionId, imageId, contentType);
         if (image) return image;
       }
       return null;
@@ -54,7 +84,7 @@ export const createDiskImageStore = ({ directory, minFreeBytes }: DiskImageStore
       assertSafe(sessionId, ...imageIds);
       await Promise.all(
         imageIds.flatMap((imageId) =>
-          QUESTION_IMAGE_CONTENT_TYPES.map((contentType) =>
+          STORED_MEDIA_CONTENT_TYPES.map((contentType) =>
             rm(imagePath(sessionId, imageId, contentType), { force: true }),
           ),
         ),

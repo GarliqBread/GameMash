@@ -20,6 +20,7 @@ describe("inspectImage", () => {
     ["lossless-200x100.webp", "image/webp", 200, 100],
     ["photo-256.jpg", "image/jpeg", 256, 256],
     ["huge-4000x10.jpg", "image/jpeg", 4000, 10],
+    ["dot-1x1.gif", "image/gif", 1, 1],
   ])("reads the real type and size of %s", (name, type, width, height) => {
     expect(inspectImage(fixture(name))).toEqual({ type, width, height });
   });

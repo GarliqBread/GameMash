@@ -38,6 +38,24 @@ const Unselected = () => {
   );
 };
 
+const Small = () => {
+  const [value, setValue] = useState<string | null>("side");
+  return (
+    <RadioCardGroup
+      aria-label="On the big screen"
+      size="sm"
+      value={value}
+      onValueChange={setValue}
+      className="gap-2"
+      options={[
+        { value: "side", label: "Next to answer" },
+        { value: "big", label: "Big" },
+        { value: "off", label: "Disabled", disabled: true },
+      ]}
+    />
+  );
+};
+
 export const Examples: Story = () => (
   <ThemeMatrix>
     {() => (
@@ -46,6 +64,7 @@ export const Examples: Story = () => (
           <Scores />
         </Frame>
         <Unselected />
+        <Small />
       </>
     )}
   </ThemeMatrix>

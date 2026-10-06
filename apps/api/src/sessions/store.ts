@@ -1,4 +1,4 @@
-import type { AvatarContentType, Character, SessionStatus } from "@gamemash/shared";
+import type { AvatarContentType, Character, SessionStatus, StoredMediaContentType } from "@gamemash/shared";
 
 export type SessionRecord = {
   id: string;
@@ -44,11 +44,13 @@ type ImageLimits = {
   expiresAt: number;
   leaseUntil: number;
   uploadedAt: number;
+  contentType: StoredMediaContentType;
 };
 
 export type SessionImage = {
   id: string;
   uploadedAt: number;
+  contentType: StoredMediaContentType | null;
 };
 
 export type SaveGameResult = "saved" | "conflict" | "session_not_found";

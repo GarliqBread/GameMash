@@ -1,16 +1,26 @@
 import { Value } from "typebox/value";
 import { describe, expect, it } from "vitest";
 import { type DrawItWord, defaultDrawItConfig } from "./draw-it/config.js";
-import { defaultPopQuizConfig, emptyQuestion, isQuestionComplete, type QuizQuestion } from "./pop-quiz/config.js";
+import {
+  defaultPopQuizConfig,
+  emptyQuestion,
+  isQuestionComplete,
+  type QuizProof,
+  type QuizQuestion,
+} from "./pop-quiz/config.js";
 import {
   type GameSetup,
   isGameReady,
   isSetupReady,
   isSetupValid,
   mapImages,
+  type SessionSetup,
   setupImageIds,
+  setupMediaRefs,
+  setupVideoIds,
   summarizeGame,
   withNewIds,
+  withoutVideos,
 } from "./setup.js";
 import { SessionSetupSchema } from "./setup-schema.js";
 
@@ -27,6 +37,29 @@ const trueFalse: QuizQuestion = {
   text: [{ text: "Pluto is a planet" }],
   answers: { squircle: "False", triangle: "", plus: "True", dome: "" },
   correct: "squircle",
+};
+
+const photoProof: QuizProof = {
+  kind: "image",
+  photos: [
+    { assetId: "proof-photo", alt: "Saturn with its rings against black space", width: 2560, height: 1664 },
+    { assetId: "proof-photo-2", alt: "Jupiter for comparison", width: 1600, height: 1600 },
+  ],
+  caption: "Saturn: more known moons than any other planet",
+  layout: "side",
+};
+
+const videoProof: QuizProof = {
+  kind: "video",
+  assetId: "proof-video",
+  posterAssetId: "proof-poster",
+  caption: "Kitchen cam, Monday 09:42",
+  layout: "side",
+  sound: true,
+  loop: false,
+  width: 1280,
+  height: 720,
+  durationMs: 102_000,
 };
 
 const quiz = (questions: QuizQuestion[], id = "quiz-1"): GameSetup => ({
@@ -151,6 +184,115 @@ const drawIt = (words: DrawItWord[], id = "draw-1"): GameSetup => ({
 });
 
 const lighthouse: DrawItWord = { id: "w1", text: "Lighthouse" };
+
+describe("quiz proof", () => {
+  const withProof = (proof: unknown) => ({ name: "", games: [quiz([{ ...complete, proof } as QuizQuestion])] });
+  const isAccepted = (proof: unknown) =>
+    Value.Check(SessionSetupSchema, withProof(proof)) && isSetupValid(withProof(proof) as SessionSetup);
+
+  it("accepts one or two photos, or one video, as proof", () => {
+    expect(isAccepted(photoProof)).toBe(true);
+    expect(
+      isAccepted({ ...photoProof, photos: photoProof.kind === "image" ? photoProof.photos.slice(0, 1) : [] }),
+    ).toBe(true);
+    expect(isAccepted(videoProof)).toBe(true);
+  });
+
+  it("allows at most two photos and never zero", () => {
+    const photo = photoProof.kind === "image" ? photoProof.photos[0] : undefined;
+    expect(isAccepted({ ...photoProof, photos: [photo, photo, photo] })).toBe(false);
+    expect(isAccepted({ ...photoProof, photos: [] })).toBe(false);
+  });
+
+  it("limits the caption, the length of a video and the size", () => {
+    expect(isAccepted({ ...photoProof, caption: "x".repeat(121) })).toBe(false);
+    expect(isAccepted({ ...videoProof, durationMs: 2 * 60 * 1000 + 1 })).toBe(false);
+    expect(isAccepted({ ...videoProof, width: 1920, height: 1080 })).toBe(false);
+    expect(isAccepted({ ...videoProof, width: 1280, height: 1280 })).toBe(false);
+    expect(isAccepted({ ...videoProof, width: 720, height: 1280 })).toBe(true);
+  });
+
+  it("keeps video details on videos only", () => {
+    expect(isAccepted({ ...photoProof, durationMs: 1000 })).toBe(false);
+    expect(isAccepted({ ...photoProof, sound: true })).toBe(false);
+    const { posterAssetId: _poster, ...withoutPoster } = videoProof as Extract<QuizProof, { kind: "video" }>;
+    expect(isAccepted(withoutPoster)).toBe(false);
+    const { loop: _loop, ...withoutLoop } = videoProof as Extract<QuizProof, { kind: "video" }>;
+    expect(isAccepted(withoutLoop)).toBe(false);
+  });
+
+  it("rejects hidden characters in the caption and alt text", () => {
+    expect(isAccepted({ ...photoProof, caption: "a\u200bb" })).toBe(false);
+    expect(isAccepted({ ...photoProof, photos: [{ assetId: "p", alt: "a\u200bb", width: 10, height: 10 }] })).toBe(
+      false,
+    );
+  });
+
+  it("refuses the same file twice in one proof", () => {
+    const photo = { assetId: "same", alt: "", width: 10, height: 10 };
+    expect(isAccepted({ ...photoProof, photos: [photo, photo] })).toBe(false);
+    expect(isAccepted({ ...videoProof, posterAssetId: "proof-video" })).toBe(false);
+  });
+
+  it("says what each file is used for", () => {
+    const setup = { name: "", games: [quiz([{ ...complete, images: ["a"], proof: videoProof }])] };
+
+    expect(setupMediaRefs(setup)).toEqual([
+      { id: "a", role: "questionImage" },
+      { id: "proof-video", role: "proofVideo" },
+      { id: "proof-poster", role: "proofPoster" },
+    ]);
+    expect(setupMediaRefs(withProof(photoProof) as SessionSetup).map((ref) => ref.role)).toEqual([
+      "proofPhoto",
+      "proofPhoto",
+    ]);
+  });
+
+  it("does not change readiness", () => {
+    expect(isQuestionComplete({ ...complete, proof: videoProof })).toBe(true);
+  });
+
+  it("counts proof media and the video poster as images of the setup", () => {
+    const setup = { name: "", games: [quiz([{ ...complete, images: ["a"], proof: videoProof }])] };
+
+    expect(setupImageIds(setup)).toEqual(["a", "proof-video", "proof-poster"]);
+    expect(setupImageIds(withProof(photoProof) as SessionSetup)).toEqual(["proof-photo", "proof-photo-2"]);
+  });
+
+  it("drops a photo whose media is gone, and the proof once none is left", () => {
+    const setup = withProof(photoProof) as SessionSetup;
+
+    expect(setupImageIds(mapImages(setup, (imageId) => (imageId === "proof-photo" ? null : imageId)))).toEqual([
+      "proof-photo-2",
+    ]);
+    expect(mapImages(setup, () => null).games[0]?.config).not.toHaveProperty("questions.0.proof");
+  });
+
+  it("drops a video proof when its video or poster is gone", () => {
+    const setup = withProof(videoProof) as SessionSetup;
+
+    expect(setupImageIds(mapImages(setup, (imageId) => `new-${imageId}`))).toEqual([
+      "new-proof-video",
+      "new-proof-poster",
+    ]);
+    expect(setupImageIds(mapImages(setup, (imageId) => (imageId === "proof-poster" ? null : imageId)))).toEqual([]);
+  });
+
+  it("leaves video proofs out, keeping everything else", () => {
+    const setup = {
+      name: "",
+      games: [
+        quiz([
+          { ...complete, images: ["a"], proof: videoProof },
+          { ...trueFalse, proof: photoProof },
+        ]),
+      ],
+    };
+
+    expect(setupVideoIds(setup)).toEqual(["proof-video"]);
+    expect(setupImageIds(withoutVideos(setup))).toEqual(["a", "proof-photo", "proof-photo-2"]);
+  });
+});
 
 describe("draw it setup", () => {
   it("accepts a new game straight from the defaults", () => {
