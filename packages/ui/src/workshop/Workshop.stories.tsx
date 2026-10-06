@@ -60,6 +60,12 @@ export const Keys: Story = () => {
         <ToolButton icon={<ImageIcon size={18} strokeWidth={2.2} />}>Add image</ToolButton>
         <ToolButton icon={<CopyIcon size={18} strokeWidth={2.2} />}>Duplicate</ToolButton>
         <ToolButton icon={<TrashIcon size={18} strokeWidth={2.2} />}>Delete</ToolButton>
+        <ToolButton size="sm" icon={<CheckIcon size={14} strokeWidth={3} />}>
+          Alt text
+        </ToolButton>
+        <ToolButton size="sm" icon={<PencilIcon size={14} strokeWidth={2.4} />}>
+          Alt text
+        </ToolButton>
       </Row>
     </Bench>
   );
@@ -77,6 +83,9 @@ export const Stickers: Story = () => {
           {t("Editing")}
         </Sticker>
         <Sticker tone="white">{t("Draft")}</Sticker>
+        <Sticker tone="lime" rotate={4}>
+          {t("New")}
+        </Sticker>
         <Sticker tone="sky" rotate={-2}>
           {t("For the host")}
         </Sticker>

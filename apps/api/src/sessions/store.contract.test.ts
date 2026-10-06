@@ -33,6 +33,7 @@ const imageLimits = (maxPerSession: number) => ({
   expiresAt: inAMinute(),
   leaseUntil: Date.now() + 5 * 60_000,
   uploadedAt: 1_000,
+  contentType: "image/webp" as const,
 });
 
 const imageIds = async (store: SessionStore, sessionId: string) =>
@@ -317,12 +318,16 @@ describe.each(stores)("%s session store", (name, makeStore) => {
 
     expect(await store.listImages(created.id)).toEqual([]);
     expect(await store.addImage(created.id, "a", imageLimits(2))).toBe("added");
-    expect(await store.addImage(created.id, "b", { ...imageLimits(2), uploadedAt: 2_000 })).toBe("added");
-    expect(await store.addImage(created.id, "a", { ...imageLimits(2), uploadedAt: 3_000 })).toBe("added");
+    expect(
+      await store.addImage(created.id, "b", { ...imageLimits(2), uploadedAt: 2_000, contentType: "video/mp4" }),
+    ).toBe("added");
+    expect(
+      await store.addImage(created.id, "a", { ...imageLimits(2), uploadedAt: 3_000, contentType: "image/gif" }),
+    ).toBe("added");
     expect(await store.addImage(created.id, "c", imageLimits(2))).toBe("limit_reached");
     expect((await store.listImages(created.id)).toSorted((x, y) => x.uploadedAt - y.uploadedAt)).toEqual([
-      { id: "a", uploadedAt: 1_000 },
-      { id: "b", uploadedAt: 2_000 },
+      { id: "a", uploadedAt: 1_000, contentType: "image/webp" },
+      { id: "b", uploadedAt: 2_000, contentType: "video/mp4" },
     ]);
 
     await store.removeImages(created.id, ["a"]);
@@ -517,7 +522,7 @@ describe.each(stores)("%s session store", (name, makeStore) => {
 
       const keys = await redis.keys(`${prefix}*`);
       const ttls = await Promise.all(keys.map((key) => redis.pTTL(key)));
-      expect(keys).toHaveLength(12);
+      expect(keys).toHaveLength(13);
       expect(ttls.every((ttl) => ttl > 60_000 && ttl <= 10 * 60_000 + CLOCK_DRIFT_MS)).toBe(true);
     });
 

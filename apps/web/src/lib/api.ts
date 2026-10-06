@@ -19,7 +19,7 @@ const toParams = (value: unknown): ErrorParams | undefined => {
   return entries.every(([, entry]) => isParamValue(entry)) ? (Object.fromEntries(entries) as ErrorParams) : undefined;
 };
 
-const parseApiError = (body: unknown): ApiError => {
+export const parseApiError = (body: unknown): ApiError => {
   if (typeof body !== "object" || body === null || !("code" in body) || !isErrorCode(body.code)) {
     return { code: "internal_error" };
   }

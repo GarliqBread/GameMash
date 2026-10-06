@@ -1,5 +1,5 @@
 import type { QuizAnswerKey } from "./config.js";
-import type { QuizText } from "./schema.js";
+import type { QuizProof, QuizText } from "./schema.js";
 
 export type QuizAnswerOption = {
   shape: QuizAnswerKey;
@@ -30,11 +30,12 @@ export type QuizFastest = {
 };
 
 export type QuizStageView =
-  | (QuizProgress & { kind: "question"; text: QuizText; images: string[] })
+  | (QuizProgress & { kind: "question"; text: QuizText; images: string[]; proof: QuizProof | null })
   | (QuizProgress & {
       kind: "answering";
       text: QuizText;
       images: string[];
+      proof: QuizProof | null;
       answers: QuizAnswerOption[];
       answeredCount: number;
       participantCount: number;
@@ -51,12 +52,15 @@ export type QuizStageView =
       participantCount: number;
       fastest: QuizFastest | null;
       leaderboard: QuizLeaderboard | null;
+      proof: QuizProof | null;
+      autoNext: boolean;
     });
 
 export type QuizPlayerResult = {
   shape: QuizAnswerKey;
   isCorrect: boolean;
   points: number;
+  ms: number;
 };
 
 export type QuizPlayerView =
@@ -75,4 +79,6 @@ export type QuizPlayerView =
       result: QuizPlayerResult | null;
       total: number;
       rank: number | null;
+      leaderboard: QuizLeaderboard | null;
+      isParticipant: boolean;
     });

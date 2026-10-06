@@ -5,6 +5,7 @@ import {
   emptyQuestion,
   type PopQuizConfig,
   type QuizAnswerKey,
+  type QuizProof,
   type QuizQuestion,
 } from "./config.js";
 import { type QuizState, popQuizRules as rules } from "./rules.js";
@@ -379,18 +380,23 @@ describe("pop quiz rules", () => {
       participantCount: 3,
       fastest: { playerId: "daan", ms: 2_100 },
     });
-    expect(rules.playerView({ ...context, playerId: "daan", isParticipant: false })).toEqual({
+    expect(rules.playerView({ ...context, playerId: "daan", isParticipant: false })).toMatchObject({
       kind: "reveal",
       questionIndex: 0,
       questionCount: 2,
       correct: { shape: "triangle", text: "Saturn" },
-      result: { shape: "triangle", isCorrect: true, points: 948 },
+      result: { shape: "triangle", isCorrect: true, points: 948, ms: 2_100 },
       total: 948,
       rank: 1,
+      leaderboard: {
+        rankedCount: 3,
+        entries: [{ playerId: "daan", rank: 1 }, { playerId: "priya" }, { playerId: "lars" }],
+      },
     });
     expect(rules.playerView({ ...context, playerId: "late", isParticipant: false })).toMatchObject({
       result: null,
       rank: 3,
+      isParticipant: false,
     });
   });
 
@@ -409,6 +415,66 @@ describe("pop quiz rules", () => {
     expect(rules.stageView(viewContext(without, reveal.state, reveal.phase, { totals }))).toMatchObject({
       leaderboard: null,
     });
+  });
+});
+
+describe("pop quiz proof", () => {
+  const photoProof = {
+    kind: "image" as const,
+    photos: [{ assetId: "photo1", alt: "Saturn", width: 1600, height: 900 }],
+    caption: "Saturn has the most",
+    layout: "side" as const,
+  };
+  const videoProof = {
+    kind: "video" as const,
+    assetId: "video1",
+    posterAssetId: "poster1",
+    caption: "Kitchen cam",
+    layout: "side" as const,
+    sound: true,
+    loop: false,
+    width: 1280,
+    height: 720,
+    durationMs: 102_000,
+  };
+  const withProof = (proof: QuizProof, overrides: Partial<PopQuizConfig> = {}) =>
+    quizConfig({ questions: [{ ...moons, proof }, capital], ...overrides });
+  const revealOf = (config: PopQuizConfig) => {
+    const { answering } = toAnswering(config);
+    return expectPhase(advance(config, answering.state, answering.phase, answers([["priya", "triangle", 0]])));
+  };
+
+  it("waits for the big screen while a video plays, and uses the timer for photos and looping videos", () => {
+    expect(revealOf(withProof(videoProof)).phase).toEqual({ name: "reveal", durationMs: null, input: null });
+    expect(revealOf(withProof(photoProof)).phase).toMatchObject({ durationMs: POP_QUIZ_AUTO_NEXT_MS, skippable: true });
+    expect(revealOf(withProof({ ...videoProof, loop: true })).phase).toMatchObject({
+      durationMs: POP_QUIZ_AUTO_NEXT_MS,
+    });
+  });
+
+  it("shows the proof only on the big screen, instead of its leaderboard, and the leaderboard on phones", () => {
+    const config = withProof(photoProof, { leaderboardAfterEachQuestion: true });
+    const reveal = revealOf(config);
+    const context = viewContext(config, reveal.state, reveal.phase, { totals: { priya: 1000 } });
+
+    expect(rules.stageView(context)).toMatchObject({ proof: photoProof, leaderboard: null, autoNext: true });
+    const phone = rules.playerView({ ...context, playerId: "priya", isParticipant: true });
+    expect(phone).toMatchObject({ leaderboard: { entries: [{ playerId: "priya", rank: 1 }] } });
+    expect(phone).not.toHaveProperty("proof");
+  });
+
+  it("lets the big screen preload the proof, and never sends it to phones", () => {
+    const config = withProof(videoProof);
+    const { question, answering } = toAnswering(config);
+
+    expect(rules.stageView(viewContext(config, question.state, question.phase))).toMatchObject({ proof: videoProof });
+    expect(rules.stageView(viewContext(config, answering.state, answering.phase))).toMatchObject({ proof: videoProof });
+    const answeringView = rules.playerView({
+      ...viewContext(config, answering.state, answering.phase),
+      playerId: "priya",
+      isParticipant: true,
+    });
+    expect(answeringView).not.toHaveProperty("proof");
   });
 });
 

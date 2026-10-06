@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { MS_PER_MINUTE, MS_PER_SECOND, QUESTION_IMAGE_CONTENT_TYPES } from "@gamemash/shared";
+import { MS_PER_MINUTE, MS_PER_SECOND, STORED_MEDIA_CONTENT_TYPES } from "@gamemash/shared";
 import { AwsClient } from "aws4fetch";
 import type { S3Config } from "../config.js";
 import {
@@ -95,7 +95,7 @@ export const createS3ImageStore = (
       await send("put", objectUrl(imageKey(sessionId, imageId)), {
         method: "PUT",
         headers: { "content-type": contentType, "cache-control": IMAGE_CACHE_CONTROL },
-        body: new Uint8Array(bytes),
+        body: new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength),
       });
     },
     get: async (sessionId, imageId) => {
@@ -103,7 +103,7 @@ export const createS3ImageStore = (
       if (MISSING_STATUSES.has(response.status)) return null;
       if (!response.ok) throw new S3RequestError("get", response.status, await response.text());
       const header = response.headers.get("content-type")?.split(";")[0]?.trim();
-      const contentType = QUESTION_IMAGE_CONTENT_TYPES.find((type) => type === header);
+      const contentType = STORED_MEDIA_CONTENT_TYPES.find((type) => type === header);
       return contentType ? { bytes: Buffer.from(await response.arrayBuffer()), contentType } : null;
     },
     presignedUrl: async (sessionId, imageId) => {

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import {
   defaultDrawItConfig,
   type GameSetup,
+  type QuizProof,
   type SessionSetup,
   type SetupImportResponse,
   setupImageIds,
@@ -44,11 +45,11 @@ const setup = async ({ withImages = true, maxActiveImages, beforePut }: Options 
     const url = (path: string) => `/api/sessions/${session.sessionId}/${path}`;
     return {
       session,
-      uploadImage: async (name: string, type: string) =>
+      uploadImage: async (name: string, type: string, path = "images") =>
         (
           await app.inject({
             method: "PUT",
-            url: url("images"),
+            url: url(path),
             payload: fixture(name),
             headers: { ...headers, "content-type": type },
           })
@@ -85,6 +86,32 @@ const quizWith = (images: string[][]): GameSetup => {
   const questions = images.map((ids, index) => ({ ...question, id: `q${index + 1}`, images: ids }));
   return { ...game, config: { ...game.config, questions } };
 };
+
+const withProof = (game: GameSetup, proof: QuizProof): GameSetup => {
+  if (game.type !== "pop-quiz") throw new Error("expected a quiz");
+  const questions = game.config.questions.map((question) => ({ ...question, proof }));
+  return { ...game, config: { ...game.config, questions } };
+};
+
+const videoProof = (assetId: string, posterAssetId: string): QuizProof => ({
+  kind: "video",
+  assetId,
+  posterAssetId,
+  caption: "Kitchen cam",
+  layout: "side",
+  sound: true,
+  loop: false,
+  width: 320,
+  height: 180,
+  durationMs: 1000,
+});
+
+const photoProof = (assetId: string): QuizProof => ({
+  kind: "image",
+  photos: [{ assetId, alt: "A dot", width: 1, height: 1 }],
+  caption: "Proof",
+  layout: "big",
+});
 
 const zip = (entries: Record<string, Uint8Array | string>, level: 0 | 6 = 0) =>
   Buffer.from(
@@ -139,6 +166,51 @@ describe("setup export and import", () => {
     expect([newPhoto, newWebp]).not.toContain(photo);
     const stored = images.keys().filter((key) => key.includes(target.session.sessionId));
     expect(stored).toHaveLength(2);
+  });
+
+  it("leaves proof videos out of the file and keeps proof photos", async () => {
+    const { createHost } = await setup();
+    const source = await createHost();
+    const video = await source.uploadImage("proof-320x180.mp4", "video/mp4", "proof-media");
+    const poster = await source.uploadImage("photo-256.jpg", "image/jpeg", "proof-media");
+    const gif = await source.uploadImage("dot-1x1.gif", "image/gif", "proof-media");
+    const first = quizWith([[]]);
+    const second = { ...quizWith([[]]), id: "quiz-2" };
+    await source.saveSetup({
+      name: "",
+      games: [withProof(first, videoProof(video, poster)), withProof(second, photoProof(gif))],
+    });
+
+    const exported = await source.exportSetup();
+
+    expect(Object.keys(unzipSync(new Uint8Array(exported.rawPayload))).toSorted()).toEqual(
+      ["setup.json", `images/${gif}.gif`].toSorted(),
+    );
+    const target = await createHost();
+    const { setup: merged } = (await target.importSetup(exported.rawPayload)).json<SetupImportResponse>();
+    const [withoutVideo, withPhoto] = merged.games;
+    expect(withoutVideo?.type === "pop-quiz" && withoutVideo.config.questions[0]?.proof).toBe(undefined);
+    expect(withPhoto?.type === "pop-quiz" && withPhoto.config.questions[0]?.proof).toMatchObject({
+      kind: "image",
+      photos: [{ alt: "A dot" }],
+    });
+    expect(setupImageIds(merged)).toHaveLength(1);
+  });
+
+  it("drops video proofs from a file instead of importing them", async () => {
+    const { createHost } = await setup();
+    const target = await createHost();
+    const game = withProof(quizWith([[]]), videoProof("video1", "poster1"));
+    const file = zip({
+      "setup.json": setupFile({ name: "", games: [game] }),
+      "images/video1.mp4": fixture("proof-320x180.mp4"),
+      "images/poster1.jpg": fixture("photo-256.jpg"),
+    });
+
+    const imported = await target.importSetup(file);
+
+    expect(imported.statusCode).toBe(200);
+    expect(setupImageIds(imported.json<SetupImportResponse>().setup)).toEqual([]);
   });
 
   it("adds the games after the current ones and keeps the current name", async () => {
@@ -354,6 +426,7 @@ describe("setup export size", () => {
       readImage: async () => ({ bytes: Buffer.alloc(1024 * 1024), contentType: "image/jpeg" }),
       hasImageRoom: async () => true,
       uploadImage: async () => ({ ok: false, error: "images_unavailable" }),
+      uploadProofMedia: async () => ({ ok: false, error: "images_unavailable" }),
       discardImages: async () => {},
     });
 

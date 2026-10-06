@@ -194,3 +194,41 @@ export const SparkleIcon = (props: IconProps) => (
     <path d="M17.5 4.5 H20.5" />
   </Icon>
 );
+
+export const VideoIcon = (props: IconProps) => (
+  <Icon strokeWidth={2.2} {...props}>
+    <rect x="3" y="5" width="14" height="14" rx="2" />
+    <path d="M17 10 L21 7 V17 L17 14 Z" />
+  </Icon>
+);
+
+export const AlertIcon = (props: IconProps) => (
+  <Icon strokeWidth={1.6} {...props}>
+    <path d="M12 3.5 C13.4 3.5 14.3 4.4 15.2 6 L21 16.5 C22 18.4 20.8 20.5 18.6 20.5 H5.4 C3.2 20.5 2 18.4 3 16.5 L8.8 6 C9.7 4.4 10.6 3.5 12 3.5 Z" />
+    <path d="M12 9 V13.5" fill="none" strokeWidth={2.4} />
+    <circle cx="12" cy="16.6" r="1.3" fill="currentColor" stroke="none" />
+  </Icon>
+);
+
+export const PauseIcon = (props: IconProps) => (
+  <Icon fill="currentColor" stroke="none" {...props}>
+    <rect x="6" y="4.5" width="4" height="15" rx="1" />
+    <rect x="14" y="4.5" width="4" height="15" rx="1" />
+  </Icon>
+);
+
+export const SoundOnIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M4 9.5 H7.5 L12 5.5 V18.5 L7.5 14.5 H4 Z" fill="currentColor" />
+    <path d="M15.5 9 C16.8 10.5 16.8 13.5 15.5 15" />
+    <path d="M18 6.5 C20.6 9.5 20.6 14.5 18 17.5" />
+  </Icon>
+);
+
+export const SoundOffIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M4 9.5 H7.5 L12 5.5 V18.5 L7.5 14.5 H4 Z" fill="currentColor" />
+    <path d="M16 9.5 L21 14.5" />
+    <path d="M21 9.5 L16 14.5" />
+  </Icon>
+);

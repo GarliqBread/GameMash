@@ -21,6 +21,7 @@ import {
   updateQuizConfig,
 } from "../setup/setup-changes";
 import type { ImageUploads } from "../setup/useImageUploads";
+import type { ProofUploads } from "../setup/useProofUploads";
 
 type ConfigChange<Config> = (change: (config: Config) => Config) => void;
 
@@ -33,6 +34,7 @@ type GameEditorProps<Config> = GameSettingsProps<Config> & {
   selectedItemId: string | undefined;
   onSelectItem: (id: string) => void;
   uploads: ImageUploads;
+  proofUploads: ProofUploads;
   imagesEnabled: boolean;
 };
 

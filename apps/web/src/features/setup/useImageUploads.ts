@@ -24,9 +24,20 @@ const resize = async (file: File) => {
 
 const toUploadError = (caught: unknown) => (caught instanceof UploadError ? caught.error : toApiError(caught));
 
-export const useImageUploads = () => {
+export const useRememberImage = () => {
   const credentials = useHostCredentials();
   const queryClient = useQueryClient();
+  return async (image: QuestionImage) => {
+    const key = sessionImagesKey(credentials.sessionId);
+    if (!queryClient.getQueryData(key)) return queryClient.invalidateQueries({ queryKey: key });
+    await queryClient.cancelQueries({ queryKey: key });
+    queryClient.setQueryData<ImageListResponse>(key, (current) => ({ images: [...(current?.images ?? []), image] }));
+  };
+};
+
+export const useImageUploads = () => {
+  const credentials = useHostCredentials();
+  const remember = useRememberImage();
   const [pending, setPending] = useState<Record<string, number>>({});
   const [errors, setErrors] = useState<Record<string, ApiError | null>>({});
 
@@ -34,13 +45,6 @@ export const useImageUploads = () => {
     setPending((current) => ({ ...current, [questionId]: (current[questionId] ?? 0) + delta }));
   const setError = (questionId: string, error: ApiError | null) =>
     setErrors((current) => ({ ...current, [questionId]: error }));
-
-  const remember = async (image: QuestionImage) => {
-    const key = sessionImagesKey(credentials.sessionId);
-    if (!queryClient.getQueryData(key)) return queryClient.invalidateQueries({ queryKey: key });
-    await queryClient.cancelQueries({ queryKey: key });
-    queryClient.setQueryData<ImageListResponse>(key, (current) => ({ images: [...(current?.images ?? []), image] }));
-  };
 
   const uploadOne = async (file: File) => {
     const { imageId, url } = await uploadImage(credentials, await resize(file));

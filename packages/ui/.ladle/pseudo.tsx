@@ -20,7 +20,7 @@ const EXPANSION = 0.4;
 
 const pseudoLocalize = (text: string) => {
   const accented = [...text].map((char) => ACCENTS[char] ?? char).join("");
-  const padding = "·".repeat(Math.max(2, Math.ceil(text.length * EXPANSION)));
+  const padding = "-".repeat(Math.max(2, Math.ceil(text.length * EXPANSION)));
   return `[${accented} ${padding}]`;
 };
 
@@ -29,7 +29,10 @@ type PseudoState = {
   toggle: () => void;
 };
 
-const PseudoContext = createContext<PseudoState>({ isPseudo: false, toggle: () => {} });
+const PseudoContext = createContext<PseudoState>({
+  isPseudo: false,
+  toggle: () => {},
+});
 
 export const PseudoProvider = ({ children }: { children: ReactNode }) => {
   const [isPseudo, setIsPseudo] = useState(false);

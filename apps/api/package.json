@@ -21,6 +21,7 @@
     "aws4fetch": "^1.0.20",
     "fastify": "^5.12.5",
     "fflate": "^0.8.3",
+    "mediabunny": "catalog:",
     "pino": "^10.3.1",
     "proxy-addr": "^2.0.8",
     "redis": "^6.2.1",

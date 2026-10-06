@@ -11,6 +11,7 @@ import { healthyRedis } from "../test-app.js";
 import { createDiskImageStore } from "./disk-image-store.js";
 
 const photo = readFileSync(new URL("../sessions/fixtures/photo-256.jpg", import.meta.url));
+const video = readFileSync(new URL("../sessions/fixtures/proof-320x180.mp4", import.meta.url));
 
 const setup = async () => {
   const imageFiles = createDiskImageStore({
@@ -29,7 +30,16 @@ const setup = async () => {
         headers: { "content-type": "image/jpeg", authorization: `Bearer ${session.hostToken}` },
       })
     ).json<UploadImageResponse>();
-  return { app, sessions, session, upload };
+  const uploadVideo = async () =>
+    (
+      await app.inject({
+        method: "PUT",
+        url: `/api/sessions/${session.sessionId}/proof-media`,
+        payload: video,
+        headers: { "content-type": "video/mp4", authorization: `Bearer ${session.hostToken}` },
+      })
+    ).json<UploadImageResponse>();
+  return { app, sessions, session, upload, uploadVideo };
 };
 
 describe("images stored on disk", () => {
@@ -47,6 +57,41 @@ describe("images stored on disk", () => {
       "x-content-type-options": "nosniff",
       "content-security-policy": "default-src 'none'; sandbox",
     });
+  });
+
+  it("serves proof videos in parts, so browsers can seek and Safari can play them", async () => {
+    const { app, uploadVideo } = await setup();
+    const { url } = await uploadVideo();
+
+    const whole = await app.inject({ method: "GET", url });
+    const part = await app.inject({ method: "GET", url, headers: { range: "bytes=100-199" } });
+    const tail = await app.inject({ method: "GET", url, headers: { range: "bytes=-10" } });
+
+    expect(whole.statusCode).toBe(200);
+    expect(whole.rawPayload).toEqual(video);
+    expect(whole.headers).toMatchObject({
+      "content-type": "video/mp4",
+      "accept-ranges": "bytes",
+      "content-length": String(video.length),
+    });
+    expect(part.statusCode).toBe(206);
+    expect(part.rawPayload).toEqual(video.subarray(100, 200));
+    expect(part.headers).toMatchObject({
+      "content-range": `bytes 100-199/${video.length}`,
+      "content-length": "100",
+      "x-content-type-options": "nosniff",
+    });
+    expect(tail.rawPayload).toEqual(video.subarray(video.length - 10));
+  });
+
+  it("refuses a range past the end of the file", async () => {
+    const { app, uploadVideo } = await setup();
+    const { url } = await uploadVideo();
+
+    const response = await app.inject({ method: "GET", url, headers: { range: `bytes=${video.length}-` } });
+
+    expect(response.statusCode).toBe(416);
+    expect(response.headers["content-range"]).toBe(`bytes */${video.length}`);
   });
 
   it("stops serving images once the session's images are deleted", async () => {

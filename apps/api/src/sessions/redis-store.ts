@@ -1,4 +1,4 @@
-import { AVATAR_CONTENT_TYPES } from "@gamemash/shared";
+import { AVATAR_CONTENT_TYPES, STORED_MEDIA_CONTENT_TYPES } from "@gamemash/shared";
 import { CharacterSchema, SessionStatusSchema } from "@gamemash/shared/schemas";
 import { RESP_TYPES } from "redis";
 import { Type } from "typebox";
@@ -90,6 +90,7 @@ const keys = (prefix: string) => ({
   avatarMeta: (id: string) => `${prefix}session:${id}:avatar-meta`,
   setup: (id: string) => `${prefix}session:${id}:setup`,
   images: (id: string) => `${prefix}session:${id}:images`,
+  imageTypes: (id: string) => `${prefix}session:${id}:image-types`,
   game: (id: string) => `${prefix}session:${id}:game`,
   inputs: (id: string) => `${prefix}session:${id}:inputs`,
   uploads: (id: string) => `${prefix}session:${id}:uploads`,
@@ -141,6 +142,7 @@ export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PRE
     key.game(session.id),
     key.inputs(session.id),
     key.images(session.id),
+    key.imageTypes(session.id),
     key.uploads(session.id),
   ];
   const binary = redis.withTypeMapping({ [RESP_TYPES.BLOB_STRING]: Buffer });
@@ -228,9 +230,13 @@ export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PRE
       );
       return toSaveSetupResult(result);
     },
-    addImage: async (sessionId, imageId, { maxPerSession, maxActive, expiresAt, leaseUntil, uploadedAt }) => {
+    addImage: async (
+      sessionId,
+      imageId,
+      { maxPerSession, maxActive, expiresAt, leaseUntil, uploadedAt, contentType },
+    ) => {
       const result = await redis.addImage(
-        [key.session(sessionId), key.images(sessionId), key.activeImages()],
+        [key.session(sessionId), key.images(sessionId), key.activeImages(), key.imageTypes(sessionId)],
         [
           imageId,
           String(maxPerSession),
@@ -239,6 +245,7 @@ export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PRE
           String(maxActive),
           String(leaseUntil),
           String(uploadedAt),
+          contentType,
         ],
       );
       return toAddImageResult(result);
@@ -248,6 +255,7 @@ export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PRE
       await redis
         .multi()
         .zRem(key.images(sessionId), imageIds)
+        .hDel(key.imageTypes(sessionId), imageIds)
         .zRem(
           key.activeImages(),
           imageIds.map((id) => activeImageMember(sessionId, id)),
@@ -263,13 +271,19 @@ export const createRedisSessionStore = (redis: RedisClient, prefix = DEFAULT_PRE
             batch.map((entry) => entry.value),
           );
       }
-      await redis.del(key.images(sessionId));
+      await redis.del([key.images(sessionId), key.imageTypes(sessionId)]);
     },
-    listImages: async (sessionId) =>
-      (await redis.zRangeWithScores(key.images(sessionId), 0, -1)).map((entry) => ({
+    listImages: async (sessionId) => {
+      const [entries, types] = await Promise.all([
+        redis.zRangeWithScores(key.images(sessionId), 0, -1),
+        redis.hGetAll(key.imageTypes(sessionId)),
+      ]);
+      return entries.map((entry) => ({
         id: entry.value,
         uploadedAt: entry.score,
-      })),
+        contentType: STORED_MEDIA_CONTENT_TYPES.find((type) => type === types[entry.value]) ?? null,
+      }));
+    },
     getGame: async (sessionId) => toGameRecord(await redis.hGetAll(key.game(sessionId))),
     saveGame: async (sessionId, expectedVersion, state, expiresAt, clearUploads) => {
       const result = await redis.saveGame(

@@ -11,6 +11,7 @@ const stickerVariants = cva(
         coral: "bg-brand-coral",
         sky: "bg-brand-sky",
         white: "bg-paper-white",
+        lime: "bg-brand-lime",
       },
     },
     defaultVariants: {

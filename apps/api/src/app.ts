@@ -3,11 +3,12 @@ import type { HealthResponse } from "@gamemash/shared";
 import Fastify, { type FastifyError, type FastifyReply, type FastifyRequest, type FastifyServerOptions } from "fastify";
 import { type GameUploads, uploadRoutes } from "./game/upload-routes.js";
 import { imageFileRoutes } from "./media/image-file-routes.js";
-import type { ImageStore } from "./media/image-store.js";
+import type { ImageFileStore } from "./media/image-store.js";
 import type { RedisHealth } from "./redis.js";
 import { avatarRoutes } from "./sessions/avatar-routes.js";
 import { errorBody, sendError } from "./sessions/error-body.js";
 import { imageRoutes } from "./sessions/image-routes.js";
+import { proofMediaRoutes } from "./sessions/proof-media-routes.js";
 import { DEFAULT_SESSION_ROUTE_LIMITS, type SessionRouteLimits, sessionRoutes } from "./sessions/routes.js";
 import type { SessionService } from "./sessions/service.js";
 import { setupRoutes } from "./sessions/setup-routes.js";
@@ -17,7 +18,7 @@ export type AppDeps = {
   sessions: SessionService;
   rateLimit?: boolean | undefined;
   limits?: Partial<SessionRouteLimits> | undefined;
-  imageFiles?: ImageStore | undefined;
+  imageFiles?: ImageFileStore | undefined;
   uploads?: GameUploads | undefined;
 };
 
@@ -74,6 +75,7 @@ export const buildApp = (
   app.register(avatarRoutes(sessions));
   app.register(setupRoutes(sessions));
   app.register(imageRoutes(sessions));
+  app.register(proofMediaRoutes(sessions));
   if (imageFiles) app.register(imageFileRoutes(imageFiles));
   if (uploads) app.register(uploadRoutes(sessions, uploads));
 

@@ -43,7 +43,11 @@ const setup = async () => {
     redis: healthyRedis,
     sessions,
     rateLimit: false,
-    uploads: { upload: runner.upload, readUpload: runner.readUpload, connectedPlayers: () => connected },
+    uploads: {
+      upload: runner.upload,
+      readUpload: runner.readUpload,
+      connectedPlayers: () => connected,
+    },
   });
   const auth = (token: string | null) => (token ? { authorization: `Bearer ${token}` } : {});
   const player = priya;

@@ -10,17 +10,19 @@ import {
   type SetupFile,
   type SetupImportResponse,
   setupImageIds,
+  setupMediaRefs,
   withNewIds,
   withoutImages,
+  withoutVideos,
 } from "@gamemash/games/config";
 import { SetupFileSchema } from "@gamemash/games/schemas";
 import {
   type ErrorCode,
   hasHiddenCharacters,
-  QUESTION_IMAGE_MAX_BYTES,
+  PROOF_GIF_MAX_BYTES,
   type QuestionImage,
-  type QuestionImageContentType,
   SETUP_IMPORT_MAX_BYTES,
+  type StoredMediaContentType,
 } from "@gamemash/shared";
 import { strFromU8, strToU8, type UnzipFileInfo, unzipSync, type Zippable, zipSync } from "fflate";
 import { Value } from "typebox/value";
@@ -33,9 +35,19 @@ const SETUP_ENTRY_MAX_BYTES = 2 * BYTES_PER_MB;
 const STORED = 0;
 const ITEM_ID_BYTES = 9;
 const UPLOAD_BATCH_SIZE = 4;
-const IMAGE_ENTRY = new RegExp(`^images/(${IMAGE_PATH_ID})\\.(${Object.values(IMAGE_EXTENSIONS).join("|")})$`);
+const IMAGE_ENTRY_EXTENSIONS = Object.entries(IMAGE_EXTENSIONS)
+  .filter(([contentType]) => contentType !== "video/mp4")
+  .map(([, extension]) => extension);
+const IMAGE_ENTRY = new RegExp(`^images/(${IMAGE_PATH_ID})\\.(${IMAGE_ENTRY_EXTENSIONS.join("|")})$`);
 
 type UploadOptions = { checkRoom: boolean };
+
+type UploadMedia = (
+  session: SessionRecord,
+  bytes: Buffer,
+  contentType: StoredMediaContentType,
+  options: UploadOptions,
+) => Promise<Result<QuestionImage>>;
 
 export type SetupTransferDeps = {
   imagesEnabled: boolean;
@@ -43,16 +55,12 @@ export type SetupTransferDeps = {
   saveSetup: (session: SessionRecord, setup: SessionSetup) => Promise<Result<null>>;
   readImage: (sessionId: string, imageId: string) => Promise<StoredImage | null>;
   hasImageRoom: () => Promise<boolean>;
-  uploadImage: (
-    session: SessionRecord,
-    bytes: Buffer,
-    contentType: QuestionImageContentType,
-    options: UploadOptions,
-  ) => Promise<Result<QuestionImage>>;
+  uploadImage: UploadMedia;
+  uploadProofMedia: UploadMedia;
   discardImages: (sessionId: string, imageIds: string[]) => Promise<void>;
 };
 
-type Archive = { file: SetupFile; images: Map<string, StoredImage> };
+type Archive = { file: SetupFile; images: Map<string, StoredImage>; questionImageIds: Set<string> };
 
 type Upload = { from: string; to: string };
 
@@ -91,7 +99,7 @@ const readSetupFile = (zip: Uint8Array): SetupFile | null => {
 const readImages = (zip: Uint8Array, imageIds: Set<string>) => {
   const isWanted = (entry: UnzipFileInfo) => {
     const imageId = IMAGE_ENTRY.exec(entry.name)?.[1];
-    return imageId !== undefined && imageIds.has(imageId) && isStoredWithin(entry, QUESTION_IMAGE_MAX_BYTES);
+    return imageId !== undefined && imageIds.has(imageId) && isStoredWithin(entry, PROOF_GIF_MAX_BYTES);
   };
   const entries = unzipSync(zip, { filter: isWanted });
   return new Map(
@@ -107,8 +115,14 @@ const readArchive = (bytes: Buffer, imagesEnabled: boolean): Archive | null => {
     const zip = new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     const parsed = readSetupFile(zip);
     if (!parsed) return null;
-    const file = imagesEnabled ? parsed : { ...parsed, setup: withoutImages(parsed.setup) };
-    return { file, images: readImages(zip, new Set(setupImageIds(file.setup))) };
+    const setup = withoutVideos(parsed.setup);
+    const file = { ...parsed, setup: imagesEnabled ? setup : withoutImages(setup) };
+    const questionImageIds = new Set(
+      setupMediaRefs(file.setup)
+        .filter((ref) => ref.role === "questionImage")
+        .map((ref) => ref.id),
+    );
+    return { file, images: readImages(zip, new Set(setupImageIds(file.setup))), questionImageIds };
   } catch {
     return null;
   }
@@ -125,10 +139,11 @@ export const createSetupTransfer = ({
   readImage,
   hasImageRoom,
   uploadImage,
+  uploadProofMedia,
   discardImages,
 }: SetupTransferDeps) => {
   const exportSetup = async (session: SessionRecord): Promise<Result<Buffer>> => {
-    const setup = await getSetup(session);
+    const setup = withoutVideos(await getSetup(session));
     const stored = await Promise.all(
       setupImageIds(setup).map(async (imageId) => [imageId, await readImage(session.id, imageId)] as const),
     );
@@ -149,25 +164,26 @@ export const createSetupTransfer = ({
     return zip.byteLength > SETUP_IMPORT_MAX_BYTES ? fail("export_too_large") : { ok: true, value: zip };
   };
 
-  const uploadOne = async (session: SessionRecord, images: Map<string, StoredImage>, from: string) => {
-    const image = images.get(from);
+  const uploadOne = async (session: SessionRecord, archive: Archive, from: string) => {
+    const image = archive.images.get(from);
     if (!image) throw new ImportFailure("import_invalid");
-    const result = await uploadImage(session, image.bytes, image.contentType, { checkRoom: false });
+    const upload = archive.questionImageIds.has(from) ? uploadImage : uploadProofMedia;
+    const result = await upload(session, image.bytes, image.contentType, { checkRoom: false });
     if (!result.ok) throw new ImportFailure(result.error);
     return { from, to: result.value.id };
   };
 
-  const uploadBatch = async (session: SessionRecord, images: Map<string, StoredImage>, imageIds: string[]) => {
-    const settled = await Promise.allSettled(imageIds.map((imageId) => uploadOne(session, images, imageId)));
+  const uploadBatch = async (session: SessionRecord, archive: Archive, imageIds: string[]) => {
+    const settled = await Promise.allSettled(imageIds.map((imageId) => uploadOne(session, archive, imageId)));
     const done = settled.flatMap((outcome) => (outcome.status === "fulfilled" ? [outcome.value] : []));
     const failed = settled.find((outcome) => outcome.status === "rejected");
     return { done, failure: failed?.status === "rejected" ? (failed.reason as unknown) : undefined };
   };
 
-  const uploadAll = async (session: SessionRecord, images: Map<string, StoredImage>, imageIds: string[]) => {
+  const uploadAll = async (session: SessionRecord, archive: Archive, imageIds: string[]) => {
     const uploads: Upload[] = [];
     for (let start = 0; start < imageIds.length; start += UPLOAD_BATCH_SIZE) {
-      const batch = await uploadBatch(session, images, imageIds.slice(start, start + UPLOAD_BATCH_SIZE));
+      const batch = await uploadBatch(session, archive, imageIds.slice(start, start + UPLOAD_BATCH_SIZE));
       uploads.push(...batch.done);
       if (batch.failure !== undefined) {
         await discardImages(
@@ -192,10 +208,11 @@ export const createSetupTransfer = ({
     return merged;
   };
 
-  const importArchive = async (session: SessionRecord, { file, images }: Archive) => {
+  const importArchive = async (session: SessionRecord, archive: Archive) => {
+    const { file } = archive;
     const imageIds = setupImageIds(file.setup);
     if (imageIds.length > 0 && !(await hasImageRoom())) throw new ImportFailure("image_storage_full");
-    const uploaded = await uploadAll(session, images, imageIds);
+    const uploaded = await uploadAll(session, archive, imageIds);
     try {
       const incoming = mapImages(file.setup, (imageId) => uploaded.get(imageId) ?? null);
       return await mergeAndSave(session, incoming);
