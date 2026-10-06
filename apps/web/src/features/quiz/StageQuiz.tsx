@@ -16,7 +16,15 @@ const countdownLabelId = (snapshot: PlayingSnapshot, view: QuizStageView) => {
 
 export const StageQuiz = ({ snapshot, view, players, status }: StageGameProps<QuizStageView>) => {
   if (view.kind !== "reveal") {
-    return <StageQuizQuestion view={view} phaseEndsAt={snapshot.phaseEndsAt} status={status} />;
+    return (
+      <StageQuizQuestion
+        view={view}
+        phaseId={snapshot.phaseId}
+        phaseEndsAt={snapshot.phaseEndsAt}
+        waitsForHost={snapshot.waitsForHost}
+        status={status}
+      />
+    );
   }
   return (
     <StageQuizReveal

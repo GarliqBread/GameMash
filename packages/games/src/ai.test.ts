@@ -160,7 +160,7 @@ describe("Pop quiz from an AI reply", () => {
 
   it("allows the longest question and answer", () => {
     expectPlayable(
-      parseQuiz(quizReply([question({ question: "q".repeat(90), answers: ["a".repeat(40), "b", "c", "d"] })])),
+      parseQuiz(quizReply([question({ question: "q".repeat(200), answers: ["a".repeat(40), "b", "c", "d"] })])),
     );
   });
 
@@ -170,7 +170,7 @@ describe("Pop quiz from an AI reply", () => {
     ["an answer that isn't text", question({ answers: ["a", 2, "c", "d"] }), [{ code: "item_wrong_format", item: 1 }]],
     ["a correct answer as text", question({ correct: "Saturn" }), [{ code: "item_wrong_format", item: 1 }]],
     ["an empty question", question({ question: "  " }), [{ code: "question_empty", item: 1 }]],
-    ["a long question", question({ question: "q".repeat(91) }), [{ code: "question_too_long", item: 1, max: 90 }]],
+    ["a long question", question({ question: "q".repeat(201) }), [{ code: "question_too_long", item: 1, max: 200 }]],
     ["three answers", question({ answers: ["a", "b", "c"] }), [{ code: "answer_count", item: 1 }]],
     ["an empty answer", question({ answers: ["a", " ", "c", "d"] }), [{ code: "answer_empty", item: 1 }]],
     [
@@ -267,7 +267,7 @@ describe("AI prompts", () => {
 
   it("states the topic, count, difficulty, language and limits for a quiz", () => {
     const prompt = aiPrompt([{ type: "pop-quiz", count: 12 }], promptOptions);
-    for (const part of ["Topic: Space", "write 12 questions", "Difficulty: hard", "in Portuguese", "90", "40"]) {
+    for (const part of ["Topic: Space", "write 12 questions", "Difficulty: hard", "in Portuguese", "200", "40"]) {
       expect(prompt).toContain(part);
     }
     expect(prompt).toContain("imageIdea");

@@ -1,4 +1,9 @@
-import { POP_QUIZ_AUTO_NEXT_SECONDS, POP_QUIZ_TIME_LIMITS, type PopQuizConfig } from "@gamemash/games/config";
+import {
+  POP_QUIZ_AUTO_NEXT_SECONDS,
+  POP_QUIZ_READ_SECONDS,
+  POP_QUIZ_TIME_LIMITS,
+  type PopQuizConfig,
+} from "@gamemash/games/config";
 import { RuleSwitchList, RulesPanel, SegmentedControl, SettingsField } from "@gamemash/ui";
 import { FormattedMessage, useIntl } from "react-intl";
 
@@ -10,7 +15,7 @@ export type QuizRulesProps = {
 export const QuizRules = ({ config, onChange }: QuizRulesProps) => {
   const intl = useIntl();
   const toggle =
-    (key: "speedBonus" | "leaderboardAfterEachQuestion" | "autoNextQuestion" | "shuffleAnswers") =>
+    (key: "speedBonus" | "leaderboardAfterEachQuestion" | "autoShowAnswers" | "autoNextQuestion" | "shuffleAnswers") =>
     (checked: boolean) =>
       onChange((current) => ({ ...current, [key]: checked }));
 
@@ -46,6 +51,12 @@ export const QuizRules = ({ config, onChange }: QuizRulesProps) => {
             label: intl.formatMessage({ id: "setup.leaderboard" }),
             checked: config.leaderboardAfterEachQuestion,
             onCheckedChange: toggle("leaderboardAfterEachQuestion"),
+          },
+          {
+            id: "autoShowAnswers",
+            label: intl.formatMessage({ id: "setup.autoShowAnswers" }, { seconds: POP_QUIZ_READ_SECONDS }),
+            checked: config.autoShowAnswers ?? true,
+            onCheckedChange: toggle("autoShowAnswers"),
           },
           {
             id: "autoNext",
